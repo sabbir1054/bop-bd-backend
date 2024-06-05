@@ -15,7 +15,7 @@ app.use(cookieParser());
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ limit: '20mb', extended: true }));
 
-// test routes
+// test routes initial
 app.get('/', async (req: Request, res: Response) => {
   res.send('Server is running !');
 });
