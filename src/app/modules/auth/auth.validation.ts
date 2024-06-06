@@ -8,6 +8,13 @@ const userRegistrationValidation = z.object({
   }),
 });
 
+const userLoginValidation = z.object({
+  body: z.object({
+    phone: z.string({ required_error: 'Phone number is required' }),
+    password: z.string({ required_error: 'Password is required' }),
+  }),
+});
 export const AuthValidation = {
   userRegistrationValidation,
+  userLoginValidation,
 };

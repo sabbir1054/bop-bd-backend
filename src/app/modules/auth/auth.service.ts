@@ -1,10 +1,17 @@
 import { User } from '@prisma/client';
 import httpStatus from 'http-status';
+import { Secret } from 'jsonwebtoken';
+import config from '../../../config';
 import ApiError from '../../../errors/ApiError';
 import { checkPasswordStrength } from '../../../helpers/checkPasswordStrength';
 import { checkPhoneNumberFormate } from '../../../helpers/checkPhoneNumber';
-import { encryptPassword } from '../../../helpers/encription';
+import {
+  encryptPassword,
+  isPasswordMatched,
+} from '../../../helpers/encription';
+import { jwtHelpers } from '../../../helpers/jwtHelpers';
 import prisma from '../../../shared/prisma';
+import { ILoginInfo, ILoginResponse } from './auth.interface';
 
 const userRegistration = async (payload: User): Promise<User> => {
   const { password, phone, ...othersData } = payload;
@@ -42,6 +49,50 @@ const userRegistration = async (payload: User): Promise<User> => {
   return result;
 };
 
+const userLogin = async (payload: ILoginInfo): Promise<ILoginResponse> => {
+  const { phone, password } = payload;
+
+  // check phone number validity
+  const isPhoneValid = checkPhoneNumberFormate(phone);
+  if (!isPhoneValid) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'Please provide valid phone number',
+    );
+  }
+  // is user exist
+  const isUserExist = await prisma.user.findUnique({
+    where: { phone: phone },
+  });
+  if (!isUserExist) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'User not exist !');
+  }
+
+  // check password
+  if (
+    isUserExist.password &&
+    !(await isPasswordMatched(password, isUserExist.password))
+  ) {
+    throw new ApiError(httpStatus.UNAUTHORIZED, 'Password is not matched');
+  }
+
+  const { id, role } = isUserExist;
+  const accessToken = jwtHelpers.createToken(
+    { id, role, phone },
+    config.jwt.secret as Secret,
+    config.jwt.expires_in as string,
+  );
+
+  const refreshToken = jwtHelpers.createToken(
+    { id, role, phone },
+    config.jwt.refresh_secret as Secret,
+    config.jwt.refresh_expires_in as string,
+  );
+
+  return { accessToken, refreshToken };
+};
+
 export const AuthServices = {
   userRegistration,
+  userLogin,
 };
