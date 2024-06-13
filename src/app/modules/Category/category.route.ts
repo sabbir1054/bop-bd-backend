@@ -14,4 +14,18 @@ router.post(
   CategoryController.createNew,
 );
 
+router.patch(
+  '/:id',
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  validateRequest(CategoryZodValidation.updateCategoryValidation),
+  CategoryController.updateSingle,
+);
+router.delete(
+  '/:id',
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  CategoryController.deleteSingle,
+);
+router.get('/:id', CategoryController.getSingle);
+router.get('/', CategoryController.getAll);
+
 export const CategoryRoutes = router;

@@ -6,7 +6,14 @@ const createCategoryValidation = z.object({
     bn_name: z.string({ required_error: 'Bangla category name is required' }),
   }),
 });
+const updateCategoryValidation = z.object({
+  body: z.object({
+    eng_name: z.string().optional(),
+    bn_name: z.string().optional(),
+  }),
+});
 
 export const CategoryZodValidation = {
   createCategoryValidation,
+  updateCategoryValidation,
 };
