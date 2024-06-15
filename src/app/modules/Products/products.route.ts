@@ -88,4 +88,16 @@ router.patch(
   validateRequest(ProductsValidation.updateProductInfoValidation),
   ProductController.updateProductInfo,
 );
+
+router.delete(
+  '/:productId',
+  auth(
+    ENUM_USER_ROLE.DEALER,
+    ENUM_USER_ROLE.IMPORTER,
+    ENUM_USER_ROLE.MANUFACTURER,
+    ENUM_USER_ROLE.WHOLESALER,
+    ENUM_USER_ROLE.SELLER,
+  ),
+  ProductController.deleteProduct,
+);
 export const ProductRoutes = router;

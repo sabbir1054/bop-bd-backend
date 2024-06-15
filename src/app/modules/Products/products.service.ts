@@ -402,7 +402,32 @@ const updateProductInfo = async (
 
   return result;
 };
+const deleteProduct = async (
+  productId: string,
+  ownerId: string,
+): Promise<Product | null> => {
+  console.log(productId);
 
+  const isProductExist = await prisma.product.findUnique({
+    where: { id: productId },
+  });
+
+  if (!isProductExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Product not found ');
+  }
+  if (isProductExist?.ownerId !== ownerId) {
+    throw new ApiError(
+      httpStatus.NOT_FOUND,
+      'Only product owner can delete products ',
+    );
+  }
+
+  const result = await prisma.product.delete({
+    where: { id: productId },
+  });
+
+  return result;
+};
 export const ProductServices = {
   createNew,
   getAllProduct,
@@ -410,4 +435,5 @@ export const ProductServices = {
   deleteImageFromProduct,
   addNewImageForProduct,
   updateProductInfo,
+  deleteProduct,
 };
