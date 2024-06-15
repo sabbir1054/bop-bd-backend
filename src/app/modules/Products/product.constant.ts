@@ -8,4 +8,5 @@ export const productFilterableFields: string[] = [
   'ownerId',
   'address',
   'sku',
+  'ownerType',
 ];

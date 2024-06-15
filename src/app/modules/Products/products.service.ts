@@ -38,8 +38,15 @@ const getAllProduct = async (
   options: IPaginationOptions,
 ): Promise<IGenericResponse<Product[]>> => {
   const { limit, page, skip } = paginationHelpers.calculatePagination(options);
-  const { searchTerm, minPrice, maxPrice, address, category, ...filtersData } =
-    filters;
+  const {
+    searchTerm,
+    minPrice,
+    maxPrice,
+    address,
+    category,
+    ownerType,
+    ...filtersData
+  } = filters;
   const andConditions: any[] = [];
 
   if (searchTerm) {
@@ -95,6 +102,13 @@ const getAllProduct = async (
     });
   }
 
+  if (ownerType) {
+    andConditions.push({
+      owner: {
+        role: ownerType,
+      },
+    });
+  }
   const whereConditions =
     andConditions.length > 0 ? { AND: andConditions } : {};
 
