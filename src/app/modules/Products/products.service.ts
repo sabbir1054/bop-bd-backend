@@ -9,6 +9,7 @@ import { IGenericResponse } from '../../../interfaces/common';
 import { IPaginationOptions } from '../../../interfaces/pagination';
 import prisma from '../../../shared/prisma';
 import { productSearchableFields } from './product.constant';
+import { IUpdateProductInput } from './product.interface';
 interface MulterRequest extends Request {
   files?: Express.Multer.File[];
 }
@@ -352,10 +353,61 @@ const addNewImageForProduct = async (req: Request): Promise<Product | null> => {
   return result;
 };
 
+const updateProductInfo = async (
+  productId: string,
+  ownerId: string,
+  payload?: IUpdateProductInput,
+): Promise<Product | null> => {
+  if (!payload) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'No update data provided');
+  }
+  const { categoryId, ...othersInfo } = payload;
+
+  const isProductExist = await prisma.product.findUnique({
+    where: { id: productId },
+    include: {
+      owner: {
+        select: {
+          id: true,
+          memberCategory: true,
+          verified: true,
+          name: true,
+          phone: true,
+          address: true,
+          photo: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
+      category: true,
+      images: true,
+      feedbacks: true,
+    },
+  });
+
+  if (!isProductExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Product not found ');
+  }
+  if (isProductExist?.ownerId !== ownerId) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Only owner can update products ');
+  }
+
+  const result = await prisma.product.update({
+    where: { id: productId },
+    data: {
+      ...othersInfo,
+      ...(categoryId && { category: { connect: { id: categoryId } } }),
+    },
+  });
+
+  return result;
+};
+
 export const ProductServices = {
   createNew,
   getAllProduct,
   getSingle,
   deleteImageFromProduct,
   addNewImageForProduct,
+  updateProductInfo,
 };

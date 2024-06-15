@@ -68,6 +68,23 @@ const addImageToProduct = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const updateProductInfo = catchAsync(async (req: Request, res: Response) => {
+  const { productId } = req.params;
+  const { id: ownerId } = req.user as any;
+  const payload = req.body;
+
+  const result = await ProductServices.updateProductInfo(
+    productId,
+    ownerId,
+    payload,
+  );
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Product info updated ',
+    data: result,
+  });
+});
 
 export const ProductController = {
   createProduct,
@@ -75,4 +92,5 @@ export const ProductController = {
   getSingle,
   deleteImageFromProduct,
   addImageToProduct,
+  updateProductInfo,
 };

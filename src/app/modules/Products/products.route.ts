@@ -2,6 +2,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import { ENUM_USER_ROLE } from '../../../enums/user';
 import { FileUploadHelper } from '../../../helpers/fileUpload';
 import auth from '../../middlewares/auth';
+import validateRequest from '../../middlewares/validateRequest';
 import { ProductController } from './products.controller';
 import { ProductsValidation } from './products.validations';
 
@@ -75,4 +76,16 @@ router.patch(
   },
 );
 
+router.patch(
+  '/infoUpdate/:productId',
+  auth(
+    ENUM_USER_ROLE.DEALER,
+    ENUM_USER_ROLE.IMPORTER,
+    ENUM_USER_ROLE.MANUFACTURER,
+    ENUM_USER_ROLE.WHOLESALER,
+    ENUM_USER_ROLE.SELLER,
+  ),
+  validateRequest(ProductsValidation.updateProductInfoValidation),
+  ProductController.updateProductInfo,
+);
 export const ProductRoutes = router;
