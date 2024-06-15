@@ -21,5 +21,34 @@ router.post(
   validateRequest(CartValidation.updateCartSingleValidation),
   CartController.updateCartSingle,
 );
+router.post(
+  '/updateCartMultiple/:productId',
+  auth(
+    ENUM_USER_ROLE.DEALER,
+    ENUM_USER_ROLE.IMPORTER,
+    ENUM_USER_ROLE.MANUFACTURER,
+    ENUM_USER_ROLE.WHOLESALER,
+    ENUM_USER_ROLE.SELLER,
+    ENUM_USER_ROLE.ADMIN,
+    ENUM_USER_ROLE.SUPER_ADMIN,
+  ),
+  validateRequest(CartValidation.updateCartMultipleValidation),
+  CartController.updateCartMultiple,
+);
+
+router.patch(
+  '/removeItemsCart',
+  auth(
+    ENUM_USER_ROLE.DEALER,
+    ENUM_USER_ROLE.IMPORTER,
+    ENUM_USER_ROLE.MANUFACTURER,
+    ENUM_USER_ROLE.WHOLESALER,
+    ENUM_USER_ROLE.SELLER,
+    ENUM_USER_ROLE.ADMIN,
+    ENUM_USER_ROLE.SUPER_ADMIN,
+  ),
+  validateRequest(CartValidation.removeCartItemsValidation),
+  CartController.removeProductFromCart,
+);
 
 export const CartRoutes = router;
