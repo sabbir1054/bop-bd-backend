@@ -1,7 +1,12 @@
 import httpStatus from 'http-status';
 import ApiError from '../../../errors/ApiError';
 import prisma from '../../../shared/prisma';
-const addToCartSingle = async (userId: string, productId: string) => {
+
+const updateCartSingle = async (
+  userId: string,
+  productId: string,
+  action: 'increment' | 'decrement',
+) => {
   const isProductExist = await prisma.product.findUnique({
     where: { id: productId },
   });
@@ -17,10 +22,17 @@ const addToCartSingle = async (userId: string, productId: string) => {
     });
 
     if (!cart) {
-      cart = await prisma.cart.create({
-        data: { userId: userId },
-        include: { CartItem: true },
-      });
+      if (action === 'decrement') {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          'Cart not found for decrement action',
+        );
+      } else {
+        cart = await prisma.cart.create({
+          data: { userId: userId },
+          include: { CartItem: true },
+        });
+      }
     }
 
     let cartItem = await prisma.cartItem.findFirst({
@@ -31,18 +43,38 @@ const addToCartSingle = async (userId: string, productId: string) => {
     });
 
     if (cartItem) {
-      cartItem = await prisma.cartItem.update({
-        where: { id: cartItem.id },
-        data: { quantity: { increment: 1 } },
-      });
+      if (action === 'increment') {
+        cartItem = await prisma.cartItem.update({
+          where: { id: cartItem.id },
+          data: { quantity: { increment: 1 } },
+        });
+      } else if (action === 'decrement') {
+        if (cartItem.quantity > 1) {
+          cartItem = await prisma.cartItem.update({
+            where: { id: cartItem.id },
+            data: { quantity: { decrement: 1 } },
+          });
+        } else {
+          await prisma.cartItem.delete({
+            where: { id: cartItem.id },
+          });
+        }
+      }
     } else {
-      cartItem = await prisma.cartItem.create({
-        data: {
-          cart: { connect: { id: cart?.id } },
-          product: { connect: { id: productId } },
-          quantity: 1,
-        },
-      });
+      if (action === 'increment') {
+        cartItem = await prisma.cartItem.create({
+          data: {
+            cart: { connect: { id: cart?.id } },
+            product: { connect: { id: productId } },
+            quantity: 1,
+          },
+        });
+      } else {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          'Cart item not found for decrement action',
+        );
+      }
     }
 
     return prisma.cart.findUnique({
@@ -54,6 +86,16 @@ const addToCartSingle = async (userId: string, productId: string) => {
   return result;
 };
 
+const removeCartSingle = async (userId: string, productId: string) => {
+  const isProductExist = await prisma.product.findUnique({
+    where: { id: productId },
+  });
+
+  if (!isProductExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Product not found');
+  }
+};
+
 export const CartServices = {
-  addToCartSingle,
+  updateCartSingle,
 };

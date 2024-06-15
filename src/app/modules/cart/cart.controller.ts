@@ -4,11 +4,12 @@ import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
 import { CartServices } from './cart.service';
 
-const addToCartSingle = catchAsync(async (req: Request, res: Response) => {
+const updateCartSingle = catchAsync(async (req: Request, res: Response) => {
   const { productId } = req.params;
   const { id: userId } = req.user as any;
+  const { action } = req.body;
 
-  const result = await CartServices.addToCartSingle(userId, productId);
+  const result = await CartServices.updateCartSingle(userId, productId, action);
 
   sendResponse(res, {
     success: true,
@@ -19,5 +20,5 @@ const addToCartSingle = catchAsync(async (req: Request, res: Response) => {
 });
 
 export const CartController = {
-  addToCartSingle,
+  updateCartSingle,
 };
