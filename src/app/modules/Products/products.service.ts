@@ -1,5 +1,9 @@
 import { Product } from '@prisma/client';
 import { Request } from 'express';
+import fs from 'fs';
+import httpStatus from 'http-status';
+import path from 'path';
+import ApiError from '../../../errors/ApiError';
 import { paginationHelpers } from '../../../helpers/paginationHelper';
 import { IGenericResponse } from '../../../interfaces/common';
 import { IPaginationOptions } from '../../../interfaces/pagination';
@@ -137,7 +141,123 @@ const getAllProduct = async (
   };
 };
 
+const getSingle = async (id: string): Promise<Product | null> => {
+  const result = await prisma.product.findUnique({
+    where: { id },
+    include: {
+      owner: {
+        select: {
+          id: true,
+          memberCategory: true,
+          verified: true,
+          name: true,
+          phone: true,
+          address: true,
+          photo: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
+      category: true,
+      images: true,
+      feedbacks: true,
+    },
+  });
+  if (!result) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Product details not found');
+  }
+  return result;
+};
+
+const deleteImageFromProduct = async (
+  imageId: string,
+  productId: string,
+  ownerId: string,
+): Promise<Product | null> => {
+  const isProductExist = await prisma.product.findUnique({
+    where: { id: productId },
+    include: {
+      owner: {
+        select: {
+          id: true,
+          memberCategory: true,
+          verified: true,
+          name: true,
+          phone: true,
+          address: true,
+          photo: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
+      category: true,
+      images: true,
+      feedbacks: true,
+    },
+  });
+
+  if (!isProductExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Product not found ');
+  }
+
+  const isImageExist = await prisma.image.findUnique({
+    where: { id: imageId, productId: productId },
+  });
+
+  if (!isImageExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Image not found ');
+  }
+
+  // Delete the image file from the server
+  const filePath = path.join(
+    process.cwd(),
+    'uploads',
+    path.basename(isImageExist.url),
+  );
+  fs.unlink(filePath, err => {
+    if (err) {
+      console.log(err);
+
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        `Failed to delete image: ${filePath}`,
+      );
+    }
+  });
+
+  // Delete the image from the database
+  await prisma.image.delete({
+    where: { id: imageId },
+  });
+
+  const result = await prisma.product.findUnique({
+    where: { id: productId },
+    include: {
+      owner: {
+        select: {
+          id: true,
+          memberCategory: true,
+          verified: true,
+          name: true,
+          phone: true,
+          address: true,
+          photo: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
+      category: true,
+      images: true,
+      feedbacks: true,
+    },
+  });
+
+  return result;
+};
+
 export const ProductServices = {
   createNew,
   getAllProduct,
+  getSingle,
+  deleteImageFromProduct,
 };

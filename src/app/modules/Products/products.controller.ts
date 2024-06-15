@@ -30,7 +30,38 @@ const getAllProducts = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getSingle = catchAsync(async (req: Request, res: Response) => {
+  const result = await ProductServices.getSingle(req.params.id);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Product retrieve ',
+    data: result,
+  });
+});
+
+const deleteImageFromProduct = catchAsync(
+  async (req: Request, res: Response) => {
+    const { imageId, productId } = req.params;
+    const { id: ownerId } = req.user as any;
+
+    const result = await ProductServices.deleteImageFromProduct(
+      imageId,
+      productId,
+      ownerId,
+    );
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Product photo updated ',
+      data: result,
+    });
+  },
+);
+
 export const ProductController = {
   createProduct,
   getAllProducts,
+  getSingle,
+  deleteImageFromProduct,
 };
