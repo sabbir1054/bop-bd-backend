@@ -43,7 +43,12 @@ const userRegistration = async (payload: User): Promise<User> => {
   const encryptedPassword = await encryptPassword(password);
 
   const result = await prisma.user.create({
-    data: { phone: phone, password: encryptedPassword, role: othersData.role },
+    data: {
+      phone: phone,
+      password: encryptedPassword,
+      role: othersData.role,
+      name: othersData.name,
+    },
   });
 
   return result;
