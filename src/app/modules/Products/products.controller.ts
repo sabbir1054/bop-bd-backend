@@ -59,9 +59,20 @@ const deleteImageFromProduct = catchAsync(
   },
 );
 
+const addImageToProduct = catchAsync(async (req: Request, res: Response) => {
+  const result = await ProductServices.addNewImageForProduct(req);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Product photo updated ',
+    data: result,
+  });
+});
+
 export const ProductController = {
   createProduct,
   getAllProducts,
   getSingle,
   deleteImageFromProduct,
+  addImageToProduct,
 };

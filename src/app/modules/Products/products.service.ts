@@ -199,6 +199,9 @@ const deleteImageFromProduct = async (
   if (!isProductExist) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Product not found ');
   }
+  if (isProductExist?.ownerId !== ownerId) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Only owner can update products ');
+  }
 
   const isImageExist = await prisma.image.findUnique({
     where: { id: imageId, productId: productId },
@@ -216,8 +219,6 @@ const deleteImageFromProduct = async (
   );
   fs.unlink(filePath, err => {
     if (err) {
-      console.log(err);
-
       throw new ApiError(
         httpStatus.BAD_REQUEST,
         `Failed to delete image: ${filePath}`,
@@ -255,9 +256,106 @@ const deleteImageFromProduct = async (
   return result;
 };
 
+const addNewImageForProduct = async (req: Request): Promise<Product | null> => {
+  const { productId } = req.params;
+  const { id: ownerId } = req.user as any;
+  const { fileUrls } = req.body;
+
+  const isProductExist = await prisma.product.findUnique({
+    where: { id: productId },
+    include: {
+      owner: {
+        select: {
+          id: true,
+          memberCategory: true,
+          verified: true,
+          name: true,
+          phone: true,
+          address: true,
+          photo: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
+      category: true,
+      images: true,
+      feedbacks: true,
+    },
+  });
+
+  if (!isProductExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Product not found ');
+  }
+  if (isProductExist?.ownerId !== ownerId) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Only owner can update products ');
+  }
+
+  //* check number of images
+  const currentImageCount = isProductExist.images.length;
+  const newImagesCount = fileUrls.length;
+
+  if (currentImageCount + newImagesCount > 5) {
+    const availableSlots = 5 - currentImageCount;
+
+    if (availableSlots < newImagesCount) {
+      const excessFiles = fileUrls.slice(availableSlots);
+      excessFiles.forEach((url: string) => {
+        const filePath = path.join(
+          process.cwd(),
+          'uploads',
+          path.basename(url),
+        );
+        fs.unlink(filePath, err => {
+          if (err) {
+            throw new ApiError(
+              httpStatus.BAD_REQUEST,
+              `Failed to delete image: ${filePath}`,
+            );
+          }
+        });
+      });
+    }
+    // Trim the fileUrls array to fit the available slots
+    fileUrls.splice(availableSlots, newImagesCount - availableSlots);
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      `You can upload only ${availableSlots} images`,
+    );
+  }
+
+  const result = await prisma.product.update({
+    where: { id: productId },
+    data: {
+      images: {
+        create: fileUrls.map((url: string) => ({ url })),
+      },
+    },
+    include: {
+      owner: {
+        select: {
+          id: true,
+          memberCategory: true,
+          verified: true,
+          name: true,
+          phone: true,
+          address: true,
+          photo: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
+      category: true,
+      images: true,
+      feedbacks: true,
+    },
+  });
+  return result;
+};
+
 export const ProductServices = {
   createNew,
   getAllProduct,
   getSingle,
   deleteImageFromProduct,
+  addNewImageForProduct,
 };

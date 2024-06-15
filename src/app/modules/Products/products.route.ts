@@ -48,5 +48,31 @@ router.delete(
   ),
   ProductController.deleteImageFromProduct,
 );
+router.patch(
+  '/addImages/:productId',
+  auth(
+    ENUM_USER_ROLE.DEALER,
+    ENUM_USER_ROLE.IMPORTER,
+    ENUM_USER_ROLE.MANUFACTURER,
+    ENUM_USER_ROLE.WHOLESALER,
+    ENUM_USER_ROLE.SELLER,
+  ),
+  FileUploadHelper.upload.array('files', 5), // Ensure 'files' matches the field name used in the form
+  async (req: Request, res: Response, next: NextFunction) => {
+    const multerReq = req as MulterRequest;
+
+    try {
+      if (multerReq.files) {
+        multerReq.body.fileUrls = multerReq.files.map(
+          file => `/uploads/${file.filename}`,
+        );
+      }
+
+      return await ProductController.addImageToProduct(multerReq, res, next);
+    } catch (error) {
+      return next(error); // Forward the error to the error handler
+    }
+  },
+);
 
 export const ProductRoutes = router;
