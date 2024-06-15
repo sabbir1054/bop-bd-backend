@@ -30,4 +30,18 @@ router.patch(
   },
 );
 
+router.delete(
+  '/removeProfilePicture',
+  auth(
+    ENUM_USER_ROLE.ADMIN,
+    ENUM_USER_ROLE.DEALER,
+    ENUM_USER_ROLE.IMPORTER,
+    ENUM_USER_ROLE.MANUFACTURER,
+    ENUM_USER_ROLE.SELLER,
+    ENUM_USER_ROLE.SUPER_ADMIN,
+    ENUM_USER_ROLE.WHOLESALER,
+  ),
+  UserController.removeProfilePicture,
+);
+
 export const UsersRoutes = router;

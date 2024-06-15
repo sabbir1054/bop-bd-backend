@@ -13,7 +13,18 @@ const updateUserProfile = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const removeProfilePicture = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.user as any;
+  const result = await UserServices.removeProfilePicture(id);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'User photo removed ',
+    data: result,
+  });
+});
 
 export const UserController = {
   updateUserProfile,
+  removeProfilePicture,
 };
