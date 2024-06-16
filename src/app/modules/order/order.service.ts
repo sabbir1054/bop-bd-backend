@@ -1,4 +1,4 @@
-import { Order } from '@prisma/client';
+import { Order, OrderStatus, PaymentStatus } from '@prisma/client';
 import httpStatus from 'http-status';
 import ApiError from '../../../errors/ApiError';
 import prisma from '../../../shared/prisma';
@@ -202,8 +202,63 @@ const getUserOutgoingOrders = async (userId: string): Promise<Order[]> => {
 
   return result;
 };
+
+const updateOrderStatus = async (
+  userId: string,
+  orderId: string,
+  status: OrderStatus,
+): Promise<Order> => {
+  const isExistOrder = await prisma.order.findUnique({
+    where: { id: orderId },
+  });
+
+  if (!isExistOrder) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Order not exist ');
+  }
+  if (userId !== isExistOrder.product_seller_id) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'Only product seller can change the status',
+    );
+  }
+  const result = await prisma.order.update({
+    where: { id: orderId },
+    data: { orderStatus: status },
+  });
+
+  return result;
+};
+
+const updatePaymentStatus = async (
+  userId: string,
+  orderId: string,
+  status: PaymentStatus,
+): Promise<Order> => {
+  const isExistOrder = await prisma.order.findUnique({
+    where: { id: orderId },
+  });
+
+  if (!isExistOrder) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Order not exist ');
+  }
+  if (userId !== isExistOrder.product_seller_id) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'Only product seller can change the status',
+    );
+  }
+  const result = await prisma.order.update({
+    where: { id: orderId },
+    data: { paymentStatus: status },
+  });
+
+  return result;
+};
+
 export const OrderService = {
   orderCreate,
   getUserIncomingOrders,
   getUserOutgoingOrders,
+  updateOrderStatus,
+  updatePaymentStatus,
 };

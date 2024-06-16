@@ -49,4 +49,33 @@ router.get(
   OrderController.getUserOutgoingOrders,
 );
 
+router.patch(
+  '/updateOrderStatus/:orderId',
+  auth(
+    ENUM_USER_ROLE.DEALER,
+    ENUM_USER_ROLE.IMPORTER,
+    ENUM_USER_ROLE.MANUFACTURER,
+    ENUM_USER_ROLE.WHOLESALER,
+    ENUM_USER_ROLE.SELLER,
+    ENUM_USER_ROLE.ADMIN,
+    ENUM_USER_ROLE.SUPER_ADMIN,
+  ),
+  validateRequest(OrderValidation.updateOrderStatusValidation),
+  OrderController.updateOrderStatus,
+);
+router.patch(
+  '/updatePaymentStatus/:orderId',
+  auth(
+    ENUM_USER_ROLE.DEALER,
+    ENUM_USER_ROLE.IMPORTER,
+    ENUM_USER_ROLE.MANUFACTURER,
+    ENUM_USER_ROLE.WHOLESALER,
+    ENUM_USER_ROLE.SELLER,
+    ENUM_USER_ROLE.ADMIN,
+    ENUM_USER_ROLE.SUPER_ADMIN,
+  ),
+  validateRequest(OrderValidation.updatePaymentStatusValidation),
+  OrderController.updatePaymentStatus,
+);
+
 export const OrderRoutes = router;

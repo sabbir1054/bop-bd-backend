@@ -37,9 +37,39 @@ const getUserOutgoingOrders = catchAsync(
     });
   },
 );
+const updateOrderStatus = catchAsync(async (req: Request, res: Response) => {
+  const { id: userId } = req.user as any;
+  const { orderId } = req.params;
+  const { status } = req.body;
+  const result = await OrderService.updateOrderStatus(userId, orderId, status);
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: 'Order status updated ',
+    data: result,
+  });
+});
+const updatePaymentStatus = catchAsync(async (req: Request, res: Response) => {
+  const { id: userId } = req.user as any;
+  const { orderId } = req.params;
+  const { status } = req.body;
+  const result = await OrderService.updatePaymentStatus(
+    userId,
+    orderId,
+    status,
+  );
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: 'Payment status updated ',
+    data: result,
+  });
+});
 
 export const OrderController = {
   orderCreate,
   getUserIncomingOrders,
   getUserOutgoingOrders,
+  updateOrderStatus,
+  updatePaymentStatus,
 };
