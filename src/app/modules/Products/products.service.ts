@@ -15,6 +15,13 @@ interface MulterRequest extends Request {
 }
 const createNew = async (req: Request): Promise<Product> => {
   const { ownerId, categoryId, fileUrls, ...others } = req.body;
+  const { id: userId } = req.user as any;
+  if (ownerId !== userId) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'Owner id does not match with user',
+    );
+  }
   const result = await prisma.product.create({
     data: {
       owner: { connect: { id: ownerId } },

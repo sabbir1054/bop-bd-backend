@@ -1,36 +1,14 @@
-/*
-  Warnings:
-
-  - You are about to drop the column `firstName` on the `users` table. All the data in the column will be lost.
-  - You are about to drop the column `gender` on the `users` table. All the data in the column will be lost.
-  - You are about to drop the column `lastName` on the `users` table. All the data in the column will be lost.
-  - You are about to drop the column `token` on the `users` table. All the data in the column will be lost.
-  - You are about to drop the column `userName` on the `users` table. All the data in the column will be lost.
-  - Added the required column `role` to the `users` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `updatedAt` to the `users` table without a default value. This is not possible if the table is not empty.
-  - Made the column `phone` on table `users` required. This step will fail if there are existing NULL values in that column.
-
-*/
 -- CreateEnum
-CREATE TYPE "Role" AS ENUM ('SUPER_ADMIN', 'ADMIN', 'MANUFACTURER', 'IMPORTER', 'WHOLESELLER', 'DEALER', 'SELLER');
+CREATE TYPE "Role" AS ENUM ('SUPER_ADMIN', 'ADMIN', 'MANUFACTURER', 'IMPORTER', 'WHOLESALER', 'DEALER', 'SELLER');
 
 -- CreateEnum
 CREATE TYPE "MemberCategory" AS ENUM ('SILVER', 'GOLD', 'PLATINUM', 'NORMAL');
 
--- AlterTable
-ALTER TABLE "users" DROP COLUMN "firstName",
-DROP COLUMN "gender",
-DROP COLUMN "lastName",
-DROP COLUMN "token",
-DROP COLUMN "userName",
-ADD COLUMN     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-ADD COLUMN     "license" TEXT,
-ADD COLUMN     "memberCategory" "MemberCategory" NOT NULL DEFAULT 'NORMAL',
-ADD COLUMN     "name" TEXT,
-ADD COLUMN     "role" "Role" NOT NULL,
-ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL,
-ALTER COLUMN "email" DROP NOT NULL,
-ALTER COLUMN "phone" SET NOT NULL;
+-- CreateEnum
+CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'ACCEPTED', 'CANCEL', 'SHIPPING', 'DELIVERED');
+
+-- CreateEnum
+CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'PAID');
 
 -- CreateTable
 CREATE TABLE "revenue_share" (
@@ -41,6 +19,26 @@ CREATE TABLE "revenue_share" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "revenue_share_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "users" (
+    "id" TEXT NOT NULL,
+    "role" "Role" NOT NULL,
+    "memberCategory" "MemberCategory" NOT NULL DEFAULT 'NORMAL',
+    "verified" BOOLEAN NOT NULL DEFAULT false,
+    "name" TEXT,
+    "email" TEXT,
+    "phone" TEXT NOT NULL,
+    "address" TEXT,
+    "photo" TEXT,
+    "password" TEXT NOT NULL,
+    "license" TEXT,
+    "nid" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -122,7 +120,10 @@ CREATE TABLE "cart_item" (
 CREATE TABLE "orders" (
     "id" TEXT NOT NULL,
     "total" DOUBLE PRECISION NOT NULL,
+    "orderStatus" "OrderStatus" NOT NULL DEFAULT 'PENDING',
+    "paymentStatus" "PaymentStatus" NOT NULL DEFAULT 'PENDING',
     "customerId" TEXT NOT NULL,
+    "product_seller_id" TEXT NOT NULL,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -141,6 +142,12 @@ CREATE TABLE "order_items" (
 
     CONSTRAINT "order_items_pkey" PRIMARY KEY ("id")
 );
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_phone_key" ON "users"("phone");
 
 -- AddForeignKey
 ALTER TABLE "products" ADD CONSTRAINT "products_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -168,6 +175,9 @@ ALTER TABLE "cart_item" ADD CONSTRAINT "cart_item_cartId_fkey" FOREIGN KEY ("car
 
 -- AddForeignKey
 ALTER TABLE "orders" ADD CONSTRAINT "orders_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "orders" ADD CONSTRAINT "orders_product_seller_id_fkey" FOREIGN KEY ("product_seller_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "order_items" ADD CONSTRAINT "order_items_productId_fkey" FOREIGN KEY ("productId") REFERENCES "products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

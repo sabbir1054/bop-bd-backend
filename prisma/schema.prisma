@@ -31,8 +31,8 @@ enum OrderStatus {
   PENDING
   ACCEPTED
   CANCEL
-  Shipping
-  Delivered
+  SHIPPING
+  DELIVERED
 }
 
 enum PaymentStatus {
@@ -66,9 +66,10 @@ model User {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   feedbacks      Feedback[]
-  orders         Order[]
   cart           Cart[]
   products       Product[]
+  outgoing_order Order[]        @relation("customer_orders")
+  incoming_order Order[]        @relation("product_seller_orders")
 
   @@map("users")
 }
@@ -158,15 +159,17 @@ model CartItem {
 }
 
 model Order {
-  id            String        @id @default(uuid())
-  total         Float
-  orderStatus   OrderStatus   @default(PENDING)
-  paymentStatus PaymentStatus @default(PENDING)
-  customer      User          @relation(fields: [customerId], references: [id])
-  customerId    String
-  updatedAt     DateTime      @updatedAt
-  createdAt     DateTime      @default(now())
-  orderItems    OrderItem[]
+  id                String        @id @default(uuid())
+  total             Float
+  orderStatus       OrderStatus   @default(PENDING)
+  paymentStatus     PaymentStatus @default(PENDING)
+  customer          User          @relation("customer_orders", fields: [customerId], references: [id])
+  customerId        String
+  product_seller    User          @relation("product_seller_orders", fields: [product_seller_id], references: [id])
+  product_seller_id String
+  updatedAt         DateTime      @updatedAt
+  createdAt         DateTime      @default(now())
+  orderItems        OrderItem[]
 
   @@map("orders")
 }
