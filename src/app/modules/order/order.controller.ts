@@ -13,7 +13,20 @@ const orderCreate = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const getUserIncomingOrders = catchAsync(
+  async (req: Request, res: Response) => {
+    const { id: userId } = req.user as any;
+    const result = await OrderService.getUserIncomingOrders(userId);
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: 'Incoming orders retrieve',
+      data: result,
+    });
+  },
+);
 
 export const OrderController = {
   orderCreate,
+  getUserIncomingOrders,
 };

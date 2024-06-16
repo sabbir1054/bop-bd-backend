@@ -22,4 +22,18 @@ router.post(
   OrderController.orderCreate,
 );
 
+router.get(
+  '/incomingOrders',
+  auth(
+    ENUM_USER_ROLE.DEALER,
+    ENUM_USER_ROLE.IMPORTER,
+    ENUM_USER_ROLE.MANUFACTURER,
+    ENUM_USER_ROLE.WHOLESALER,
+    ENUM_USER_ROLE.SELLER,
+    ENUM_USER_ROLE.ADMIN,
+    ENUM_USER_ROLE.SUPER_ADMIN,
+  ),
+  OrderController.getUserIncomingOrders,
+);
+
 export const OrderRoutes = router;
