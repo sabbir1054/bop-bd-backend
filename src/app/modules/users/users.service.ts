@@ -81,7 +81,73 @@ const removeProfilePicture = async (userId: string): Promise<User> => {
   return result;
 };
 
+const getAll = async (): Promise<Partial<User>[]> => {
+  const result = await prisma.user.findMany({
+    select: {
+      id: true,
+      role: true,
+      email: true,
+      license: true,
+      nid: true,
+      memberCategory: true,
+      verified: true,
+      name: true,
+      phone: true,
+      address: true,
+      photo: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+  return result;
+};
+
+const getSingle = async (
+  userId: string,
+  profileId: string,
+  role: string,
+): Promise<User | null> => {
+  let result = await prisma.user.findUnique({
+    where: { id: profileId },
+    include: {
+      feedbacks: true,
+      cart: {
+        include: {
+          CartItem: true,
+        },
+      },
+      products: true,
+      outgoing_order: {
+        include: { orderItems: true },
+      },
+      incoming_order: {
+        include: { orderItems: true },
+      },
+    },
+  });
+
+  if (!result) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found !');
+  }
+  result.password = '';
+
+  if (role === ('ADMIN' || 'SUPER_ADMIN')) {
+    return result;
+  } else {
+    if (userId !== result.id) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'You can only see you profile',
+      );
+    } else {
+      return result;
+    }
+  }
+};
+
 export const UserServices = {
   updateUserProfile,
   removeProfilePicture,
+  getAll,
+  getSingle,
 };

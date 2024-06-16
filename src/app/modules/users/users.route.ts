@@ -44,4 +44,23 @@ router.delete(
   UserController.removeProfilePicture,
 );
 
+router.get(
+  '/:profileId',
+  auth(
+    ENUM_USER_ROLE.ADMIN,
+    ENUM_USER_ROLE.DEALER,
+    ENUM_USER_ROLE.IMPORTER,
+    ENUM_USER_ROLE.MANUFACTURER,
+    ENUM_USER_ROLE.SELLER,
+    ENUM_USER_ROLE.SUPER_ADMIN,
+    ENUM_USER_ROLE.WHOLESALER,
+  ),
+  UserController.getSingle,
+);
+router.get(
+  '/',
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  UserController.getAll,
+);
+
 export const UsersRoutes = router;

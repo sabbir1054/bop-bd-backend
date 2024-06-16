@@ -226,6 +226,7 @@ const removeItemsFromCart = async (userId: string, cartItemIds: string[]) => {
 
   return deletedItems;
 };
+
 export const CartServices = {
   updateCartSingle,
   updateCartMultiple,
