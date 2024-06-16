@@ -16,6 +16,13 @@ const updateCartSingle = async (
     throw new ApiError(httpStatus.NOT_FOUND, 'Product not found');
   }
 
+  if (userId === isProductExist.ownerId) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'You can not add your product in the cart',
+    );
+  }
+
   const result = await prisma.$transaction(async prisma => {
     let cart = await prisma.cart.findFirst({
       where: { userId: userId },
@@ -106,6 +113,13 @@ const updateCartMultiple = async (
 
   if (!isProductExist) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Product not found');
+  }
+
+  if (userId === isProductExist.ownerId) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'You can not add your product in the cart',
+    );
   }
 
   const result = await prisma.$transaction(async prisma => {
