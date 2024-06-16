@@ -25,8 +25,21 @@ const getUserIncomingOrders = catchAsync(
     });
   },
 );
+const getUserOutgoingOrders = catchAsync(
+  async (req: Request, res: Response) => {
+    const { id: userId } = req.user as any;
+    const result = await OrderService.getUserOutgoingOrders(userId);
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: 'Outgoing orders retrieve',
+      data: result,
+    });
+  },
+);
 
 export const OrderController = {
   orderCreate,
   getUserIncomingOrders,
+  getUserOutgoingOrders,
 };

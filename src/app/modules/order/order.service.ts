@@ -167,7 +167,43 @@ const getUserIncomingOrders = async (userId: string): Promise<Order[]> => {
 
   return result;
 };
+const getUserOutgoingOrders = async (userId: string): Promise<Order[]> => {
+  const result = await prisma.order.findMany({
+    where: { customerId: userId },
+    include: {
+      product_seller: {
+        select: {
+          id: true,
+          role: true,
+          email: true,
+          license: true,
+          nid: true,
+          memberCategory: true,
+          verified: true,
+          name: true,
+          phone: true,
+          address: true,
+          photo: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
+      orderItems: {
+        include: {
+          product: true,
+        },
+      },
+    },
+  });
+
+  if (!result) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User incoming order not found');
+  }
+
+  return result;
+};
 export const OrderService = {
   orderCreate,
   getUserIncomingOrders,
+  getUserOutgoingOrders,
 };
