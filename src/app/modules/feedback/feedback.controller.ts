@@ -35,9 +35,22 @@ const getSingle = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const updateSingle = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.user as any;
+  const { feedbackId } = req.params;
+
+  const result = await FeedbackService.updateSingle(id, feedbackId, req.body);
+  sendResponse<Feedback>(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Updated feedback !',
+    data: result,
+  });
+});
 
 export const FeedbackController = {
   createNew,
   getAll,
   getSingle,
+  updateSingle,
 };

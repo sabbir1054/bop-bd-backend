@@ -2,9 +2,13 @@ import { Feedback } from '@prisma/client';
 import httpStatus from 'http-status';
 import ApiError from '../../../errors/ApiError';
 import prisma from '../../../shared/prisma';
+import { IFeedbackUpdate } from './feedback.Interface';
 
 const createNew = async (id: string, payload: Feedback): Promise<Feedback> => {
   const { userId, productId, rating, comment } = payload;
+  if (rating > 5) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Rating not more than 5');
+  }
   if (id !== userId) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'User id not match');
   }
@@ -118,7 +122,38 @@ const getSingle = async (feedbackId: string): Promise<Feedback | null> => {
       },
     },
   });
+  if (!result) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Feedback not found');
+  }
+  return result;
+};
 
+const updateSingle = async (
+  userId: string,
+  feedbackId: string,
+  payload: IFeedbackUpdate,
+): Promise<Feedback | null> => {
+  if (payload.rating && payload.rating > 5) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Rating is not more than 5');
+  }
+  const isFeedbackExist = await prisma.feedback.findUnique({
+    where: { id: feedbackId },
+  });
+  if (!isFeedbackExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Feedback not found');
+  }
+
+  if (userId !== isFeedbackExist.userId) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'You can not change others feedback',
+    );
+  }
+
+  const result = await prisma.feedback.update({
+    where: { id: feedbackId },
+    data: { ...payload },
+  });
   return result;
 };
 
@@ -126,4 +161,5 @@ export const FeedbackService = {
   createNew,
   getAll,
   getSingle,
+  updateSingle,
 };
