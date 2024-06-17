@@ -47,10 +47,23 @@ const updateSingle = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const deleteSingle = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.user as any;
+  const { feedbackId } = req.params;
+
+  const result = await FeedbackService.deleteSingle(id, feedbackId);
+  sendResponse<Feedback>(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Delete feedback !',
+    data: result,
+  });
+});
 
 export const FeedbackController = {
   createNew,
   getAll,
   getSingle,
   updateSingle,
+  deleteSingle,
 };

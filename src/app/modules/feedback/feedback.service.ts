@@ -156,10 +156,34 @@ const updateSingle = async (
   });
   return result;
 };
+const deleteSingle = async (
+  userId: string,
+  feedbackId: string,
+): Promise<Feedback | null> => {
+  const isFeedbackExist = await prisma.feedback.findUnique({
+    where: { id: feedbackId },
+  });
+  if (!isFeedbackExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Feedback not found');
+  }
+
+  if (userId !== isFeedbackExist.userId) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'You can not delete others feedback',
+    );
+  }
+
+  const result = await prisma.feedback.delete({
+    where: { id: feedbackId },
+  });
+  return result;
+};
 
 export const FeedbackService = {
   createNew,
   getAll,
   getSingle,
   updateSingle,
+  deleteSingle,
 };

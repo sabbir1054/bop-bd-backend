@@ -19,6 +19,18 @@ router.post(
   validateRequest(FeedbackValidation.createFeedbackValidation),
   FeedbackController.createNew,
 );
+router.delete(
+  '/:feedbackId',
+  auth(
+    ENUM_USER_ROLE.DEALER,
+    ENUM_USER_ROLE.IMPORTER,
+    ENUM_USER_ROLE.MANUFACTURER,
+    ENUM_USER_ROLE.SELLER,
+    ENUM_USER_ROLE.WHOLESALER,
+  ),
+
+  FeedbackController.deleteSingle,
+);
 router.patch(
   '/:feedbackId',
   auth(
