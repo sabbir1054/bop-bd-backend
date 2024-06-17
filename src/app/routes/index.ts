@@ -2,9 +2,10 @@ import express from 'express';
 import { CategoryRoutes } from '../modules/Category/category.route';
 import { ProductRoutes } from '../modules/Products/products.route';
 import { AuthRoutes } from '../modules/auth/auth.route';
-import { UsersRoutes } from '../modules/users/users.route';
 import { CartRoutes } from '../modules/cart/cart.routes';
+import { FeedbackRoutes } from '../modules/feedback/feedback.routes';
 import { OrderRoutes } from '../modules/order/order.route';
+import { UsersRoutes } from '../modules/users/users.route';
 
 const router = express.Router();
 
@@ -33,6 +34,10 @@ const moduleRoutes = [
   {
     path: '/order',
     route: OrderRoutes,
+  },
+  {
+    path: '/feedback',
+    route: FeedbackRoutes,
   },
 ];
 
