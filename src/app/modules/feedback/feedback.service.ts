@@ -67,6 +67,63 @@ const createNew = async (id: string, payload: Feedback): Promise<Feedback> => {
   return result;
 };
 
+const getAll = async (role: string, userId: string): Promise<Feedback[]> => {
+  if (role === 'ADMIN' || 'SUPER_ADMIN') {
+    const result = await prisma.feedback.findMany({
+      include: { user: true, product: true },
+    });
+    return result;
+  } else {
+    const result = await prisma.feedback.findMany({
+      where: { userId: userId },
+      include: { user: true, product: true },
+    });
+    return result;
+  }
+};
+
+const getSingle = async (feedbackId: string): Promise<Feedback | null> => {
+  const result = await prisma.feedback.findUnique({
+    where: { id: feedbackId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          memberCategory: true,
+          verified: true,
+          name: true,
+          phone: true,
+          address: true,
+          photo: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
+      product: {
+        include: {
+          owner: {
+            select: {
+              id: true,
+              memberCategory: true,
+              verified: true,
+              name: true,
+              phone: true,
+              address: true,
+              photo: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return result;
+};
+
 export const FeedbackService = {
   createNew,
+  getAll,
+  getSingle,
 };

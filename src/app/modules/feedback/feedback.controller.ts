@@ -15,7 +15,29 @@ const createNew = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const getAll = catchAsync(async (req: Request, res: Response) => {
+  const { id, role } = req.user as any;
+  const result = await FeedbackService.getAll(role, id);
+  sendResponse<Feedback[]>(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Feedback retrieve !',
+    data: result,
+  });
+});
+const getSingle = catchAsync(async (req: Request, res: Response) => {
+  const { feedbackId } = req.params;
+  const result = await FeedbackService.getSingle(feedbackId);
+  sendResponse<Feedback>(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Feedback retrieve !',
+    data: result,
+  });
+});
 
 export const FeedbackController = {
   createNew,
+  getAll,
+  getSingle,
 };

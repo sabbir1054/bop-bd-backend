@@ -19,5 +19,17 @@ router.post(
   validateRequest(FeedbackValidation.createFeedbackValidation),
   FeedbackController.createNew,
 );
+router.get('/:feedbackId', FeedbackController.getSingle);
+router.get(
+  '/',
+  auth(
+    ENUM_USER_ROLE.DEALER,
+    ENUM_USER_ROLE.IMPORTER,
+    ENUM_USER_ROLE.MANUFACTURER,
+    ENUM_USER_ROLE.SELLER,
+    ENUM_USER_ROLE.WHOLESALER,
+  ),
+  FeedbackController.getAll,
+);
 
 export const FeedbackRoutes = router;
