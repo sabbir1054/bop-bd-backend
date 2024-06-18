@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_DB: bopbd
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - bopnet
+
+  app:
+    image: sabbir1054/bopbdbackend-v1
+    environment:
+      DATABASE_URL: postgresql://postgres:root@db:5432/bopbd
+    ports:
+      - '5002:5002'
+    networks:
+      - bopnet
+    depends_on:
+      - db
+
+networks:
+  bopnet:
+    driver: bridge
+
+volumes:
+  postgres-data:
