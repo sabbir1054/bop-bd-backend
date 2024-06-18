@@ -54,7 +54,24 @@ const userLogin = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void
         data: others,
     });
 }));
+const refreshToken = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { refreshToken } = req.cookies;
+    const result = yield auth_service_1.AuthServices.refreshToken(refreshToken);
+    // set refresh token into cookie
+    const cookieOptions = {
+        secure: config_1.default.env === 'production',
+        httpOnly: true,
+    };
+    res.cookie('refreshToken', refreshToken, cookieOptions);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: 'User logged in successfully',
+        data: result,
+    });
+}));
 exports.AuthController = {
     userRegistration,
     userLogin,
+    refreshToken,
 };
