@@ -1,10 +1,13 @@
 import express, { NextFunction, Request, Response } from 'express';
+import fs from 'fs';
+import httpStatus from 'http-status';
+import path from 'path';
 import { ENUM_USER_ROLE } from '../../../enums/user';
+import ApiError from '../../../errors/ApiError';
 import { FileUploadHelper } from '../../../helpers/fileUpload';
 import auth from '../../middlewares/auth';
 import { UsersValidation } from './user.validation';
 import { UserController } from './users.controller';
-
 const router = express.Router();
 
 router.patch(
@@ -20,9 +23,12 @@ router.patch(
   ),
   FileUploadHelper.uploadProfile.single('file'),
   (req: Request, res: Response, next: NextFunction) => {
-    req.body = UsersValidation.updateUserProfileValidation.parse(
-      JSON.parse(req.body.data),
-    );
+    if (req.body) {
+      req.body = UsersValidation.updateUserProfileValidation.parse(
+        JSON.parse(req.body.data),
+      );
+    }
+
     if (req.file) {
       req.body.photo = `/uploads/${req.file.filename}`;
     }
@@ -62,5 +68,21 @@ router.get(
   auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
   UserController.getAll,
 );
+
+router.get('/profile/image/:fileName', (req: Request, res: Response) => {
+  const filePath = path.join(
+    process.cwd(),
+    'uploads/userPhoto',
+    path.basename(req.params.fileName),
+  );
+  // Check if the file exists
+  fs.access(filePath, fs.constants.F_OK, err => {
+    if (err) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Image not found');
+    }
+    // Send the image file
+    res.sendFile(filePath);
+  });
+});
 
 export const UsersRoutes = router;

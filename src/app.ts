@@ -11,9 +11,6 @@ const app: Application = express();
 app.use(cors({ credentials: true }));
 app.use(cookieParser());
 
-// Middleware to serve static files from the 'uploads' directory
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
 //parser
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ limit: '20mb', extended: true }));
