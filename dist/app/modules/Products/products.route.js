@@ -17,6 +17,7 @@ const express_1 = __importDefault(require("express"));
 const fs_1 = __importDefault(require("fs"));
 const http_status_1 = __importDefault(require("http-status"));
 const path_1 = __importDefault(require("path"));
+const config_1 = __importDefault(require("../../../config"));
 const user_1 = require("../../../enums/user");
 const ApiError_1 = __importDefault(require("../../../errors/ApiError"));
 const fileUpload_1 = require("../../../helpers/fileUpload");
@@ -29,7 +30,7 @@ router.post('/createProduct', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, 
     const multerReq = req;
     multerReq.body = products_validations_1.ProductsValidation.createProductValidation.parse(JSON.parse(multerReq.body.data));
     if (multerReq.files) {
-        multerReq.body.fileUrls = multerReq.files.map(file => `/uploads/${file.filename}`);
+        multerReq.body.fileUrls = multerReq.files.map(file => `http://localhost:${config_1.default.port}/api/v1/products/image/${file.filename}`);
     }
     return products_controller_1.ProductController.createProduct(multerReq, res, next);
 });
@@ -51,15 +52,15 @@ router.patch('/addImages/:productId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.
 }));
 router.patch('/infoUpdate/:productId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.SELLER), (0, validateRequest_1.default)(products_validations_1.ProductsValidation.updateProductInfoValidation), products_controller_1.ProductController.updateProductInfo);
 router.delete('/:productId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.SELLER), products_controller_1.ProductController.deleteProduct);
-router.get('/image/:fileName', (req, res) => {
-    const filePath = path_1.default.join(process.cwd(), 'uploads', path_1.default.basename(req.params.fileName));
+router.get('/image/:fileName', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const filePath = yield path_1.default.join(process.cwd(), 'uploads', path_1.default.basename(req.params.fileName));
     // Check if the file exists
-    fs_1.default.access(filePath, fs_1.default.constants.F_OK, err => {
+    yield fs_1.default.access(filePath, fs_1.default.constants.F_OK, err => {
         if (err) {
             throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Image not found');
         }
         // Send the image file
         res.sendFile(filePath);
     });
-});
+}));
 exports.ProductRoutes = router;
