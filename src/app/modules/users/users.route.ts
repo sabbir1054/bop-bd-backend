@@ -30,7 +30,7 @@ router.patch(
     }
 
     if (req.file) {
-      req.body.photo = `/uploads/${req.file.filename}`;
+      req.body.photo = `/uploads/userPhoto/${req.file.filename}`;
     }
     return UserController.updateUserProfile(req, res, next);
   },
