@@ -18,6 +18,10 @@ services:
       DATABASE_URL: postgresql://postgres:root@db:5432/bopbd
     ports:
       - '5002:5002'
+      - '5005:5005'
+    volumes:
+      - uploads:/uploads
+      - ./uploads/userPhoto:/uploads/userPhoto
     networks:
       - bopnet
     depends_on:
@@ -29,3 +33,4 @@ networks:
 
 volumes:
   postgres-data:
+  uploads:
