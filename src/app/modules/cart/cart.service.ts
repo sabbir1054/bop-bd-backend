@@ -227,8 +227,32 @@ const removeItemsFromCart = async (userId: string, cartItemIds: string[]) => {
   return deletedItems;
 };
 
+const getAll = async (userId: string) => {
+  const isUserExist = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      cart: {
+        include: {
+          CartItem: {
+            include: {
+              product: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!isUserExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+  }
+  const result = isUserExist.cart;
+  return result;
+};
+
 export const CartServices = {
   updateCartSingle,
   updateCartMultiple,
   removeItemsFromCart,
+  getAll,
 };

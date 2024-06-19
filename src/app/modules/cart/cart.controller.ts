@@ -52,8 +52,21 @@ const removeProductFromCart = catchAsync(
     });
   },
 );
+const getAll = catchAsync(async (req: Request, res: Response) => {
+  const { id: userId } = req.user as any;
+  const result = await CartServices.getAll(userId);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: 'Cart retrieve',
+    data: result,
+  });
+});
+
 export const CartController = {
   updateCartSingle,
   updateCartMultiple,
   removeProductFromCart,
+  getAll,
 };
