@@ -2,6 +2,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import fs from 'fs';
 import httpStatus from 'http-status';
 import path from 'path';
+import config from '../../../config';
 import { ENUM_USER_ROLE } from '../../../enums/user';
 import ApiError from '../../../errors/ApiError';
 import { FileUploadHelper } from '../../../helpers/fileUpload';
@@ -31,7 +32,8 @@ router.post(
     );
     if (multerReq.files) {
       multerReq.body.fileUrls = multerReq.files.map(
-        file => `/uploads/${file.filename}`,
+        file =>
+          `http://localhost:${config.port}/api/v1/products/image/${file.filename}`,
       );
     }
     return ProductController.createProduct(multerReq, res, next);
@@ -104,14 +106,14 @@ router.delete(
   ProductController.deleteProduct,
 );
 
-router.get('/image/:fileName', (req: Request, res: Response) => {
-  const filePath = path.join(
+router.get('/image/:fileName', async (req: Request, res: Response) => {
+  const filePath = await path.join(
     process.cwd(),
     'uploads',
     path.basename(req.params.fileName),
   );
   // Check if the file exists
-  fs.access(filePath, fs.constants.F_OK, err => {
+  await fs.access(filePath, fs.constants.F_OK, err => {
     if (err) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Image not found');
     }

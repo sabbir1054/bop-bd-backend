@@ -14,7 +14,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProductRoutes = void 0;
 const express_1 = __importDefault(require("express"));
+const fs_1 = __importDefault(require("fs"));
+const http_status_1 = __importDefault(require("http-status"));
+const path_1 = __importDefault(require("path"));
 const user_1 = require("../../../enums/user");
+const ApiError_1 = __importDefault(require("../../../errors/ApiError"));
 const fileUpload_1 = require("../../../helpers/fileUpload");
 const auth_1 = __importDefault(require("../../middlewares/auth"));
 const validateRequest_1 = __importDefault(require("../../middlewares/validateRequest"));
@@ -47,4 +51,15 @@ router.patch('/addImages/:productId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.
 }));
 router.patch('/infoUpdate/:productId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.SELLER), (0, validateRequest_1.default)(products_validations_1.ProductsValidation.updateProductInfoValidation), products_controller_1.ProductController.updateProductInfo);
 router.delete('/:productId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.SELLER), products_controller_1.ProductController.deleteProduct);
+router.get('/image/:fileName', (req, res) => {
+    const filePath = path_1.default.join(process.cwd(), 'uploads', path_1.default.basename(req.params.fileName));
+    // Check if the file exists
+    fs_1.default.access(filePath, fs_1.default.constants.F_OK, err => {
+        if (err) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Image not found');
+        }
+        // Send the image file
+        res.sendFile(filePath);
+    });
+});
 exports.ProductRoutes = router;

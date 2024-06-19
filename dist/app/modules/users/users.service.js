@@ -18,20 +18,27 @@ const http_status_1 = __importDefault(require("http-status"));
 const path_1 = __importDefault(require("path"));
 const ApiError_1 = __importDefault(require("../../../errors/ApiError"));
 const prisma_1 = __importDefault(require("../../../shared/prisma"));
-const updateUserProfile = (req) => __awaiter(void 0, void 0, void 0, function* () {
+const updateUserProfile = (req, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { id: userId } = req.user;
+    const deletePhoto = (photoLink) => {
+        // Delete the image file from the server
+        const filePath = path_1.default.join(process.cwd(), 'uploads/userPhoto', path_1.default.basename(photoLink));
+        fs_1.default.unlink(filePath, err => {
+            if (err) {
+                deletePhoto(req.body.photo);
+                next(new ApiError_1.default(http_status_1.default.BAD_REQUEST, `Failed to delete previous image, try again for update,photo `));
+            }
+        });
+    };
     const isUserExist = yield prisma_1.default.user.findUnique({ where: { id: userId } });
     if (!isUserExist) {
+        //* delete uploaded photo
+        deletePhoto(req.body.photo);
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User not exist');
     }
     if (isUserExist.photo && req.body.photo !== isUserExist.photo) {
-        // Delete the image file from the server
-        const filePath = path_1.default.join(process.cwd(), 'uploads/userPhoto', path_1.default.basename(isUserExist.photo));
-        fs_1.default.unlink(filePath, err => {
-            if (err) {
-                throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, `Failed to delete image: ${filePath}`);
-            }
-        });
+        //* delete photo
+        deletePhoto(isUserExist === null || isUserExist === void 0 ? void 0 : isUserExist.photo);
         const result = yield prisma_1.default.user.update({
             where: { id: userId },
             data: Object.assign({}, req.body),

@@ -2,6 +2,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import fs from 'fs';
 import httpStatus from 'http-status';
 import path from 'path';
+import config from '../../../config';
 import { ENUM_USER_ROLE } from '../../../enums/user';
 import ApiError from '../../../errors/ApiError';
 import { FileUploadHelper } from '../../../helpers/fileUpload';
@@ -30,7 +31,7 @@ router.patch(
     }
 
     if (req.file) {
-      req.body.photo = `/uploads/userPhoto/${req.file.filename}`;
+      req.body.photo = `http://localhost:${config.port}/api/v1/users/profile/image/${req.file.filename}`;
     }
     return UserController.updateUserProfile(req, res, next);
   },
