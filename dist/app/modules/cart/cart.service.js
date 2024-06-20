@@ -193,8 +193,34 @@ const removeItemsFromCart = (userId, cartItemIds) => __awaiter(void 0, void 0, v
     }));
     return deletedItems;
 });
+const getAll = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    const isUserExist = yield prisma_1.default.user.findUnique({
+        where: { id: userId },
+        include: {
+            cart: {
+                include: {
+                    CartItem: {
+                        include: {
+                            product: {
+                                include: {
+                                    images: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    });
+    if (!isUserExist) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User not found');
+    }
+    const result = isUserExist.cart;
+    return result;
+});
 exports.CartServices = {
     updateCartSingle,
     updateCartMultiple,
     removeItemsFromCart,
+    getAll,
 };

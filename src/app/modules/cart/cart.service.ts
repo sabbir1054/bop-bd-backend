@@ -235,7 +235,11 @@ const getAll = async (userId: string) => {
         include: {
           CartItem: {
             include: {
-              product: true,
+              product: {
+                include: {
+                  images: true,
+                },
+              },
             },
           },
         },
