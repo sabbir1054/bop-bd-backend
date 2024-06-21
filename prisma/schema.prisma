@@ -50,6 +50,17 @@ model RevenueShare {
   @@map("revenue_share")
 }
 
+model BusinessType {
+  id        String     @id @default(uuid())
+  typeName  String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  user      User[]
+  category  Category[]
+
+  @@map("business_type")
+}
+
 model User {
   id             String         @id @default(uuid())
   role           Role
@@ -63,6 +74,7 @@ model User {
   password       String
   license        String?
   nid            String?
+  shop_name      String?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   feedbacks      Feedback[]
@@ -70,18 +82,21 @@ model User {
   products       Product[]
   outgoing_order Order[]        @relation("customer_orders")
   incoming_order Order[]        @relation("product_seller_orders")
+  businessType   BusinessType?  @relation(fields: [businessTypeId], references: [id])
+  businessTypeId String?
 
   @@map("users")
 }
 
 model Category {
-  id       String    @id @default(uuid())
-  eng_name String
-  bn_name  String
-  products Product[]
-
-  updatedAt DateTime @updatedAt
-  createdAt DateTime @default(now())
+  id             String       @id @default(uuid())
+  eng_name       String
+  bn_name        String
+  products       Product[]
+  businessType   BusinessType @relation(fields: [businessTypeId], references: [id])
+  businessTypeId String
+  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime     @default(now())
 
   @@map("categories")
 }

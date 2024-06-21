@@ -156,7 +156,11 @@ const getUserIncomingOrders = async (userId: string): Promise<Order[]> => {
       },
       orderItems: {
         include: {
-          product: true,
+          product: {
+            include: {
+              images: true,
+            },
+          },
         },
       },
     },

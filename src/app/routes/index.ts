@@ -2,6 +2,7 @@ import express from 'express';
 import { CategoryRoutes } from '../modules/Category/category.route';
 import { ProductRoutes } from '../modules/Products/products.route';
 import { AuthRoutes } from '../modules/auth/auth.route';
+import { BusinessTypeRoutes } from '../modules/businessType/businessType.route';
 import { CartRoutes } from '../modules/cart/cart.routes';
 import { FeedbackRoutes } from '../modules/feedback/feedback.routes';
 import { OrderRoutes } from '../modules/order/order.route';
@@ -14,6 +15,10 @@ const moduleRoutes = [
   {
     path: '/auth',
     route: AuthRoutes,
+  },
+  {
+    path: '/businessType',
+    route: BusinessTypeRoutes,
   },
   {
     path: '/category',

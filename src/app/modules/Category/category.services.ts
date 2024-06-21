@@ -4,19 +4,35 @@ import ApiError from '../../../errors/ApiError';
 import prisma from '../../../shared/prisma';
 
 const createNew = async (payload: Category): Promise<Category> => {
+  const isBusinessTypeExist = await prisma.businessType.findUnique({
+    where: { id: payload.businessTypeId },
+  });
+  if (!isBusinessTypeExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Business type not found !');
+  }
+
   const result = await prisma.category.create({
-    data: payload,
+    data: {
+      eng_name: payload.eng_name,
+      bn_name: payload.bn_name,
+      businessType: { connect: { id: payload.businessTypeId } },
+    },
   });
   return result;
 };
 
 const getAll = async (): Promise<Category[]> => {
-  const result = await prisma.category.findMany();
+  const result = await prisma.category.findMany({
+    include: { businessType: true },
+  });
   return result;
 };
 
 const getSingle = async (id: string): Promise<Category | null> => {
-  const result = await prisma.category.findUnique({ where: { id } });
+  const result = await prisma.category.findUnique({
+    where: { id },
+    include: { businessType: true },
+  });
 
   if (!result) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Category not found !');
@@ -28,13 +44,29 @@ const updateSingle = async (
   id: string,
   data: Partial<Category>,
 ): Promise<Category | null> => {
+  const { businessTypeId, ...othersData } = data;
   const isExist = await prisma.category.findUnique({ where: { id } });
 
   if (!isExist) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Amenity not found !');
+    throw new ApiError(httpStatus.NOT_FOUND, 'Category not found !');
   }
-  const result = await prisma.category.update({ where: { id }, data });
 
+  const updateData: any = {};
+
+  if (businessTypeId) {
+    updateData.businessType = { connect: { id: businessTypeId } };
+  }
+  if (othersData.bn_name) {
+    updateData.bn_name = othersData.bn_name;
+  }
+  if (othersData.eng_name) {
+    updateData.eng_name = othersData.eng_name;
+  }
+
+  const result = await prisma.category.update({
+    where: { id: id },
+    data: updateData,
+  });
   return result;
 };
 
