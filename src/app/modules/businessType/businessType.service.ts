@@ -1,4 +1,4 @@
-import { BusinessType } from '@prisma/client';
+import { BusinessType, Category } from '@prisma/client';
 import httpStatus from 'http-status';
 import ApiError from '../../../errors/ApiError';
 import prisma from '../../../shared/prisma';
@@ -55,10 +55,34 @@ const deleteSingle = async (id: string): Promise<BusinessType | null> => {
   return result;
 };
 
+const getAllProductBusinessType = async (id: string): Promise<Category[]> => {
+  const isBusinessTypeExist = await prisma.businessType.findUnique({
+    where: { id: id },
+    include: {
+      category: {
+        include: {
+          products: {
+            include: {
+              images: true,
+              owner: true,
+            },
+          },
+        },
+      },
+    },
+  });
+  if (!isBusinessTypeExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, ' Business type not found !');
+  }
+  const result = isBusinessTypeExist.category;
+  return result;
+};
+
 export const BusinessTypeServices = {
   createNew,
   getAll,
   getSingle,
   updateSingle,
   deleteSingle,
+  getAllProductBusinessType,
 };

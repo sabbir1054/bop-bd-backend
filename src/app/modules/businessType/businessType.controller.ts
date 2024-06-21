@@ -1,4 +1,4 @@
-import { BusinessType } from '@prisma/client';
+import { BusinessType, Category } from '@prisma/client';
 import { Request, Response } from 'express';
 import httpStatus from 'http-status';
 import catchAsync from '../../../shared/catchAsync';
@@ -56,10 +56,24 @@ const deleteSingle = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const getAllProductBusinessType = catchAsync(
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    const result = await BusinessTypeServices.getAllProductBusinessType(id);
+    sendResponse<Category[]>(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'All products retrieve under this businessType',
+      data: result,
+    });
+  },
+);
 export const BusinessTypeController = {
   createNew,
   getAll,
   getSingle,
   updateSingle,
   deleteSingle,
+  getAllProductBusinessType,
 };

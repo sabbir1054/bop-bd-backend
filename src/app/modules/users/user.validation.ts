@@ -11,6 +11,7 @@ const updateUserProfileValidation = z.object({
   address: z.string().optional(),
   license: z.string().optional(),
   nid: z.string().optional(),
+  businessTypeId: z.string().optional(),
 });
 
 export const UsersValidation = {

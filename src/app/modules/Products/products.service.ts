@@ -22,6 +22,15 @@ const createNew = async (req: Request): Promise<Product> => {
       'Owner id does not match with user',
     );
   }
+  const ownerBusinessTypeCheck = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+  if (!ownerBusinessTypeCheck?.businessTypeId) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'Please set user business type and complete profile',
+    );
+  }
   const result = await prisma.product.create({
     data: {
       owner: { connect: { id: ownerId } },

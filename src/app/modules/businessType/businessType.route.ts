@@ -25,6 +25,10 @@ router.delete(
   auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
   BusinessTypeController.deleteSingle,
 );
+router.get(
+  '/getProductsOfType/:id',
+  BusinessTypeController.getAllProductBusinessType,
+);
 router.get('/:id', BusinessTypeController.getSingle);
 router.get('/', BusinessTypeController.getAll);
 

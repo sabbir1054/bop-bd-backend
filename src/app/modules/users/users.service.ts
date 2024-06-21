@@ -37,6 +37,13 @@ const updateUserProfile = async (
     deletePhoto(req.body.photo);
     throw new ApiError(httpStatus.NOT_FOUND, 'User not exist');
   }
+  //* make updated data
+  const { businessTypeId, ...others } = req.body;
+  const updatedData = others;
+
+  if (businessTypeId) {
+    updatedData.businessType = { connect: { id: businessTypeId } };
+  }
 
   if (isUserExist.photo && req.body.photo !== isUserExist.photo) {
     //* delete photo
@@ -44,7 +51,7 @@ const updateUserProfile = async (
     const result = await prisma.user.update({
       where: { id: userId },
       data: {
-        ...req.body,
+        ...updatedData,
       },
     });
 
@@ -53,7 +60,7 @@ const updateUserProfile = async (
     const result = await prisma.user.update({
       where: { id: userId },
       data: {
-        ...req.body,
+        ...updatedData,
       },
     });
 
