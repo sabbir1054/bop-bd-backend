@@ -5,7 +5,7 @@ import prisma from '../../../shared/prisma';
 import { IOrderCreate } from './order.interface';
 
 const orderCreate = async (orderData: IOrderCreate): Promise<Order[]> => {
-  const { cartId } = orderData;
+  const { cartId, shipping_address } = orderData;
 
   const result = await prisma.$transaction(async prisma => {
     // Fetch cart details including items
@@ -95,6 +95,7 @@ const orderCreate = async (orderData: IOrderCreate): Promise<Order[]> => {
       // Create the order
       const order = await prisma.order.create({
         data: {
+          shipping_address: shipping_address,
           total,
           customer: {
             connect: { id: cart.userId },

@@ -167,6 +167,7 @@ model Order {
   customerId        String
   product_seller    User          @relation("product_seller_orders", fields: [product_seller_id], references: [id])
   product_seller_id String
+  shipping_address  String
   updatedAt         DateTime      @updatedAt
   createdAt         DateTime      @default(now())
   orderItems        OrderItem[]

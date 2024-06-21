@@ -4,6 +4,9 @@ import { OrderStatusConstant, PaymentStatusConstant } from './order.constant';
 const orderCreateValidation = z.object({
   body: z.object({
     cartId: z.string({ required_error: 'Cart id is required' }),
+    shipping_address: z.string({
+      required_error: 'Shipping address is required',
+    }),
   }),
 });
 const updateOrderStatusValidation = z.object({

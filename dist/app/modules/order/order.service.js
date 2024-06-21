@@ -17,7 +17,7 @@ const http_status_1 = __importDefault(require("http-status"));
 const ApiError_1 = __importDefault(require("../../../errors/ApiError"));
 const prisma_1 = __importDefault(require("../../../shared/prisma"));
 const orderCreate = (orderData) => __awaiter(void 0, void 0, void 0, function* () {
-    const { cartId } = orderData;
+    const { cartId, shipping_address } = orderData;
     const result = yield prisma_1.default.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {
         // Fetch cart details including items
         const cart = yield prisma.cart.findUnique({
@@ -83,6 +83,7 @@ const orderCreate = (orderData) => __awaiter(void 0, void 0, void 0, function* (
             // Create the order
             const order = yield prisma.order.create({
                 data: {
+                    shipping_address: shipping_address,
                     total,
                     customer: {
                         connect: { id: cart.userId },
