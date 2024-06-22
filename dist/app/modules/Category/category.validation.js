@@ -9,6 +9,7 @@ const createCategoryValidation = zod_1.default.object({
     body: zod_1.default.object({
         eng_name: zod_1.default.string({ required_error: 'English category name is required' }),
         bn_name: zod_1.default.string({ required_error: 'Bangla category name is required' }),
+        businessTypeId: zod_1.default.string({ required_error: 'Business type i required' }),
     }),
 });
 const updateCategoryValidation = zod_1.default.object({

@@ -18,7 +18,7 @@ import {
 } from './auth.interface';
 
 const userRegistration = async (payload: User): Promise<User> => {
-  const { password, phone, ...othersData } = payload;
+  const { password, phone, businessTypeId, ...othersData } = payload;
   // check phone number validity
   const isPhoneValid = checkPhoneNumberFormate(phone);
   if (!isPhoneValid) {
@@ -33,6 +33,12 @@ const userRegistration = async (payload: User): Promise<User> => {
   if (!passwordValidity.validity) {
     throw new ApiError(httpStatus.BAD_REQUEST, passwordValidity.msg);
   }
+
+  //* business type check
+  // const isBusinessTypeExist = await prisma.businessType.findUnique({
+  //   where: { id: businessTypeId },
+  // });
+
   // check is phone is already exist
   const isUserAlreadyExist = await prisma.user.findUnique({
     where: { phone: phone },

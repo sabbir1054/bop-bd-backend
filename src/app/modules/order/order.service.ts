@@ -259,11 +259,30 @@ const updatePaymentStatus = async (
 
   return result;
 };
+const getSingle = async (id: string): Promise<Order | null> => {
+  const result = await prisma.order.findUnique({
+    where: { id },
+    include: {
+      customer: true,
+      product_seller: true,
+      orderItems: {
+        include: {
+          product: true,
+        },
+      },
+    },
+  });
 
+  if (!result) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Order doesnt exist');
+  }
+  return result;
+};
 export const OrderService = {
   orderCreate,
   getUserIncomingOrders,
   getUserOutgoingOrders,
   updateOrderStatus,
   updatePaymentStatus,
+  getSingle,
 };

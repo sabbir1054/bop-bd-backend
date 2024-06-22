@@ -16,6 +16,7 @@ const updateUserProfileValidation = zod_1.default.object({
     address: zod_1.default.string().optional(),
     license: zod_1.default.string().optional(),
     nid: zod_1.default.string().optional(),
+    businessTypeId: zod_1.default.string().optional(),
 });
 exports.UsersValidation = {
     updateUserProfileValidation,

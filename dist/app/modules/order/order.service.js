@@ -140,7 +140,11 @@ const getUserIncomingOrders = (userId) => __awaiter(void 0, void 0, void 0, func
             },
             orderItems: {
                 include: {
-                    product: true,
+                    product: {
+                        include: {
+                            images: true,
+                        },
+                    },
                 },
             },
         },

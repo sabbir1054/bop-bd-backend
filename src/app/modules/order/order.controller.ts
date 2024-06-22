@@ -1,3 +1,4 @@
+import { Order } from '@prisma/client';
 import { Request, Response } from 'express';
 import httpStatus from 'http-status';
 import catchAsync from '../../../shared/catchAsync';
@@ -65,11 +66,20 @@ const updatePaymentStatus = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
-
+const getSingle = catchAsync(async (req: Request, res: Response) => {
+  const result = await OrderService.getSingle(req.params.id);
+  sendResponse<Order>(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Business type retrieve',
+    data: result,
+  });
+});
 export const OrderController = {
   orderCreate,
   getUserIncomingOrders,
   getUserOutgoingOrders,
   updateOrderStatus,
   updatePaymentStatus,
+  getSingle,
 };

@@ -37,6 +37,12 @@ const createNew = (req) => __awaiter(void 0, void 0, void 0, function* () {
     if (ownerId !== userId) {
         throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Owner id does not match with user');
     }
+    const ownerBusinessTypeCheck = yield prisma_1.default.user.findUnique({
+        where: { id: userId },
+    });
+    if (!(ownerBusinessTypeCheck === null || ownerBusinessTypeCheck === void 0 ? void 0 : ownerBusinessTypeCheck.businessTypeId)) {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Please set user business type and complete profile');
+    }
     const result = yield prisma_1.default.product.create({
         data: Object.assign({ owner: { connect: { id: ownerId } }, category: { connect: { id: categoryId } }, images: {
                 create: fileUrls.map((url) => ({ url })),

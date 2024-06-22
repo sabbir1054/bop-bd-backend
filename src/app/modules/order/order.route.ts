@@ -78,4 +78,18 @@ router.patch(
   OrderController.updatePaymentStatus,
 );
 
+router.get(
+  '/:id',
+  auth(
+    ENUM_USER_ROLE.DEALER,
+    ENUM_USER_ROLE.IMPORTER,
+    ENUM_USER_ROLE.MANUFACTURER,
+    ENUM_USER_ROLE.WHOLESALER,
+    ENUM_USER_ROLE.SELLER,
+    ENUM_USER_ROLE.ADMIN,
+    ENUM_USER_ROLE.SUPER_ADMIN,
+  ),
+  OrderController.getSingle,
+);
+
 export const OrderRoutes = router;

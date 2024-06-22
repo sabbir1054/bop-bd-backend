@@ -8,6 +8,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -36,19 +47,25 @@ const updateUserProfile = (req, next) => __awaiter(void 0, void 0, void 0, funct
         deletePhoto(req.body.photo);
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User not exist');
     }
+    //* make updated data
+    const _a = req.body, { businessTypeId } = _a, others = __rest(_a, ["businessTypeId"]);
+    const updatedData = others;
+    if (businessTypeId) {
+        updatedData.businessType = { connect: { id: businessTypeId } };
+    }
     if (isUserExist.photo && req.body.photo !== isUserExist.photo) {
         //* delete photo
         deletePhoto(isUserExist === null || isUserExist === void 0 ? void 0 : isUserExist.photo);
         const result = yield prisma_1.default.user.update({
             where: { id: userId },
-            data: Object.assign({}, req.body),
+            data: Object.assign({}, updatedData),
         });
         return result;
     }
     else {
         const result = yield prisma_1.default.user.update({
             where: { id: userId },
-            data: Object.assign({}, req.body),
+            data: Object.assign({}, updatedData),
         });
         return result;
     }
