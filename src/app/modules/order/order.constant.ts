@@ -7,7 +7,7 @@ export const OrderStatusConstant = [
 ];
 export const PaymentStatusConstant = ['PENDING', 'PAID'];
 
-export const ordersSearchableFields: string[] = ['orderCode', 'phone'];
+export const ordersSearchableFields: string[] = ['orderCode'];
 
 export const ordersFilterableFields: string[] = [
   'searchTerm',
