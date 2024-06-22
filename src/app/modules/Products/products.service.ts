@@ -24,11 +24,32 @@ const createNew = async (req: Request): Promise<Product> => {
   }
   const ownerBusinessTypeCheck = await prisma.user.findUnique({
     where: { id: userId },
+    include: {
+      businessType: {
+        include: {
+          category: true,
+        },
+      },
+    },
   });
-  if (!ownerBusinessTypeCheck?.businessTypeId) {
+  if (!ownerBusinessTypeCheck || !ownerBusinessTypeCheck?.businessTypeId) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
       'Please set user business type and complete profile',
+    );
+  }
+  // Extract the array of category IDs
+  const categoryIds = ownerBusinessTypeCheck.businessType?.category.map(
+    cat => cat.id,
+  );
+
+  // Check if the specific category ID is in the array
+  const isCategoryPresent = categoryIds?.includes(categoryId);
+
+  if (!isCategoryPresent) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Category ID is not associated with the user's business type",
     );
   }
   const result = await prisma.product.create({

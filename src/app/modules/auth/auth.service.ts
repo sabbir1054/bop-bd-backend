@@ -18,7 +18,7 @@ import {
 } from './auth.interface';
 
 const userRegistration = async (payload: User): Promise<User> => {
-  const { password, phone, businessTypeId, ...othersData } = payload;
+  const { password, phone, ...othersData } = payload;
   // check phone number validity
   const isPhoneValid = checkPhoneNumberFormate(phone);
   if (!isPhoneValid) {
@@ -34,11 +34,6 @@ const userRegistration = async (payload: User): Promise<User> => {
     throw new ApiError(httpStatus.BAD_REQUEST, passwordValidity.msg);
   }
 
-  //* business type check
-  // const isBusinessTypeExist = await prisma.businessType.findUnique({
-  //   where: { id: businessTypeId },
-  // });
-
   // check is phone is already exist
   const isUserAlreadyExist = await prisma.user.findUnique({
     where: { phone: phone },
@@ -51,17 +46,50 @@ const userRegistration = async (payload: User): Promise<User> => {
   }
 
   const encryptedPassword = await encryptPassword(password);
+  console.log(othersData.role);
 
-  const result = await prisma.user.create({
-    data: {
-      phone: phone,
-      password: encryptedPassword,
-      role: othersData.role,
-      name: othersData.name,
-    },
-  });
+  if (othersData.role === ('ADMIN' || 'SUPER_ADMIN')) {
+    const result = await prisma.user.create({
+      data: {
+        phone: phone,
+        password: encryptedPassword,
+        role: othersData.role,
+        name: othersData.name,
+      },
+    });
 
-  return result;
+    return result;
+  } else {
+    console.log(othersData.role);
+
+    if (!othersData.businessTypeId) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Please provide your businessTypeId',
+      );
+    }
+    //* business type check
+    const isBusinessTypeExist = await prisma.businessType.findUnique({
+      where: { id: othersData.businessTypeId },
+    });
+    console.log(isBusinessTypeExist, othersData.businessTypeId);
+
+    if (!isBusinessTypeExist) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Business type not found');
+    }
+
+    const result = await prisma.user.create({
+      data: {
+        phone: phone,
+        password: encryptedPassword,
+        role: othersData.role,
+        name: othersData.name,
+        businessType: { connect: { id: othersData.businessTypeId } },
+      },
+    });
+
+    return result;
+  }
 };
 
 const userLogin = async (payload: ILoginInfo): Promise<ILoginResponse> => {

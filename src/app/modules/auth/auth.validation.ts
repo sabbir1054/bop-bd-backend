@@ -6,6 +6,7 @@ const userRegistrationValidation = z.object({
     phone: z.string({ required_error: 'Phone number is required' }),
     password: z.string({ required_error: 'Password is required' }),
     role: z.string({ required_error: 'Role is required' }),
+    businessTypeId: z.string({ required_error: 'Business type is required' }),
   }),
 });
 

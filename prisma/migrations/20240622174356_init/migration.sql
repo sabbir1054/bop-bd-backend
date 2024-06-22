@@ -132,6 +132,7 @@ CREATE TABLE "cart_item" (
 -- CreateTable
 CREATE TABLE "orders" (
     "id" TEXT NOT NULL,
+    "orderCode" TEXT NOT NULL,
     "total" DOUBLE PRECISION NOT NULL,
     "orderStatus" "OrderStatus" NOT NULL DEFAULT 'PENDING',
     "paymentStatus" "PaymentStatus" NOT NULL DEFAULT 'PENDING',
@@ -162,6 +163,9 @@ CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_phone_key" ON "users"("phone");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "orders_orderCode_key" ON "orders"("orderCode");
 
 -- AddForeignKey
 ALTER TABLE "users" ADD CONSTRAINT "users_businessTypeId_fkey" FOREIGN KEY ("businessTypeId") REFERENCES "business_type"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -72,7 +72,7 @@ const createNew = async (id: string, payload: Feedback): Promise<Feedback> => {
 };
 
 const getAll = async (role: string, userId: string): Promise<Feedback[]> => {
-  if (role === 'ADMIN' || 'SUPER_ADMIN') {
+  if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
     const result = await prisma.feedback.findMany({
       include: { user: true, product: true },
     });
