@@ -36,6 +36,19 @@ router.get(
   OrderController.getUserIncomingOrders,
 );
 router.get(
+  '/incomingOrders/find',
+  auth(
+    ENUM_USER_ROLE.DEALER,
+    ENUM_USER_ROLE.IMPORTER,
+    ENUM_USER_ROLE.MANUFACTURER,
+    ENUM_USER_ROLE.WHOLESALER,
+    ENUM_USER_ROLE.SELLER,
+    ENUM_USER_ROLE.ADMIN,
+    ENUM_USER_ROLE.SUPER_ADMIN,
+  ),
+  OrderController.searchFilterIncomingOrders,
+);
+router.get(
   '/outgoingOrders',
   auth(
     ENUM_USER_ROLE.DEALER,
@@ -47,6 +60,19 @@ router.get(
     ENUM_USER_ROLE.SUPER_ADMIN,
   ),
   OrderController.getUserOutgoingOrders,
+);
+router.get(
+  '/outgoingOrders/find',
+  auth(
+    ENUM_USER_ROLE.DEALER,
+    ENUM_USER_ROLE.IMPORTER,
+    ENUM_USER_ROLE.MANUFACTURER,
+    ENUM_USER_ROLE.WHOLESALER,
+    ENUM_USER_ROLE.SELLER,
+    ENUM_USER_ROLE.ADMIN,
+    ENUM_USER_ROLE.SUPER_ADMIN,
+  ),
+  OrderController.searchFilterOutgoingOrders,
 );
 
 router.patch(

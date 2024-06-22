@@ -1,8 +1,11 @@
 import { Order } from '@prisma/client';
 import { Request, Response } from 'express';
 import httpStatus from 'http-status';
+import { paginationFields } from '../../../constants/paginationFields';
 import catchAsync from '../../../shared/catchAsync';
+import pick from '../../../shared/pick';
 import sendResponse from '../../../shared/sendResponse';
+import { ordersFilterableFields } from './order.constant';
 import { OrderService } from './order.service';
 
 const orderCreate = catchAsync(async (req: Request, res: Response) => {
@@ -75,6 +78,45 @@ const getSingle = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
+const searchFilterIncomingOrders = catchAsync(
+  async (req: Request, res: Response) => {
+    const filters = pick(req.query, ordersFilterableFields);
+    const options = pick(req.query, paginationFields);
+    const { id: userId } = req.user as any;
+    const result = await OrderService.searchFilterIncomingOrders(
+      userId,
+      filters,
+      options,
+    );
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Orders retrieve successfully !!',
+      meta: result.meta,
+      data: result.data,
+    });
+  },
+);
+const searchFilterOutgoingOrders = catchAsync(
+  async (req: Request, res: Response) => {
+    const filters = pick(req.query, ordersFilterableFields);
+    const options = pick(req.query, paginationFields);
+    const { id: userId } = req.user as any;
+    const result = await OrderService.searchFilterOutgoingOrders(
+      userId,
+      filters,
+      options,
+    );
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Orders retrieve successfully !!',
+      meta: result.meta,
+      data: result.data,
+    });
+  },
+);
 export const OrderController = {
   orderCreate,
   getUserIncomingOrders,
@@ -82,4 +124,6 @@ export const OrderController = {
   updateOrderStatus,
   updatePaymentStatus,
   getSingle,
+  searchFilterIncomingOrders,
+  searchFilterOutgoingOrders,
 };

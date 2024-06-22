@@ -2,7 +2,11 @@ import { Order, OrderStatus, PaymentStatus } from '@prisma/client';
 import httpStatus from 'http-status';
 import ApiError from '../../../errors/ApiError';
 import { orderCodeGenerator } from '../../../helpers/orderIdcodeGenerator';
+import { paginationHelpers } from '../../../helpers/paginationHelper';
+import { IGenericResponse } from '../../../interfaces/common';
+import { IPaginationOptions } from '../../../interfaces/pagination';
 import prisma from '../../../shared/prisma';
+import { ordersSearchableFields } from './order.constant';
 import { IOrderCreate } from './order.interface';
 
 // const orderCreate = async (orderData: IOrderCreate): Promise<Order[]> => {
@@ -430,6 +434,141 @@ const getSingle = async (id: string): Promise<Order | null> => {
   return result;
 };
 
+const searchFilterIncomingOrders = async (
+  ownerId: string,
+  filters: any,
+  options: IPaginationOptions,
+): Promise<IGenericResponse<Order[]>> => {
+  const { limit, page, skip } = paginationHelpers.calculatePagination(options);
+  const { searchTerm, phone, ...filtersData } = filters;
+  const andConditions: any[] = [];
+
+  if (searchTerm) {
+    andConditions.push({
+      OR: ordersSearchableFields.map(field => ({
+        [field]: {
+          contains: searchTerm,
+          mode: 'insensitive',
+        },
+      })),
+    });
+  }
+  if (phone) {
+    andConditions.push({
+      customer: {
+        phone: {
+          contains: phone,
+          mode: 'insensitive',
+        },
+      },
+    });
+  }
+  if (Object.keys(filtersData).length) {
+    const conditions = Object.entries(filtersData).map(([field, value]) => ({
+      [field]: value,
+    }));
+    andConditions.push({ AND: conditions });
+  }
+
+  //* Add condition for ownerId
+  andConditions.push({
+    product_seller_id: ownerId,
+  });
+
+  const whereConditions =
+    andConditions.length > 0 ? { AND: andConditions } : {};
+
+  const result = await prisma.order.findMany({
+    where: whereConditions,
+    skip,
+    take: limit,
+    orderBy:
+      options.sortBy && options.sortOrder
+        ? { [options.sortBy]: options.sortOrder }
+        : {
+            createdAt: 'desc',
+          },
+  });
+  const total = await prisma.order.count({
+    where: whereConditions,
+  });
+  return {
+    meta: {
+      total,
+      page,
+      limit,
+    },
+    data: result,
+  };
+};
+const searchFilterOutgoingOrders = async (
+  ownerId: string,
+  filters: any,
+  options: IPaginationOptions,
+): Promise<IGenericResponse<Order[]>> => {
+  const { limit, page, skip } = paginationHelpers.calculatePagination(options);
+  const { searchTerm, phone, ...filtersData } = filters;
+  const andConditions: any[] = [];
+
+  if (searchTerm) {
+    andConditions.push({
+      OR: ordersSearchableFields.map(field => ({
+        [field]: {
+          contains: searchTerm,
+          mode: 'insensitive',
+        },
+      })),
+    });
+  }
+  if (phone) {
+    andConditions.push({
+      product_seller: {
+        phone: {
+          contains: phone,
+          mode: 'insensitive',
+        },
+      },
+    });
+  }
+  if (Object.keys(filtersData).length) {
+    const conditions = Object.entries(filtersData).map(([field, value]) => ({
+      [field]: value,
+    }));
+    andConditions.push({ AND: conditions });
+  }
+
+  //* Add condition for ownerId
+  andConditions.push({
+    customerId: ownerId,
+  });
+
+  const whereConditions =
+    andConditions.length > 0 ? { AND: andConditions } : {};
+
+  const result = await prisma.order.findMany({
+    where: whereConditions,
+    skip,
+    take: limit,
+    orderBy:
+      options.sortBy && options.sortOrder
+        ? { [options.sortBy]: options.sortOrder }
+        : {
+            createdAt: 'desc',
+          },
+  });
+  const total = await prisma.order.count({
+    where: whereConditions,
+  });
+  return {
+    meta: {
+      total,
+      page,
+      limit,
+    },
+    data: result,
+  };
+};
+
 export const OrderService = {
   orderCreate,
   getUserIncomingOrders,
@@ -437,4 +576,6 @@ export const OrderService = {
   updateOrderStatus,
   updatePaymentStatus,
   getSingle,
+  searchFilterIncomingOrders,
+  searchFilterOutgoingOrders,
 };

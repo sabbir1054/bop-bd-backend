@@ -6,3 +6,11 @@ export const OrderStatusConstant = [
   'DELIVERED',
 ];
 export const PaymentStatusConstant = ['PENDING', 'PAID'];
+
+export const ordersSearchableFields: string[] = ['orderCode', 'phone'];
+
+export const ordersFilterableFields: string[] = [
+  'searchTerm',
+  'orderStatus',
+  'paymentStatus',
+];
