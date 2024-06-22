@@ -32,16 +32,31 @@ const paginationHelper_1 = require("../../../helpers/paginationHelper");
 const prisma_1 = __importDefault(require("../../../shared/prisma"));
 const product_constant_1 = require("./product.constant");
 const createNew = (req) => __awaiter(void 0, void 0, void 0, function* () {
-    const _a = req.body, { ownerId, categoryId, fileUrls } = _a, others = __rest(_a, ["ownerId", "categoryId", "fileUrls"]);
+    var _a;
+    const _b = req.body, { ownerId, categoryId, fileUrls } = _b, others = __rest(_b, ["ownerId", "categoryId", "fileUrls"]);
     const { id: userId } = req.user;
     if (ownerId !== userId) {
         throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Owner id does not match with user');
     }
     const ownerBusinessTypeCheck = yield prisma_1.default.user.findUnique({
         where: { id: userId },
+        include: {
+            businessType: {
+                include: {
+                    category: true,
+                },
+            },
+        },
     });
-    if (!(ownerBusinessTypeCheck === null || ownerBusinessTypeCheck === void 0 ? void 0 : ownerBusinessTypeCheck.businessTypeId)) {
+    if (!ownerBusinessTypeCheck || !(ownerBusinessTypeCheck === null || ownerBusinessTypeCheck === void 0 ? void 0 : ownerBusinessTypeCheck.businessTypeId)) {
         throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Please set user business type and complete profile');
+    }
+    // Extract the array of category IDs
+    const categoryIds = (_a = ownerBusinessTypeCheck.businessType) === null || _a === void 0 ? void 0 : _a.category.map(cat => cat.id);
+    // Check if the specific category ID is in the array
+    const isCategoryPresent = categoryIds === null || categoryIds === void 0 ? void 0 : categoryIds.includes(categoryId);
+    if (!isCategoryPresent) {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, "Category ID is not associated with the user's business type");
     }
     const result = yield prisma_1.default.product.create({
         data: Object.assign({ owner: { connect: { id: ownerId } }, category: { connect: { id: categoryId } }, images: {

@@ -8,6 +8,7 @@ const userRegistrationValidation = zod_1.z.object({
         phone: zod_1.z.string({ required_error: 'Phone number is required' }),
         password: zod_1.z.string({ required_error: 'Password is required' }),
         role: zod_1.z.string({ required_error: 'Role is required' }),
+        businessTypeId: zod_1.z.string({ required_error: 'Business type is required' }),
     }),
 });
 const userLoginValidation = zod_1.z.object({

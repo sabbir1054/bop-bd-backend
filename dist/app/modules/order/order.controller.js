@@ -14,8 +14,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrderController = void 0;
 const http_status_1 = __importDefault(require("http-status"));
+const paginationFields_1 = require("../../../constants/paginationFields");
 const catchAsync_1 = __importDefault(require("../../../shared/catchAsync"));
+const pick_1 = __importDefault(require("../../../shared/pick"));
 const sendResponse_1 = __importDefault(require("../../../shared/sendResponse"));
+const order_constant_1 = require("./order.constant");
 const order_service_1 = require("./order.service");
 const orderCreate = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield order_service_1.OrderService.orderCreate(req.body);
@@ -70,10 +73,48 @@ const updatePaymentStatus = (0, catchAsync_1.default)((req, res) => __awaiter(vo
         data: result,
     });
 }));
+const getSingle = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield order_service_1.OrderService.getSingle(req.params.id);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: 'Business type retrieve',
+        data: result,
+    });
+}));
+const searchFilterIncomingOrders = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const filters = (0, pick_1.default)(req.query, order_constant_1.ordersFilterableFields);
+    const options = (0, pick_1.default)(req.query, paginationFields_1.paginationFields);
+    const { id: userId } = req.user;
+    const result = yield order_service_1.OrderService.searchFilterIncomingOrders(userId, filters, options);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: 'Orders retrieve successfully !!',
+        meta: result.meta,
+        data: result.data,
+    });
+}));
+const searchFilterOutgoingOrders = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const filters = (0, pick_1.default)(req.query, order_constant_1.ordersFilterableFields);
+    const options = (0, pick_1.default)(req.query, paginationFields_1.paginationFields);
+    const { id: userId } = req.user;
+    const result = yield order_service_1.OrderService.searchFilterOutgoingOrders(userId, filters, options);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: 'Orders retrieve successfully !!',
+        meta: result.meta,
+        data: result.data,
+    });
+}));
 exports.OrderController = {
     orderCreate,
     getUserIncomingOrders,
     getUserOutgoingOrders,
     updateOrderStatus,
     updatePaymentStatus,
+    getSingle,
+    searchFilterIncomingOrders,
+    searchFilterOutgoingOrders,
 };

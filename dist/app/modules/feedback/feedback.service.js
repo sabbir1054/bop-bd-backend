@@ -75,7 +75,7 @@ const createNew = (id, payload) => __awaiter(void 0, void 0, void 0, function* (
     return result;
 });
 const getAll = (role, userId) => __awaiter(void 0, void 0, void 0, function* () {
-    if (role === 'ADMIN' || 'SUPER_ADMIN') {
+    if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
         const result = yield prisma_1.default.feedback.findMany({
             include: { user: true, product: true },
         });

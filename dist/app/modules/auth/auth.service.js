@@ -52,15 +52,42 @@ const userRegistration = (payload) => __awaiter(void 0, void 0, void 0, function
         throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'User already registered with this phone number !');
     }
     const encryptedPassword = yield (0, encription_1.encryptPassword)(password);
-    const result = yield prisma_1.default.user.create({
-        data: {
-            phone: phone,
-            password: encryptedPassword,
-            role: othersData.role,
-            name: othersData.name,
-        },
-    });
-    return result;
+    console.log(othersData.role);
+    if (othersData.role === ('ADMIN' || 'SUPER_ADMIN')) {
+        const result = yield prisma_1.default.user.create({
+            data: {
+                phone: phone,
+                password: encryptedPassword,
+                role: othersData.role,
+                name: othersData.name,
+            },
+        });
+        return result;
+    }
+    else {
+        console.log(othersData.role);
+        if (!othersData.businessTypeId) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Please provide your businessTypeId');
+        }
+        //* business type check
+        const isBusinessTypeExist = yield prisma_1.default.businessType.findUnique({
+            where: { id: othersData.businessTypeId },
+        });
+        console.log(isBusinessTypeExist, othersData.businessTypeId);
+        if (!isBusinessTypeExist) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Business type not found');
+        }
+        const result = yield prisma_1.default.user.create({
+            data: {
+                phone: phone,
+                password: encryptedPassword,
+                role: othersData.role,
+                name: othersData.name,
+                businessType: { connect: { id: othersData.businessTypeId } },
+            },
+        });
+        return result;
+    }
 });
 const userLogin = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     const { phone, password } = payload;
