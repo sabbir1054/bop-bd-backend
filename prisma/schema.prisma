@@ -82,7 +82,7 @@ model User {
   products       Product[]
   outgoing_order Order[]        @relation("customer_orders")
   incoming_order Order[]        @relation("product_seller_orders")
-  businessType   BusinessType?   @relation(fields: [businessTypeId], references: [id])
+  businessType   BusinessType?  @relation(fields: [businessTypeId], references: [id])
   businessTypeId String?
 
   @@map("users")

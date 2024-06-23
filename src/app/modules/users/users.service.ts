@@ -8,7 +8,7 @@ import prisma from '../../../shared/prisma';
 const updateUserProfile = async (
   req: Request,
   next: NextFunction,
-): Promise<User | null> => {
+): Promise<Partial<User> | null> => {
   const { id: userId } = req.user as any;
 
   const deletePhoto = (photoLink: string) => {
@@ -53,6 +53,29 @@ const updateUserProfile = async (
       data: {
         ...updatedData,
       },
+      select: {
+        id: true,
+        role: true,
+        memberCategory: true,
+        verified: true,
+        name: true,
+        email: true,
+        phone: true,
+        address: true,
+        photo: true,
+        license: true,
+        nid: true,
+        shop_name: true,
+        createdAt: true,
+        updatedAt: true,
+        feedbacks: true,
+        cart: true,
+        products: true,
+        outgoing_order: true,
+        incoming_order: true,
+        businessType: true,
+        businessTypeId: true,
+      },
     });
 
     return result;
@@ -62,13 +85,36 @@ const updateUserProfile = async (
       data: {
         ...updatedData,
       },
+      select: {
+        id: true,
+        role: true,
+        memberCategory: true,
+        verified: true,
+        name: true,
+        email: true,
+        phone: true,
+        address: true,
+        photo: true,
+        license: true,
+        nid: true,
+        shop_name: true,
+        createdAt: true,
+        updatedAt: true,
+        feedbacks: true,
+        cart: true,
+        products: true,
+        outgoing_order: true,
+        incoming_order: true,
+        businessType: true,
+        businessTypeId: true,
+      },
     });
 
     return result;
   }
 };
 
-const removeProfilePicture = async (userId: string): Promise<User> => {
+const removeProfilePicture = async (userId: string): Promise<Partial<User>> => {
   const isUserExist = await prisma.user.findUnique({
     where: { id: userId },
   });
@@ -97,6 +143,29 @@ const removeProfilePicture = async (userId: string): Promise<User> => {
     data: {
       photo: '',
     },
+    select: {
+      id: true,
+      role: true,
+      memberCategory: true,
+      verified: true,
+      name: true,
+      email: true,
+      phone: true,
+      address: true,
+      photo: true,
+      license: true,
+      nid: true,
+      shop_name: true,
+      createdAt: true,
+      updatedAt: true,
+      feedbacks: true,
+      cart: true,
+      products: true,
+      outgoing_order: true,
+      incoming_order: true,
+      businessType: true,
+      businessTypeId: true,
+    },
   });
 
   return result;
@@ -107,17 +176,20 @@ const getAll = async (): Promise<Partial<User>[]> => {
     select: {
       id: true,
       role: true,
-      email: true,
-      license: true,
-      nid: true,
       memberCategory: true,
       verified: true,
       name: true,
+      email: true,
       phone: true,
       address: true,
       photo: true,
+      license: true,
+      nid: true,
+      shop_name: true,
       createdAt: true,
       updatedAt: true,
+      businessType: true,
+      businessTypeId: true,
     },
   });
   return result;

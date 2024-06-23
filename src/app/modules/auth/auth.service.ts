@@ -17,7 +17,7 @@ import {
   IRefreshTokenResponse,
 } from './auth.interface';
 
-const userRegistration = async (payload: User): Promise<User> => {
+const userRegistration = async (payload: User): Promise<Partial<User>> => {
   const { password, phone, ...othersData } = payload;
   // check phone number validity
   const isPhoneValid = checkPhoneNumberFormate(phone);
@@ -85,6 +85,29 @@ const userRegistration = async (payload: User): Promise<User> => {
         role: othersData.role,
         name: othersData.name,
         businessType: { connect: { id: othersData.businessTypeId } },
+      },
+      select: {
+        id: true,
+        role: true,
+        memberCategory: true,
+        verified: true,
+        name: true,
+        email: true,
+        phone: true,
+        address: true,
+        photo: true,
+        license: true,
+        nid: true,
+        shop_name: true,
+        createdAt: true,
+        updatedAt: true,
+        feedbacks: true,
+        cart: true,
+        products: true,
+        outgoing_order: true,
+        incoming_order: true,
+        businessType: true,
+        businessTypeId: true,
       },
     });
 
