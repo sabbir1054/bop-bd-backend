@@ -30,120 +30,6 @@ const orderIdcodeGenerator_1 = require("../../../helpers/orderIdcodeGenerator");
 const paginationHelper_1 = require("../../../helpers/paginationHelper");
 const prisma_1 = __importDefault(require("../../../shared/prisma"));
 const order_constant_1 = require("./order.constant");
-// const orderCreate = async (orderData: IOrderCreate): Promise<Order[]> => {
-//   const { cartId, shipping_address } = orderData;
-//   const result = await prisma.$transaction(async prisma => {
-//     // Fetch cart details including items
-//     const cart = await prisma.cart.findUnique({
-//       where: { id: cartId },
-//       include: {
-//         CartItem: {
-//           include: {
-//             product: {
-//               include: {
-//                 owner: true,
-//               },
-//             },
-//           },
-//         },
-//       },
-//     });
-//     if (!cart) {
-//       throw new ApiError(
-//         httpStatus.NOT_FOUND,
-//         `Cart with id ${cartId} not found.`,
-//       );
-//     }
-//     // Filter out items where the product owner is the same as the cart user
-//     const validCartItems = cart.CartItem.filter(
-//       item => item.product.ownerId !== cart.userId,
-//     );
-//     if (validCartItems.length === 0) {
-//       throw new ApiError(
-//         httpStatus.BAD_REQUEST,
-//         `You cannot buy your own products.`,
-//       );
-//     }
-//     // Create a map of product prices
-//     const productIds = validCartItems.map(item => item.productId);
-//     const products = await prisma.product.findMany({
-//       where: {
-//         id: { in: productIds },
-//       },
-//       select: {
-//         id: true,
-//         price: true,
-//         discount_price: true,
-//       },
-//     });
-//     const productPriceMap = products.reduce(
-//       (acc, product) => {
-//         acc[product.id] = product.discount_price ?? product.price;
-//         return acc;
-//       },
-//       {} as { [key: string]: number },
-//     );
-//     // Group valid cart items by product owner
-//     const groupedByOwner = validCartItems.reduce(
-//       (acc, item) => {
-//         const ownerId = item.product.ownerId;
-//         if (!acc[ownerId]) {
-//           acc[ownerId] = [];
-//         }
-//         acc[ownerId].push(item);
-//         return acc;
-//       },
-//       {} as { [key: string]: typeof validCartItems },
-//     );
-//     const createdOrders = [];
-//     // Create separate orders for each product owner
-//     for (const [ownerId, items] of Object.entries(groupedByOwner)) {
-//       const orderItemsData = items.map(item => ({
-//         productId: item.productId,
-//         quantity: item.quantity,
-//         price: productPriceMap[item.productId],
-//       }));
-//       const total = orderItemsData.reduce((acc, item) => {
-//         const price = productPriceMap[item.productId];
-//         return acc + price * item.quantity;
-//       }, 0);
-//       // Create the order
-//       const order = await prisma.order.create({
-//         data: {
-//           shipping_address: shipping_address,
-//           total,
-//           customer: {
-//             connect: { id: cart.userId },
-//           },
-//           product_seller: {
-//             connect: { id: ownerId },
-//           },
-//           orderItems: {
-//             create: orderItemsData.map(item => ({
-//               product: {
-//                 connect: { id: item.productId },
-//               },
-//               quantity: item.quantity,
-//               price: item.price,
-//             })),
-//           },
-//         },
-//         include: {
-//           orderItems: true,
-//         },
-//       });
-//       createdOrders.push(order);
-//     }
-//     // Empty the cart
-//     await prisma.cartItem.deleteMany({
-//       where: {
-//         cartId: cart.id,
-//       },
-//     });
-//     return createdOrders;
-//   });
-//   return result;
-// };
 const orderCreate = (orderData) => __awaiter(void 0, void 0, void 0, function* () {
     const { cartId, shipping_address } = orderData;
     const result = yield prisma_1.default.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {
@@ -365,11 +251,56 @@ const getSingle = (id) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield prisma_1.default.order.findUnique({
         where: { id },
         include: {
-            customer: true,
-            product_seller: true,
+            customer: {
+                select: {
+                    id: true,
+                    role: true,
+                    memberCategory: true,
+                    verified: true,
+                    name: true,
+                    email: true,
+                    phone: true,
+                    address: true,
+                    photo: true,
+                    license: true,
+                    nid: true,
+                    shop_name: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    feedbacks: true,
+                    businessType: true,
+                    businessTypeId: true,
+                },
+            },
+            product_seller: {
+                select: {
+                    id: true,
+                    role: true,
+                    memberCategory: true,
+                    verified: true,
+                    name: true,
+                    email: true,
+                    phone: true,
+                    address: true,
+                    photo: true,
+                    license: true,
+                    nid: true,
+                    shop_name: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    businessType: true,
+                    businessTypeId: true,
+                },
+            },
             orderItems: {
                 include: {
-                    product: true,
+                    product: {
+                        include: {
+                            images: true,
+                            category: true,
+                            feedbacks: true,
+                        },
+                    },
                 },
             },
         },
@@ -423,6 +354,17 @@ const searchFilterIncomingOrders = (ownerId, filters, options) => __awaiter(void
             : {
                 createdAt: 'desc',
             },
+        include: {
+            orderItems: {
+                include: {
+                    product: {
+                        include: {
+                            images: true,
+                        },
+                    },
+                },
+            },
+        },
     });
     const total = yield prisma_1.default.order.count({
         where: whereConditions,
@@ -480,6 +422,17 @@ const searchFilterOutgoingOrders = (ownerId, filters, options) => __awaiter(void
             : {
                 createdAt: 'desc',
             },
+        include: {
+            orderItems: {
+                include: {
+                    product: {
+                        include: {
+                            images: true,
+                        },
+                    },
+                },
+            },
+        },
     });
     const total = yield prisma_1.default.order.count({
         where: whereConditions,

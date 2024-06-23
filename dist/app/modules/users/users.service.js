@@ -59,6 +59,29 @@ const updateUserProfile = (req, next) => __awaiter(void 0, void 0, void 0, funct
         const result = yield prisma_1.default.user.update({
             where: { id: userId },
             data: Object.assign({}, updatedData),
+            select: {
+                id: true,
+                role: true,
+                memberCategory: true,
+                verified: true,
+                name: true,
+                email: true,
+                phone: true,
+                address: true,
+                photo: true,
+                license: true,
+                nid: true,
+                shop_name: true,
+                createdAt: true,
+                updatedAt: true,
+                feedbacks: true,
+                cart: true,
+                products: true,
+                outgoing_order: true,
+                incoming_order: true,
+                businessType: true,
+                businessTypeId: true,
+            },
         });
         return result;
     }
@@ -66,6 +89,29 @@ const updateUserProfile = (req, next) => __awaiter(void 0, void 0, void 0, funct
         const result = yield prisma_1.default.user.update({
             where: { id: userId },
             data: Object.assign({}, updatedData),
+            select: {
+                id: true,
+                role: true,
+                memberCategory: true,
+                verified: true,
+                name: true,
+                email: true,
+                phone: true,
+                address: true,
+                photo: true,
+                license: true,
+                nid: true,
+                shop_name: true,
+                createdAt: true,
+                updatedAt: true,
+                feedbacks: true,
+                cart: true,
+                products: true,
+                outgoing_order: true,
+                incoming_order: true,
+                businessType: true,
+                businessTypeId: true,
+            },
         });
         return result;
     }
@@ -91,6 +137,29 @@ const removeProfilePicture = (userId) => __awaiter(void 0, void 0, void 0, funct
         data: {
             photo: '',
         },
+        select: {
+            id: true,
+            role: true,
+            memberCategory: true,
+            verified: true,
+            name: true,
+            email: true,
+            phone: true,
+            address: true,
+            photo: true,
+            license: true,
+            nid: true,
+            shop_name: true,
+            createdAt: true,
+            updatedAt: true,
+            feedbacks: true,
+            cart: true,
+            products: true,
+            outgoing_order: true,
+            incoming_order: true,
+            businessType: true,
+            businessTypeId: true,
+        },
     });
     return result;
 });
@@ -99,17 +168,20 @@ const getAll = () => __awaiter(void 0, void 0, void 0, function* () {
         select: {
             id: true,
             role: true,
-            email: true,
-            license: true,
-            nid: true,
             memberCategory: true,
             verified: true,
             name: true,
+            email: true,
             phone: true,
             address: true,
             photo: true,
+            license: true,
+            nid: true,
+            shop_name: true,
             createdAt: true,
             updatedAt: true,
+            businessType: true,
+            businessTypeId: true,
         },
     });
     return result;
@@ -131,6 +203,7 @@ const getSingle = (userId, profileId, role) => __awaiter(void 0, void 0, void 0,
             incoming_order: {
                 include: { orderItems: true },
             },
+            businessType: true,
         },
     });
     if (!result) {

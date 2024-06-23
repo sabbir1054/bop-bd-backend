@@ -216,6 +216,7 @@ const getSingle = async (
       incoming_order: {
         include: { orderItems: true },
       },
+      businessType: true,
     },
   });
 

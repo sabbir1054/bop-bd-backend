@@ -9,7 +9,7 @@ import { IRefreshTokenResponse } from './auth.interface';
 
 const userRegistration = catchAsync(async (req: Request, res: Response) => {
   const result = await AuthServices.userRegistration(req.body);
-  sendResponse<User>(res, {
+  sendResponse<Partial<User>>(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: 'User registered',
