@@ -56,12 +56,33 @@ const userRegistration = async (payload: User): Promise<Partial<User>> => {
         role: othersData.role,
         name: othersData.name,
       },
+      select: {
+        id: true,
+        role: true,
+        memberCategory: true,
+        verified: true,
+        name: true,
+        email: true,
+        phone: true,
+        address: true,
+        photo: true,
+        license: true,
+        nid: true,
+        shop_name: true,
+        createdAt: true,
+        updatedAt: true,
+        feedbacks: true,
+        cart: true,
+        products: true,
+        outgoing_order: true,
+        incoming_order: true,
+        businessType: true,
+        businessTypeId: true,
+      },
     });
 
     return result;
   } else {
-    console.log(othersData.role);
-
     if (!othersData.businessTypeId) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
@@ -72,7 +93,6 @@ const userRegistration = async (payload: User): Promise<Partial<User>> => {
     const isBusinessTypeExist = await prisma.businessType.findUnique({
       where: { id: othersData.businessTypeId },
     });
-    console.log(isBusinessTypeExist, othersData.businessTypeId);
 
     if (!isBusinessTypeExist) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Business type not found');

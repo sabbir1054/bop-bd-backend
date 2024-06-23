@@ -47,7 +47,9 @@ const updateUserProfile = async (
 
   if (isUserExist.photo && req.body.photo !== isUserExist.photo) {
     //* delete photo
-    deletePhoto(isUserExist?.photo);
+    if (req.body.photo) {
+      deletePhoto(isUserExist?.photo);
+    }
     const result = await prisma.user.update({
       where: { id: userId },
       data: {

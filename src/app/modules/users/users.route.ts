@@ -24,9 +24,9 @@ router.patch(
   ),
   FileUploadHelper.uploadProfile.single('file'),
   (req: Request, res: Response, next: NextFunction) => {
-    if (req.body) {
-      req.body = UsersValidation.updateUserProfileValidation.parse(
-        JSON.parse(req.body.data),
+    if (req.body?.data) {
+      req.body = UsersValidation?.updateUserProfileValidation?.parse(
+        JSON?.parse(req.body?.data),
       );
     }
 
