@@ -20,8 +20,8 @@ services:
       - '5002:5002'
       - '5005:5005'
     volumes:
-      - uploads:/uploads
-      - ./uploads/userPhoto:/uploads/userPhoto
+      - F:/Project/bop-bd/volume/uploads:/uploads:rw
+      - F:/Project/bop-bd/volume/uploads/userPhoto:/uploads/userPhoto:rw
     networks:
       - bopnet
     depends_on:
@@ -33,4 +33,3 @@ networks:
 
 volumes:
   postgres-data:
-  uploads:

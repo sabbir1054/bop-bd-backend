@@ -226,6 +226,7 @@ const getSingle = async (id: string): Promise<Product | null> => {
       owner: {
         select: {
           id: true,
+          role: true,
           memberCategory: true,
           verified: true,
           name: true,
@@ -234,11 +235,30 @@ const getSingle = async (id: string): Promise<Product | null> => {
           photo: true,
           createdAt: true,
           updatedAt: true,
+          businessType: true,
         },
       },
       category: true,
       images: true,
-      feedbacks: true,
+      feedbacks: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              memberCategory: true,
+              verified: true,
+              name: true,
+              phone: true,
+              address: true,
+              photo: true,
+              createdAt: true,
+              updatedAt: true,
+              businessType: true,
+              role: true,
+            },
+          },
+        },
+      },
     },
   });
   if (!result) {

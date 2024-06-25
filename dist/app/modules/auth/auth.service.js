@@ -61,11 +61,33 @@ const userRegistration = (payload) => __awaiter(void 0, void 0, void 0, function
                 role: othersData.role,
                 name: othersData.name,
             },
+            select: {
+                id: true,
+                role: true,
+                memberCategory: true,
+                verified: true,
+                name: true,
+                email: true,
+                phone: true,
+                address: true,
+                photo: true,
+                license: true,
+                nid: true,
+                shop_name: true,
+                createdAt: true,
+                updatedAt: true,
+                feedbacks: true,
+                cart: true,
+                products: true,
+                outgoing_order: true,
+                incoming_order: true,
+                businessType: true,
+                businessTypeId: true,
+            },
         });
         return result;
     }
     else {
-        console.log(othersData.role);
         if (!othersData.businessTypeId) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Please provide your businessTypeId');
         }
@@ -73,7 +95,6 @@ const userRegistration = (payload) => __awaiter(void 0, void 0, void 0, function
         const isBusinessTypeExist = yield prisma_1.default.businessType.findUnique({
             where: { id: othersData.businessTypeId },
         });
-        console.log(isBusinessTypeExist, othersData.businessTypeId);
         if (!isBusinessTypeExist) {
             throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Business type not found');
         }

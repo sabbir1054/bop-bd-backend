@@ -17,8 +17,9 @@ const user_validation_1 = require("./user.validation");
 const users_controller_1 = require("./users.controller");
 const router = express_1.default.Router();
 router.patch('/updateProfile', (0, auth_1.default)(user_1.ENUM_USER_ROLE.ADMIN, user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.SELLER, user_1.ENUM_USER_ROLE.SUPER_ADMIN, user_1.ENUM_USER_ROLE.WHOLESALER), fileUpload_1.FileUploadHelper.uploadProfile.single('file'), (req, res, next) => {
-    if (req.body) {
-        req.body = user_validation_1.UsersValidation.updateUserProfileValidation.parse(JSON.parse(req.body.data));
+    var _a, _b, _c;
+    if ((_a = req.body) === null || _a === void 0 ? void 0 : _a.data) {
+        req.body = (_b = user_validation_1.UsersValidation === null || user_validation_1.UsersValidation === void 0 ? void 0 : user_validation_1.UsersValidation.updateUserProfileValidation) === null || _b === void 0 ? void 0 : _b.parse(JSON === null || JSON === void 0 ? void 0 : JSON.parse((_c = req.body) === null || _c === void 0 ? void 0 : _c.data));
     }
     if (req.file) {
         req.body.photo = `http://localhost:${config_1.default.port}/api/v1/users/profile/image/${req.file.filename}`;

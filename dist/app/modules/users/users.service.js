@@ -55,7 +55,9 @@ const updateUserProfile = (req, next) => __awaiter(void 0, void 0, void 0, funct
     }
     if (isUserExist.photo && req.body.photo !== isUserExist.photo) {
         //* delete photo
-        deletePhoto(isUserExist === null || isUserExist === void 0 ? void 0 : isUserExist.photo);
+        if (req.body.photo) {
+            deletePhoto(isUserExist === null || isUserExist === void 0 ? void 0 : isUserExist.photo);
+        }
         const result = yield prisma_1.default.user.update({
             where: { id: userId },
             data: Object.assign({}, updatedData),

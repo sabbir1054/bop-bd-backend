@@ -202,6 +202,7 @@ const getSingle = (id) => __awaiter(void 0, void 0, void 0, function* () {
             owner: {
                 select: {
                     id: true,
+                    role: true,
                     memberCategory: true,
                     verified: true,
                     name: true,
@@ -210,11 +211,30 @@ const getSingle = (id) => __awaiter(void 0, void 0, void 0, function* () {
                     photo: true,
                     createdAt: true,
                     updatedAt: true,
+                    businessType: true,
                 },
             },
             category: true,
             images: true,
-            feedbacks: true,
+            feedbacks: {
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            memberCategory: true,
+                            verified: true,
+                            name: true,
+                            phone: true,
+                            address: true,
+                            photo: true,
+                            createdAt: true,
+                            updatedAt: true,
+                            businessType: true,
+                            role: true,
+                        },
+                    },
+                },
+            },
         },
     });
     if (!result) {
