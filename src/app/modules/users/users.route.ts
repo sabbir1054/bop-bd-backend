@@ -31,7 +31,7 @@ router.patch(
     }
 
     if (req.file) {
-      req.body.photo = `http://localhost:${config.port}/api/v1/users/profile/image/${req.file.filename}`;
+      req.body.photo = `https://www.apibop.bopbd.com.bd/api/v1/users/profile/image/${req.file.filename}`;
     }
     return UserController.updateUserProfile(req, res, next);
   },

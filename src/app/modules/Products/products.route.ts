@@ -2,7 +2,6 @@ import express, { NextFunction, Request, Response } from 'express';
 import fs from 'fs';
 import httpStatus from 'http-status';
 import path from 'path';
-import config from '../../../config';
 import { ENUM_USER_ROLE } from '../../../enums/user';
 import ApiError from '../../../errors/ApiError';
 import { FileUploadHelper } from '../../../helpers/fileUpload';
@@ -33,7 +32,7 @@ router.post(
     if (multerReq.files) {
       multerReq.body.fileUrls = multerReq.files.map(
         file =>
-          `http://localhost:${config.port}/api/v1/products/image/${file.filename}`,
+          `https://www.apibop.bopbd.com.bd/api/v1/products/image/${file.filename}`,
       );
     }
     return ProductController.createProduct(multerReq, res, next);
@@ -70,7 +69,8 @@ router.patch(
     try {
       if (multerReq.files) {
         multerReq.body.fileUrls = multerReq.files.map(
-          file => `/uploads/${file.filename}`,
+          file =>
+            `https://www.apibop.bopbd.com.bd/api/v1/products/image/${file.filename}`,
         );
       }
 
