@@ -449,30 +449,6 @@ const updateProductInfo = (productId, ownerId, payload) => __awaiter(void 0, voi
     });
     return result;
 });
-/* const deleteProduct = async (
-  productId: string,
-  ownerId: string,
-): Promise<Product | null> => {
-  const isProductExist = await prisma.product.findUnique({
-    where: { id: productId },
-  });
-
-  if (!isProductExist) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Product not found ');
-  }
-  if (isProductExist?.ownerId !== ownerId) {
-    throw new ApiError(
-      httpStatus.NOT_FOUND,
-      'Only product owner can delete products ',
-    );
-  }
-
-  const result = await prisma.product.delete({
-    where: { id: productId },
-  });
-
-  return result;
-}; */
 const deleteProduct = (productId, ownerId) => __awaiter(void 0, void 0, void 0, function* () {
     // Check if the product exists
     const isProductExist = yield prisma_1.default.product.findUnique({
