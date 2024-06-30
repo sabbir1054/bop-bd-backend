@@ -449,19 +449,65 @@ const updateProductInfo = (productId, ownerId, payload) => __awaiter(void 0, voi
     });
     return result;
 });
+/* const deleteProduct = async (
+  productId: string,
+  ownerId: string,
+): Promise<Product | null> => {
+  const isProductExist = await prisma.product.findUnique({
+    where: { id: productId },
+  });
+
+  if (!isProductExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Product not found ');
+  }
+  if (isProductExist?.ownerId !== ownerId) {
+    throw new ApiError(
+      httpStatus.NOT_FOUND,
+      'Only product owner can delete products ',
+    );
+  }
+
+  const result = await prisma.product.delete({
+    where: { id: productId },
+  });
+
+  return result;
+}; */
 const deleteProduct = (productId, ownerId) => __awaiter(void 0, void 0, void 0, function* () {
+    // Check if the product exists
     const isProductExist = yield prisma_1.default.product.findUnique({
         where: { id: productId },
+        include: {
+            images: true,
+        },
     });
     if (!isProductExist) {
-        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Product not found ');
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Product not found');
     }
-    if ((isProductExist === null || isProductExist === void 0 ? void 0 : isProductExist.ownerId) !== ownerId) {
-        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Only product owner can delete products ');
+    // Check if the owner is the same as the one making the request
+    if (isProductExist.ownerId !== ownerId) {
+        throw new ApiError_1.default(http_status_1.default.FORBIDDEN, 'Only product owner can delete products');
     }
-    const result = yield prisma_1.default.product.delete({
-        where: { id: productId },
-    });
+    const result = yield prisma_1.default.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {
+        // Delete images from the server
+        for (const image of isProductExist.images) {
+            const filePath = path_1.default.join(process.cwd(), 'uploads', path_1.default.basename(image.url));
+            fs_1.default.unlink(filePath, err => {
+                if (err) {
+                    console.error(`Failed to delete image: ${filePath}`);
+                }
+            });
+        }
+        // Delete image records from the database
+        yield prisma.image.deleteMany({
+            where: { productId: productId },
+        });
+        // Delete the product
+        const result = yield prisma.product.delete({
+            where: { id: productId },
+        });
+        return result;
+    }));
     return result;
 });
 exports.ProductServices = {

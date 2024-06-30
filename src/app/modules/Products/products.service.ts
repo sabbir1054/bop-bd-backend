@@ -521,7 +521,7 @@ const updateProductInfo = async (
 
   return result;
 };
-const deleteProduct = async (
+/* const deleteProduct = async (
   productId: string,
   ownerId: string,
 ): Promise<Product | null> => {
@@ -544,7 +544,61 @@ const deleteProduct = async (
   });
 
   return result;
+}; */
+
+const deleteProduct = async (
+  productId: string,
+  ownerId: string,
+): Promise<Product | null> => {
+  // Check if the product exists
+  const isProductExist = await prisma.product.findUnique({
+    where: { id: productId },
+    include: {
+      images: true,
+    },
+  });
+
+  if (!isProductExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Product not found');
+  }
+
+  // Check if the owner is the same as the one making the request
+  if (isProductExist.ownerId !== ownerId) {
+    throw new ApiError(
+      httpStatus.FORBIDDEN,
+      'Only product owner can delete products',
+    );
+  }
+  const result = await prisma.$transaction(async prisma => {
+    // Delete images from the server
+    for (const image of isProductExist.images) {
+      const filePath = path.join(
+        process.cwd(),
+        'uploads',
+        path.basename(image.url),
+      );
+      fs.unlink(filePath, err => {
+        if (err) {
+          console.error(`Failed to delete image: ${filePath}`);
+        }
+      });
+    }
+
+    // Delete image records from the database
+    await prisma.image.deleteMany({
+      where: { productId: productId },
+    });
+
+    // Delete the product
+    const result = await prisma.product.delete({
+      where: { id: productId },
+    });
+    return result;
+  });
+
+  return result;
 };
+
 export const ProductServices = {
   createNew,
   getAllProduct,

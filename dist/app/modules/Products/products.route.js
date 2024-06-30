@@ -17,7 +17,6 @@ const express_1 = __importDefault(require("express"));
 const fs_1 = __importDefault(require("fs"));
 const http_status_1 = __importDefault(require("http-status"));
 const path_1 = __importDefault(require("path"));
-const config_1 = __importDefault(require("../../../config"));
 const user_1 = require("../../../enums/user");
 const ApiError_1 = __importDefault(require("../../../errors/ApiError"));
 const fileUpload_1 = require("../../../helpers/fileUpload");
@@ -30,7 +29,7 @@ router.post('/createProduct', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, 
     const multerReq = req;
     multerReq.body = products_validations_1.ProductsValidation.createProductValidation.parse(JSON.parse(multerReq.body.data));
     if (multerReq.files) {
-        multerReq.body.fileUrls = multerReq.files.map(file => `http://localhost:${config_1.default.port}/api/v1/products/image/${file.filename}`);
+        multerReq.body.fileUrls = multerReq.files.map(file => `https://www.apibop.bopbd.com.bd/api/v1/products/image/${file.filename}`);
     }
     return products_controller_1.ProductController.createProduct(multerReq, res, next);
 });
@@ -42,7 +41,7 @@ router.patch('/addImages/:productId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.
     const multerReq = req;
     try {
         if (multerReq.files) {
-            multerReq.body.fileUrls = multerReq.files.map(file => `/uploads/${file.filename}`);
+            multerReq.body.fileUrls = multerReq.files.map(file => `https://www.apibop.bopbd.com.bd/api/v1/products/image/${file.filename}`);
         }
         return yield products_controller_1.ProductController.addImageToProduct(multerReq, res, next);
     }

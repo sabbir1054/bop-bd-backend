@@ -8,7 +8,6 @@ const express_1 = __importDefault(require("express"));
 const fs_1 = __importDefault(require("fs"));
 const http_status_1 = __importDefault(require("http-status"));
 const path_1 = __importDefault(require("path"));
-const config_1 = __importDefault(require("../../../config"));
 const user_1 = require("../../../enums/user");
 const ApiError_1 = __importDefault(require("../../../errors/ApiError"));
 const fileUpload_1 = require("../../../helpers/fileUpload");
@@ -22,7 +21,7 @@ router.patch('/updateProfile', (0, auth_1.default)(user_1.ENUM_USER_ROLE.ADMIN, 
         req.body = (_b = user_validation_1.UsersValidation === null || user_validation_1.UsersValidation === void 0 ? void 0 : user_validation_1.UsersValidation.updateUserProfileValidation) === null || _b === void 0 ? void 0 : _b.parse(JSON === null || JSON === void 0 ? void 0 : JSON.parse((_c = req.body) === null || _c === void 0 ? void 0 : _c.data));
     }
     if (req.file) {
-        req.body.photo = `http://localhost:${config_1.default.port}/api/v1/users/profile/image/${req.file.filename}`;
+        req.body.photo = `https://www.apibop.bopbd.com.bd/api/v1/users/profile/image/${req.file.filename}`;
     }
     return users_controller_1.UserController.updateUserProfile(req, res, next);
 });
