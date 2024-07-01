@@ -1,11 +1,14 @@
 import { z } from 'zod';
+import { userRole } from './auth.constant';
 
 const userRegistrationValidation = z.object({
   body: z.object({
     name: z.string().optional(),
     phone: z.string({ required_error: 'Phone number is required' }),
     password: z.string({ required_error: 'Password is required' }),
-    role: z.string({ required_error: 'Role is required' }),
+    role: z.enum([...userRole] as [string, ...string[]], {
+      required_error: 'Role is required',
+    }),
     businessTypeId: z.string({ required_error: 'Business type is required' }),
   }),
 });

@@ -21,7 +21,7 @@ router.post(
     ENUM_USER_ROLE.IMPORTER,
     ENUM_USER_ROLE.MANUFACTURER,
     ENUM_USER_ROLE.WHOLESALER,
-    ENUM_USER_ROLE.SELLER,
+    ENUM_USER_ROLE.RESELLER,
   ),
   FileUploadHelper.upload.array('files', 5),
   (req: Request, res: Response, next: NextFunction) => {
@@ -49,7 +49,7 @@ router.delete(
     ENUM_USER_ROLE.IMPORTER,
     ENUM_USER_ROLE.MANUFACTURER,
     ENUM_USER_ROLE.WHOLESALER,
-    ENUM_USER_ROLE.SELLER,
+    ENUM_USER_ROLE.RESELLER,
   ),
   ProductController.deleteImageFromProduct,
 );
@@ -60,7 +60,7 @@ router.patch(
     ENUM_USER_ROLE.IMPORTER,
     ENUM_USER_ROLE.MANUFACTURER,
     ENUM_USER_ROLE.WHOLESALER,
-    ENUM_USER_ROLE.SELLER,
+    ENUM_USER_ROLE.RESELLER,
   ),
   FileUploadHelper.upload.array('files', 5), // Ensure 'files' matches the field name used in the form
   async (req: Request, res: Response, next: NextFunction) => {
@@ -88,7 +88,7 @@ router.patch(
     ENUM_USER_ROLE.IMPORTER,
     ENUM_USER_ROLE.MANUFACTURER,
     ENUM_USER_ROLE.WHOLESALER,
-    ENUM_USER_ROLE.SELLER,
+    ENUM_USER_ROLE.RESELLER,
   ),
   validateRequest(ProductsValidation.updateProductInfoValidation),
   ProductController.updateProductInfo,
@@ -101,7 +101,7 @@ router.delete(
     ENUM_USER_ROLE.IMPORTER,
     ENUM_USER_ROLE.MANUFACTURER,
     ENUM_USER_ROLE.WHOLESALER,
-    ENUM_USER_ROLE.SELLER,
+    ENUM_USER_ROLE.RESELLER,
   ),
   ProductController.deleteProduct,
 );

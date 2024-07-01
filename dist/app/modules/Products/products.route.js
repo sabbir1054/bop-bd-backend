@@ -25,7 +25,7 @@ const validateRequest_1 = __importDefault(require("../../middlewares/validateReq
 const products_controller_1 = require("./products.controller");
 const products_validations_1 = require("./products.validations");
 const router = express_1.default.Router();
-router.post('/createProduct', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.SELLER), fileUpload_1.FileUploadHelper.upload.array('files', 5), (req, res, next) => {
+router.post('/createProduct', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.RESELLER), fileUpload_1.FileUploadHelper.upload.array('files', 5), (req, res, next) => {
     const multerReq = req;
     multerReq.body = products_validations_1.ProductsValidation.createProductValidation.parse(JSON.parse(multerReq.body.data));
     if (multerReq.files) {
@@ -35,8 +35,8 @@ router.post('/createProduct', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, 
 });
 router.get('/:id', products_controller_1.ProductController.getSingle);
 router.get('/', products_controller_1.ProductController.getAllProducts);
-router.delete('/deleteProductImage/:imageId/:productId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.SELLER), products_controller_1.ProductController.deleteImageFromProduct);
-router.patch('/addImages/:productId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.SELLER), fileUpload_1.FileUploadHelper.upload.array('files', 5), // Ensure 'files' matches the field name used in the form
+router.delete('/deleteProductImage/:imageId/:productId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.RESELLER), products_controller_1.ProductController.deleteImageFromProduct);
+router.patch('/addImages/:productId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.RESELLER), fileUpload_1.FileUploadHelper.upload.array('files', 5), // Ensure 'files' matches the field name used in the form
 (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const multerReq = req;
     try {
@@ -49,8 +49,8 @@ router.patch('/addImages/:productId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.
         return next(error); // Forward the error to the error handler
     }
 }));
-router.patch('/infoUpdate/:productId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.SELLER), (0, validateRequest_1.default)(products_validations_1.ProductsValidation.updateProductInfoValidation), products_controller_1.ProductController.updateProductInfo);
-router.delete('/:productId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.SELLER), products_controller_1.ProductController.deleteProduct);
+router.patch('/infoUpdate/:productId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.RESELLER), (0, validateRequest_1.default)(products_validations_1.ProductsValidation.updateProductInfoValidation), products_controller_1.ProductController.updateProductInfo);
+router.delete('/:productId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.RESELLER), products_controller_1.ProductController.deleteProduct);
 router.get('/image/:fileName', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const filePath = yield path_1.default.join(process.cwd(), 'uploads', path_1.default.basename(req.params.fileName));
     // Check if the file exists

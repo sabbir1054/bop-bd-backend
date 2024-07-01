@@ -17,7 +17,8 @@ enum Role {
   IMPORTER
   WHOLESALER
   DEALER
-  SELLER
+  RESELLER
+  STAFF
 }
 
 enum MemberCategory {
@@ -38,6 +39,39 @@ enum OrderStatus {
 enum PaymentStatus {
   PENDING
   PAID
+}
+
+enum StaffRole {
+  NORMAL_STAFF
+  ADMIN
+  STORE_MANAGER
+  DELIVERY_BOY
+  ACCOUNTS_MANAGER
+  PURCHASE_OFFICER
+}
+
+model Staff {
+  id             String       @id @default(uuid())
+  role           StaffRole
+  salary         Float
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  Organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+
+  @@map("staff")
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  owner     User     @relation(fields: [ownerId], references: [id])
+  ownerId   String   @unique
+  staff     Staff[]
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@map("organizations")
 }
 
 model RevenueShare {
@@ -84,6 +118,10 @@ model User {
   incoming_order Order[]        @relation("product_seller_orders")
   businessType   BusinessType?  @relation(fields: [businessTypeId], references: [id])
   businessTypeId String?
+  organizationId String?
+  organization   Organization?
+  otp            String?
+  token          String?
 
   @@map("users")
 }
