@@ -22,4 +22,5 @@ router.post(
   AuthController.refreshToken,
 );
 router.post('/verifyOtp', AuthController.verifyOtp);
+router.post('/resendOtp', AuthController.resendOtp);
 export const AuthRoutes = router;

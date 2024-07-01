@@ -55,11 +55,20 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
 });
 
 const verifyOtp = catchAsync(async (req: Request, res: Response) => {
-  const result = await AuthServices.verifyOTP(req.body);
+  const result: any = await AuthServices.verifyOTP(req.body);
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: 'User verification done',
+    message: result?.message,
+    data: result?.result,
+  });
+});
+const resendOtp = catchAsync(async (req: Request, res: Response) => {
+  const result = await AuthServices.resendOtp(req.body.phone);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Otp resend done',
     data: result,
   });
 });
@@ -69,4 +78,5 @@ export const AuthController = {
   userLogin,
   refreshToken,
   verifyOtp,
+  resendOtp,
 };
