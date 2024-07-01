@@ -21,5 +21,5 @@ router.post(
   validateRequest(AuthValidation.refreshTokenZodSchema),
   AuthController.refreshToken,
 );
-
+router.post('/verifyOtp', AuthController.verifyOtp);
 export const AuthRoutes = router;

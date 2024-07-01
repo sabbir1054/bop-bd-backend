@@ -188,49 +188,101 @@ const verifyOTP = async (payload: IVerifyOtp) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Phone info not found');
   }
 
+  // const result = await prisma.$transaction(async prisma => {
+  //   // otp matched
+  //   if (isPhoneOtpExist.otpCode == payload.givenOtp) {
+  //     const result = await prisma.user.update({
+  //       where: { phone: payload.phone },
+  //       data: { isMobileVerified: true },
+  //     });
+  //     await prisma.oneTimePassword.delete({ where: { phone: payload.phone } });
+  //   } else {
+  //     //otp not matched
+
+  //     // condition resend otp 3 & check otp 3
+  //     // if (
+  //     //   isPhoneOtpExist.checkCounter == 3 &&
+  //     //   isPhoneOtpExist.resendCounter == 3
+  //     // ) {
+  //     //   await prisma.user.delete({ where: { id: isUserCreate.id } });
+  //     //   throw new ApiError(
+  //     //     httpStatus.BAD_REQUEST,
+  //     //     'You exceed your resend and otp check limit please try again after some time',
+  //     //   );
+  //     // }
+  //     // // condition resend otp 2||1 & check otp 3
+  //     // else if (
+  //     //   (isPhoneOtpExist.checkCounter === 3 &&
+  //     //     isPhoneOtpExist.resendCounter === 2) ||
+  //     //   (isPhoneOtpExist.checkCounter === 3 &&
+  //     //     isPhoneOtpExist.resendCounter === 1)
+  //     // ) {
+  //     //   throw new ApiError(httpStatus.BAD_REQUEST, 'Otp is expired, resend it');
+  //     // } else {
+  //     //   await prisma.oneTimePassword.update({
+  //     //     where: { phone: payload.phone },
+  //     //     data: { checkCounter: { increment: 1 } },
+  //     //   });
+  //     //   await prisma.user.delete({ where: { id: isUserCreate.id } });
+  //     //   throw new ApiError(
+  //     //     httpStatus.BAD_REQUEST,
+  //     //     'You exceed your resend and otp check limit please try again after some time',
+  //     //   );
+  //     // }
+
+  //   }
+  // });
   const result = await prisma.$transaction(async prisma => {
-    // otp matched
-    if (isPhoneOtpExist.otpCode == payload.givenOtp) {
+    if (isPhoneOtpExist.otpCode === payload.givenOtp) {
+      // OTP matched
       const result = await prisma.user.update({
         where: { phone: payload.phone },
         data: { isMobileVerified: true },
       });
       await prisma.oneTimePassword.delete({ where: { phone: payload.phone } });
+      return result;
     } else {
-      //otp not matched
+      // OTP not matched
+      console.log(isPhoneOtpExist);
 
-      // condition resend otp 3 & check otp 3
-      if (
-        isPhoneOtpExist.checkCounter === 3 &&
-        isPhoneOtpExist.resendCounter === 3
-      ) {
-        await prisma.user.delete({ where: { id: isUserCreate.id } });
-        throw new ApiError(
-          httpStatus.BAD_REQUEST,
-          'You exceed your resend and otp check limit please try again after some time',
-        );
-      }
-      // condition resend otp 2||1 & check otp 3
-      else if (
-        (isPhoneOtpExist.checkCounter === 3 &&
-          isPhoneOtpExist.resendCounter === 2) ||
-        (isPhoneOtpExist.checkCounter === 3 &&
-          isPhoneOtpExist.resendCounter === 1)
-      ) {
-        throw new ApiError(httpStatus.BAD_REQUEST, 'Otp is expired, resend it');
-      } else {
-        await prisma.oneTimePassword.update({
+      if (isPhoneOtpExist.checkCounter < 2) {
+        // Increment check counter if less than 3
+        const result = await prisma.oneTimePassword.update({
           where: { phone: payload.phone },
           data: { checkCounter: { increment: 1 } },
         });
-        await prisma.user.delete({ where: { id: isUserCreate.id } });
+        console.log(result);
+
         throw new ApiError(
           httpStatus.BAD_REQUEST,
-          'You exceed your resend and otp check limit please try again after some time',
+          'Invalid OTP. Please try again.',
         );
+      } else if (isPhoneOtpExist.checkCounter === 2) {
+        // Third attempt, reset checkCounter and increment resendCounter
+        if (isPhoneOtpExist.resendCounter < 2) {
+          await prisma.oneTimePassword.update({
+            where: { phone: payload.phone },
+            data: { checkCounter: 0, resendCounter: { increment: 1 } },
+          });
+          throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            'OTP expired. Please resend OTP.',
+          );
+        } else if (isPhoneOtpExist.resendCounter === 2) {
+          // Delete user after 3 resends and 3 check attempts
+          await prisma.user.delete({ where: { id: isUserCreate.id } });
+          await prisma.oneTimePassword.delete({
+            where: { phone: payload.phone },
+          });
+          throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            'You have exceeded your OTP resend and verification limit. Please try again after some time.',
+          );
+        }
       }
     }
   });
+  return result;
 };
 
 const resendOtp = async (phone: string) => {
@@ -367,4 +419,6 @@ export const AuthServices = {
   userRegistration,
   userLogin,
   refreshToken,
+  verifyOTP,
+  resendOtp,
 };

@@ -4,8 +4,8 @@ import httpStatus from 'http-status';
 import config from '../../../config';
 import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
-import { AuthServices } from './auth.service';
 import { IRefreshTokenResponse } from './auth.interface';
+import { AuthServices } from './auth.service';
 
 const userRegistration = catchAsync(async (req: Request, res: Response) => {
   const result = await AuthServices.userRegistration(req.body);
@@ -54,8 +54,19 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const verifyOtp = catchAsync(async (req: Request, res: Response) => {
+  const result = await AuthServices.verifyOTP(req.body);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'User verification done',
+    data: result,
+  });
+});
+
 export const AuthController = {
   userRegistration,
   userLogin,
   refreshToken,
+  verifyOtp,
 };
