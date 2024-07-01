@@ -217,23 +217,73 @@ const verifyOTP = async (payload: IVerifyOtp) => {
         (isPhoneOtpExist.checkCounter === 3 &&
           isPhoneOtpExist.resendCounter === 1)
       ) {
-        await prisma.oneTimePassword.update({
-          where: { phone: payload.phone },
-          data: { checkCounter: 0 },
-        });
         throw new ApiError(httpStatus.BAD_REQUEST, 'Otp is expired, resend it');
       } else {
         await prisma.oneTimePassword.update({
           where: { phone: payload.phone },
           data: { checkCounter: { increment: 1 } },
         });
+        await prisma.user.delete({ where: { id: isUserCreate.id } });
         throw new ApiError(
           httpStatus.BAD_REQUEST,
-          'Otp not matched,try agai with valid otp',
+          'You exceed your resend and otp check limit please try again after some time',
         );
       }
     }
   });
+};
+
+const resendOtp = async (phone: string) => {
+  const isUserCreate = await prisma.user.findUnique({
+    where: { phone: phone },
+  });
+
+  if (!isUserCreate) {
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      'User register info not save please register again',
+    );
+  }
+
+  const isPhoneOtpExist = await prisma.oneTimePassword.findUnique({
+    where: { phone: phone },
+  });
+  if (!isPhoneOtpExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Phone info not found');
+  }
+
+  if (isPhoneOtpExist.resendCounter < 3) {
+    //otp process
+    const otp = generateOTP();
+
+    const sendOtp = await sendOTP(
+      phone,
+      otp,
+      `Your BOP-BD registration verification code is ${otp}`,
+    );
+
+    if (sendOtp == null || sendOtp.Status != 0) {
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Otp not send please try again',
+      );
+    }
+
+    const makeOtpForUser = await prisma.oneTimePassword.update({
+      where: { phone: phone },
+      data: {
+        otpCode: otp,
+        checkCounter: 0,
+        resendCounter: { increment: 1 },
+      },
+    });
+
+    if (!makeOtpForUser) {
+      throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Otp not set');
+    }
+  } else {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Your limit exceed');
+  }
 };
 
 const userLogin = async (payload: ILoginInfo): Promise<ILoginResponse> => {
