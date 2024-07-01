@@ -10,11 +10,13 @@ import {
   isPasswordMatched,
 } from '../../../helpers/encription';
 import { jwtHelpers } from '../../../helpers/jwtHelpers';
+import { generateOTP, sendOTP } from '../../../helpers/otpHelpers';
 import prisma from '../../../shared/prisma';
 import {
   ILoginInfo,
   ILoginResponse,
   IRefreshTokenResponse,
+  IVerifyOtp,
 } from './auth.interface';
 
 const userRegistration = async (payload: User): Promise<Partial<User>> => {
@@ -46,93 +48,192 @@ const userRegistration = async (payload: User): Promise<Partial<User>> => {
   }
 
   const encryptedPassword = await encryptPassword(password);
-  console.log(othersData.role);
 
-  if (othersData.role === ('ADMIN' || 'SUPER_ADMIN')) {
-    const result = await prisma.user.create({
-      data: {
-        phone: phone,
-        password: encryptedPassword,
-        role: othersData.role,
-        name: othersData.name,
-      },
-      select: {
-        id: true,
-        role: true,
-        memberCategory: true,
-        verified: true,
-        name: true,
-        email: true,
-        phone: true,
-        address: true,
-        photo: true,
-        license: true,
-        nid: true,
-        shop_name: true,
-        createdAt: true,
-        updatedAt: true,
-        feedbacks: true,
-        cart: true,
-        products: true,
-        outgoing_order: true,
-        incoming_order: true,
-        businessType: true,
-        businessTypeId: true,
-      },
-    });
+  const result = await prisma.$transaction(async prisma => {
+    //otp process
+    const otp = generateOTP();
 
-    return result;
-  } else {
-    if (!othersData.businessTypeId) {
+    const sendOtp = await sendOTP(
+      payload.phone,
+      otp,
+      `Your BOP-BD registration verification code is ${otp}`,
+    );
+
+    if (sendOtp == null || sendOtp.Status != 0) {
       throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        'Please provide your businessTypeId',
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Otp not send please try again',
       );
     }
-    //* business type check
-    const isBusinessTypeExist = await prisma.businessType.findUnique({
-      where: { id: othersData.businessTypeId },
+
+    const makeOtpForUser = await prisma.oneTimePassword.create({
+      data: {
+        phone: payload.phone,
+        otpCode: otp,
+        checkCounter: 0,
+        resendCounter: 0,
+      },
     });
 
-    if (!isBusinessTypeExist) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'Business type not found');
+    if (!makeOtpForUser) {
+      throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Otp not set');
     }
 
-    const result = await prisma.user.create({
-      data: {
-        phone: phone,
-        password: encryptedPassword,
-        role: othersData.role,
-        name: othersData.name,
-        businessType: { connect: { id: othersData.businessTypeId } },
-      },
-      select: {
-        id: true,
-        role: true,
-        memberCategory: true,
-        verified: true,
-        name: true,
-        email: true,
-        phone: true,
-        address: true,
-        photo: true,
-        license: true,
-        nid: true,
-        shop_name: true,
-        createdAt: true,
-        updatedAt: true,
-        feedbacks: true,
-        cart: true,
-        products: true,
-        outgoing_order: true,
-        incoming_order: true,
-        businessType: true,
-        businessTypeId: true,
-      },
-    });
+    if (othersData.role === ('ADMIN' || 'SUPER_ADMIN')) {
+      const result = await prisma.user.create({
+        data: {
+          phone: phone,
+          password: encryptedPassword,
+          role: othersData.role,
+          name: othersData.name,
+        },
+        select: {
+          id: true,
+          role: true,
+          memberCategory: true,
+          verified: true,
+          name: true,
+          email: true,
+          phone: true,
+          address: true,
+          photo: true,
+          license: true,
+          nid: true,
+          shop_name: true,
+          createdAt: true,
+          updatedAt: true,
+          feedbacks: true,
+          cart: true,
+          products: true,
+          outgoing_order: true,
+          incoming_order: true,
+          businessType: true,
+          businessTypeId: true,
+        },
+      });
 
-    return result;
+      return result;
+    } else {
+      if (!othersData.businessTypeId) {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          'Please provide your businessTypeId',
+        );
+      }
+      //* business type check
+      const isBusinessTypeExist = await prisma.businessType.findUnique({
+        where: { id: othersData.businessTypeId },
+      });
+
+      if (!isBusinessTypeExist) {
+        throw new ApiError(httpStatus.NOT_FOUND, 'Business type not found');
+      }
+
+      const result = await prisma.user.create({
+        data: {
+          phone: phone,
+          password: encryptedPassword,
+          role: othersData.role,
+          name: othersData.name,
+          businessType: { connect: { id: othersData.businessTypeId } },
+        },
+        select: {
+          id: true,
+          role: true,
+          memberCategory: true,
+          verified: true,
+          name: true,
+          email: true,
+          phone: true,
+          address: true,
+          photo: true,
+          license: true,
+          nid: true,
+          shop_name: true,
+          createdAt: true,
+          updatedAt: true,
+          feedbacks: true,
+          cart: true,
+          products: true,
+          outgoing_order: true,
+          incoming_order: true,
+          businessType: true,
+          businessTypeId: true,
+        },
+      });
+
+      return result;
+    }
+  });
+
+  return result;
+};
+
+const verifyOTP = async (payload: IVerifyOtp) => {
+  const isUserCreate = await prisma.user.findUnique({
+    where: { phone: payload.phone },
+  });
+
+  if (!isUserCreate) {
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      'User inf not save please register again',
+    );
   }
+
+  const isPhoneOtpExist = await prisma.oneTimePassword.findUnique({
+    where: { phone: payload.phone },
+  });
+  if (!isPhoneOtpExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Phone info not found');
+  }
+
+  const result = await prisma.$transaction(async prisma => {
+    // otp matched
+    if (isPhoneOtpExist.otpCode == payload.givenOtp) {
+      const result = await prisma.user.update({
+        where: { phone: payload.phone },
+        data: { isMobileVerified: true },
+      });
+      await prisma.oneTimePassword.delete({ where: { phone: payload.phone } });
+    } else {
+      //otp not matched
+
+      // condition resend otp 3 & check otp 3
+      if (
+        isPhoneOtpExist.checkCounter === 3 &&
+        isPhoneOtpExist.resendCounter === 3
+      ) {
+        await prisma.user.delete({ where: { id: isUserCreate.id } });
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          'You exceed your resend and otp check limit please try again after some time',
+        );
+      }
+      // condition resend otp 2||1 & check otp 3
+      else if (
+        (isPhoneOtpExist.checkCounter === 3 &&
+          isPhoneOtpExist.resendCounter === 2) ||
+        (isPhoneOtpExist.checkCounter === 3 &&
+          isPhoneOtpExist.resendCounter === 1)
+      ) {
+        await prisma.oneTimePassword.update({
+          where: { phone: payload.phone },
+          data: { checkCounter: 0 },
+        });
+        throw new ApiError(httpStatus.BAD_REQUEST, 'Otp is expired, resend it');
+      } else {
+        await prisma.oneTimePassword.update({
+          where: { phone: payload.phone },
+          data: { checkCounter: { increment: 1 } },
+        });
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          'Otp not matched,try agai with valid otp',
+        );
+      }
+    }
+  });
 };
 
 const userLogin = async (payload: ILoginInfo): Promise<ILoginResponse> => {

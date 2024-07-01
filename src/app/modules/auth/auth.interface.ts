@@ -11,3 +11,8 @@ export type ILoginResponse = {
 export type IRefreshTokenResponse = {
   accessToken: string;
 };
+
+export type IVerifyOtp = {
+  phone: string;
+  givenOtp: string;
+};

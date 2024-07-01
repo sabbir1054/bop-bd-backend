@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "Role" AS ENUM ('SUPER_ADMIN', 'ADMIN', 'MANUFACTURER', 'IMPORTER', 'WHOLESALER', 'DEALER', 'RESELLER');
+CREATE TYPE "Role" AS ENUM ('SUPER_ADMIN', 'ADMIN', 'MANUFACTURER', 'IMPORTER', 'WHOLESALER', 'DEALER', 'RESELLER', 'STAFF');
 
 -- CreateEnum
 CREATE TYPE "MemberCategory" AS ENUM ('SILVER', 'GOLD', 'PLATINUM', 'NORMAL');
@@ -9,6 +9,32 @@ CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'ACCEPTED', 'CANCEL', 'SHIPPING', 
 
 -- CreateEnum
 CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'PAID');
+
+-- CreateEnum
+CREATE TYPE "StaffRole" AS ENUM ('NORMAL_STAFF', 'ADMIN', 'STORE_MANAGER', 'DELIVERY_BOY', 'ACCOUNTS_MANAGER', 'PURCHASE_OFFICER');
+
+-- CreateTable
+CREATE TABLE "staff" (
+    "id" TEXT NOT NULL,
+    "role" "StaffRole" NOT NULL,
+    "salary" DOUBLE PRECISION NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "organizationId" TEXT NOT NULL,
+
+    CONSTRAINT "staff_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "organizations" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "ownerId" TEXT NOT NULL,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "organizations_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
 CREATE TABLE "revenue_share" (
@@ -32,6 +58,19 @@ CREATE TABLE "business_type" (
 );
 
 -- CreateTable
+CREATE TABLE "one_time_password" (
+    "id" TEXT NOT NULL,
+    "phone" TEXT NOT NULL,
+    "otpCode" TEXT NOT NULL,
+    "resendCounter" INTEGER NOT NULL,
+    "checkCounter" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "one_time_password_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
     "role" "Role" NOT NULL,
@@ -49,6 +88,10 @@ CREATE TABLE "users" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "businessTypeId" TEXT,
+    "organizationId" TEXT,
+    "token" TEXT,
+    "isMobileVerified" BOOLEAN NOT NULL DEFAULT false,
+    "isEmailVerified" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
@@ -159,6 +202,12 @@ CREATE TABLE "order_items" (
 );
 
 -- CreateIndex
+CREATE UNIQUE INDEX "organizations_ownerId_key" ON "organizations"("ownerId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "one_time_password_phone_key" ON "one_time_password"("phone");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- CreateIndex
@@ -166,6 +215,12 @@ CREATE UNIQUE INDEX "users_phone_key" ON "users"("phone");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "orders_orderCode_key" ON "orders"("orderCode");
+
+-- AddForeignKey
+ALTER TABLE "staff" ADD CONSTRAINT "staff_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organizations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "organizations" ADD CONSTRAINT "organizations_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "users" ADD CONSTRAINT "users_businessTypeId_fkey" FOREIGN KEY ("businessTypeId") REFERENCES "business_type"("id") ON DELETE SET NULL ON UPDATE CASCADE;

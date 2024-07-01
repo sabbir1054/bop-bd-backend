@@ -24,4 +24,9 @@ export default {
     expires_in: process.env.JWT_EXPIRES_IN,
     refresh_expires_in: process.env.JWT_REFRESH_EXPIRES_IN,
   },
+  mobileOTP: {
+    apiKey: process.env.MOBILE_OTP_API_KEY,
+    secretKey: process.env.MOBILE_OTP_SECRET_KEY,
+    callerId: process.env.MOBILE_OTP_CALLER_ID,
+  },
 };
