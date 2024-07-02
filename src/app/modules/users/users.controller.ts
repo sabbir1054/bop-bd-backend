@@ -47,10 +47,21 @@ const getSingle = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const deleteUnverifiedOtp = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserServices.deleteUnverifiedOtp(req.body.phone);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'User deleted',
+    data: result,
+  });
+});
 
 export const UserController = {
   updateUserProfile,
   removeProfilePicture,
   getAll,
   getSingle,
+  deleteUnverifiedOtp,
 };

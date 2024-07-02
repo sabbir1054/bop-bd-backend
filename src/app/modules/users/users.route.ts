@@ -2,7 +2,6 @@ import express, { NextFunction, Request, Response } from 'express';
 import fs from 'fs';
 import httpStatus from 'http-status';
 import path from 'path';
-import config from '../../../config';
 import { ENUM_USER_ROLE } from '../../../enums/user';
 import ApiError from '../../../errors/ApiError';
 import { FileUploadHelper } from '../../../helpers/fileUpload';
@@ -85,5 +84,7 @@ router.get('/profile/image/:fileName', (req: Request, res: Response) => {
     res.sendFile(filePath);
   });
 });
+
+router.delete('/deleteUnverified', UserController.deleteUnverifiedOtp);
 
 export const UsersRoutes = router;

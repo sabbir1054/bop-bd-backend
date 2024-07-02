@@ -241,9 +241,41 @@ const getSingle = async (
   }
 };
 
+const deleteUnverifiedOtp = async (phone: string) => {
+  const isUserExist = await prisma.user.findUnique({ where: { phone: phone } });
+  const isOtpCreate = await prisma.oneTimePassword.findUnique({
+    where: { phone: phone },
+  });
+  if (isUserExist?.isMobileVerified) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'User is verified. Please contact with admin for delete',
+    );
+  }
+  const result = await prisma.$transaction(async prisma => {
+    if (isUserExist && isOtpCreate) {
+      await prisma.user.delete({ where: { phone: phone } });
+      await prisma.oneTimePassword.delete({ where: { phone: phone } });
+    } else {
+      if (isUserExist) {
+        await prisma.user.delete({ where: { phone: phone } });
+      }
+
+      if (isOtpCreate) {
+        await prisma.oneTimePassword.delete({ where: { phone: phone } });
+      }
+    }
+
+    return 'Delete user';
+  });
+
+  return result;
+};
+
 export const UserServices = {
   updateUserProfile,
   removeProfilePicture,
   getAll,
   getSingle,
+  deleteUnverifiedOtp,
 };
