@@ -53,10 +53,10 @@ enum StaffRole {
 model Staff {
   id             String       @id @default(uuid())
   role           StaffRole
-  salary         Float
+  salary         Float?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-  Organization   Organization @relation(fields: [organizationId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
   organizationId String
 
   @@map("staff")
@@ -64,7 +64,7 @@ model Staff {
 
 model Organization {
   id        String   @id @default(uuid())
-  name      String
+  name      String?
   owner     User     @relation(fields: [ownerId], references: [id])
   ownerId   String   @unique
   staff     Staff[]
@@ -99,8 +99,8 @@ model OneTimePassword {
   id            String   @id @default(uuid())
   phone         String   @unique
   otpCode       String
-  resendCounter Int      
-  checkCounter  Int      
+  resendCounter Int
+  checkCounter  Int
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

@@ -8,3 +8,11 @@ export const userRole = [
   'RESELLER',
   'STAFF',
 ];
+export const staffRole = [
+  'NORMAL_STAFF',
+  'ADMIN',
+  'STORE_MANAGER',
+  'DELIVERY_BOY',
+  'ACCOUNTS_MANAGER',
+  'PURCHASE_OFFICER',
+];

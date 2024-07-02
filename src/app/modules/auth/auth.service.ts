@@ -16,10 +16,13 @@ import {
   ILoginInfo,
   ILoginResponse,
   IRefreshTokenResponse,
+  IRegisterInfo,
   IVerifyOtp,
 } from './auth.interface';
 
-const userRegistration = async (payload: User): Promise<Partial<User>> => {
+const userRegistration = async (
+  payload: IRegisterInfo,
+): Promise<Partial<User>> => {
   const { password, phone, ...othersData } = payload;
   // check phone number validity
   const isPhoneValid = checkPhoneNumberFormate(phone);
@@ -129,40 +132,92 @@ const userRegistration = async (payload: User): Promise<Partial<User>> => {
         throw new ApiError(httpStatus.NOT_FOUND, 'Business type not found');
       }
 
-      const result = await prisma.user.create({
-        data: {
-          phone: phone,
-          password: encryptedPassword,
-          role: othersData.role,
-          name: othersData.name,
-          businessType: { connect: { id: othersData.businessTypeId } },
-        },
-        select: {
-          id: true,
-          role: true,
-          memberCategory: true,
-          verified: true,
-          name: true,
-          email: true,
-          phone: true,
-          address: true,
-          photo: true,
-          license: true,
-          nid: true,
-          shop_name: true,
-          createdAt: true,
-          updatedAt: true,
-          feedbacks: true,
-          cart: true,
-          products: true,
-          outgoing_order: true,
-          incoming_order: true,
-          businessType: true,
-          businessTypeId: true,
-        },
-      });
+      if (othersData.role === 'STAFF') {
+        if (!othersData.organizationId) {
+          throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            'For Staff registration , organization id is requied',
+          );
+        }
 
-      return result;
+        if (!othersData.staffRole) {
+          throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            'For Staff registration , organization id is requied',
+          );
+        }
+        const result = await prisma.user.create({
+          data: {
+            phone: phone,
+            password: encryptedPassword,
+            role: othersData.role,
+            name: othersData.name,
+            businessType: { connect: { id: othersData.businessTypeId } },
+          },
+          select: {
+            id: true,
+            role: true,
+            memberCategory: true,
+            verified: true,
+            name: true,
+            email: true,
+            phone: true,
+            address: true,
+            photo: true,
+            license: true,
+            nid: true,
+            shop_name: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        });
+
+        await prisma.staff.create({
+          data: {
+            organization: { connect: { id: othersData.organizationId } },
+            role: othersData.staffRole,
+          },
+        });
+
+        return result;
+      } else {
+        const result = await prisma.user.create({
+          data: {
+            phone: phone,
+            password: encryptedPassword,
+            role: othersData.role,
+            name: othersData.name,
+            businessType: { connect: { id: othersData.businessTypeId } },
+          },
+          select: {
+            id: true,
+            role: true,
+            memberCategory: true,
+            verified: true,
+            name: true,
+            email: true,
+            phone: true,
+            address: true,
+            photo: true,
+            license: true,
+            nid: true,
+            shop_name: true,
+            createdAt: true,
+            updatedAt: true,
+            feedbacks: true,
+            cart: true,
+            products: true,
+            outgoing_order: true,
+            incoming_order: true,
+            businessType: true,
+            businessTypeId: true,
+          },
+        });
+        await prisma.organization.create({
+          data: { owner: { connect: { id: result.id } } },
+        });
+        return result;
+      }
     }
   });
 
