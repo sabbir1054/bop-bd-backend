@@ -148,7 +148,7 @@ const updateCartMultiple = async (
     if (!isValidStaff) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
-    if (isValidStaff.role !== ('STORE_MANAGER' || 'STAFF_ADMIN')) {
+    if (isValidStaff.role !== ('PURCHASE_OFFICER' || 'STAFF_ADMIN')) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
         'Only store manager or admin delete the product image',
@@ -237,7 +237,11 @@ const updateCartMultiple = async (
   return result;
 };
 
-const removeItemsFromCart = async (userId: string, cartItemIds: string[]) => {
+const removeItemsFromCart = async (
+  userId: string,
+  userRole: string,
+  cartItemIds: string[],
+) => {
   const cartItems = await prisma.cartItem.findMany({
     where: {
       id: {
@@ -248,8 +252,28 @@ const removeItemsFromCart = async (userId: string, cartItemIds: string[]) => {
       cart: true,
     },
   });
+  let ownerId = null;
 
-  if ((cartItems[0] && cartItems[0].cart.userId) !== userId) {
+  if (userRole === 'STAFF') {
+    const isValidStaff = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+      include: { organization: true },
+    });
+    if (!isValidStaff) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
+    }
+    if (isValidStaff.role !== ('PURCHASE_OFFICER' || 'STAFF_ADMIN')) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Only store manager or admin delete the product image',
+      );
+    }
+    ownerId = isValidStaff.organization.ownerId;
+  } else {
+    ownerId = userId;
+  }
+
+  if ((cartItems[0] && cartItems[0].cart.userId) !== ownerId) {
     throw new ApiError(httpStatus.BAD_REQUEST, "You can't change other cart");
   }
 
@@ -271,9 +295,30 @@ const removeItemsFromCart = async (userId: string, cartItemIds: string[]) => {
   return deletedItems;
 };
 
-const getAll = async (userId: string) => {
+const getMyCart = async (userId: string, userRole: string) => {
+  let ownerId = null;
+
+  if (userRole === 'STAFF') {
+    const isValidStaff = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+      include: { organization: true },
+    });
+    if (!isValidStaff) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
+    }
+    if (isValidStaff.role !== ('PURCHASE_OFFICER' || 'STAFF_ADMIN')) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Only store manager or admin delete the product image',
+      );
+    }
+    ownerId = isValidStaff.organization.ownerId;
+  } else {
+    ownerId = userId;
+  }
+
   const isUserExist = await prisma.user.findUnique({
-    where: { id: userId },
+    where: { id: ownerId },
     include: {
       cart: {
         include: {
@@ -302,5 +347,5 @@ export const CartServices = {
   updateCartSingle,
   updateCartMultiple,
   removeItemsFromCart,
-  getAll,
+  getMyCart,
 };

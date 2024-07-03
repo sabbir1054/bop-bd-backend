@@ -45,10 +45,14 @@ const updateCartMultiple = catchAsync(async (req: Request, res: Response) => {
 });
 const removeProductFromCart = catchAsync(
   async (req: Request, res: Response) => {
-    const { id: userId } = req.user as any;
+    const { id: userId, role } = req.user as any;
     const { cartItemIds } = req.body;
 
-    const result = await CartServices.removeItemsFromCart(userId, cartItemIds);
+    const result = await CartServices.removeItemsFromCart(
+      userId,
+      role,
+      cartItemIds,
+    );
 
     sendResponse(res, {
       success: true,
@@ -58,9 +62,9 @@ const removeProductFromCart = catchAsync(
     });
   },
 );
-const getAll = catchAsync(async (req: Request, res: Response) => {
-  const { id: userId } = req.user as any;
-  const result = await CartServices.getAll(userId);
+const getMyCart = catchAsync(async (req: Request, res: Response) => {
+  const { id: userId, role } = req.user as any;
+  const result = await CartServices.getMyCart(userId, role);
 
   sendResponse(res, {
     success: true,
@@ -74,5 +78,5 @@ export const CartController = {
   updateCartSingle,
   updateCartMultiple,
   removeProductFromCart,
-  getAll,
+  getMyCart,
 };

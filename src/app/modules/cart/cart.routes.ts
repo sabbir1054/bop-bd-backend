@@ -65,7 +65,7 @@ router.get(
     ENUM_USER_ROLE.SUPER_ADMIN,
     ENUM_USER_ROLE.STAFF,
   ),
-  CartController.getAll,
+  CartController.getMyCart,
 );
 
 export const CartRoutes = router;
