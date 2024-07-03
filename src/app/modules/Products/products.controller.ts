@@ -90,9 +90,9 @@ const updateProductInfo = catchAsync(async (req: Request, res: Response) => {
 
 const deleteProduct = catchAsync(async (req: Request, res: Response) => {
   const { productId } = req.params;
-  const { id: ownerId } = req.user as any;
+  const { id: userId, role } = req.user as any;
 
-  const result = await ProductServices.deleteProduct(productId, ownerId);
+  const result = await ProductServices.deleteProduct(productId, userId, role);
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,

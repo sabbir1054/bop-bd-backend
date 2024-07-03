@@ -301,7 +301,7 @@ const deleteImageFromProduct = async (
 ): Promise<Product | null> => {
   let ownerId = null;
 
-  if (userRole !== 'STAFF') {
+  if (userRole === 'STAFF') {
     const isValidStaff = await prisma.staff.findUnique({
       where: { staffInfoId: userId },
       include: { organization: true },
@@ -424,7 +424,7 @@ const addNewImageForProduct = async (req: Request): Promise<Product | null> => {
   const { fileUrls } = req.body;
   let ownerId = null;
 
-  if (userRole !== 'STAFF') {
+  if (userRole === 'STAFF') {
     const isValidStaff = await prisma.staff.findUnique({
       where: { staffInfoId: userId },
       include: { organization: true },
@@ -545,7 +545,7 @@ const updateProductInfo = async (
 
   let ownerId = null;
 
-  if (userRole !== 'STAFF') {
+  if (userRole === 'STAFF') {
     const isValidStaff = await prisma.staff.findUnique({
       where: { staffInfoId: userId },
       include: { organization: true },
@@ -561,7 +561,15 @@ const updateProductInfo = async (
     }
     ownerId = isValidStaff.organization.ownerId;
   } else {
-    ownerId = userId;
+    if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') {
+      const productOwner = await prisma.product.findUnique({
+        where: { id: productId },
+      });
+
+      ownerId = productOwner?.ownerId;
+    } else {
+      ownerId = userId;
+    }
   }
 
   const { categoryId, ...othersInfo } = payload;
@@ -615,8 +623,30 @@ const updateProductInfo = async (
 
 const deleteProduct = async (
   productId: string,
-  ownerId: string,
+  userId: string,
+  userRole: string,
 ): Promise<Product | null> => {
+  let ownerId = null;
+
+  if (userRole !== 'STAFF') {
+    const isValidStaff = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+      include: { organization: true },
+    });
+    if (!isValidStaff) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
+    }
+    if (isValidStaff.role !== ('STORE_MANAGER' || 'STAFF_ADMIN')) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Only store manager or admin delete the product image',
+      );
+    }
+    ownerId = isValidStaff.organization.ownerId;
+  } else {
+    ownerId = userId;
+  }
+
   // Check if the product exists
   const isProductExist = await prisma.product.findUnique({
     where: { id: productId },
