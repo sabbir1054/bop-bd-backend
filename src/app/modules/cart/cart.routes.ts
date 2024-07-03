@@ -67,5 +67,10 @@ router.get(
   ),
   CartController.getMyCart,
 );
+router.get(
+  '/userCart/:userId',
+  auth(ENUM_USER_ROLE.SUPER_ADMIN, ENUM_USER_ROLE.STAFF),
+  CartController.getSingleUserCart,
+);
 
 export const CartRoutes = router;

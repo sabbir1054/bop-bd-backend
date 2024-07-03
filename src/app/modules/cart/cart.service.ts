@@ -343,9 +343,37 @@ const getMyCart = async (userId: string, userRole: string) => {
   return result;
 };
 
+const getSingleUserCart = async (userId: string) => {
+  const isUserExist = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      cart: {
+        include: {
+          CartItem: {
+            include: {
+              product: {
+                include: {
+                  images: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!isUserExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+  }
+  const result = isUserExist.cart;
+  return result;
+};
+
 export const CartServices = {
   updateCartSingle,
   updateCartMultiple,
   removeItemsFromCart,
   getMyCart,
+  getSingleUserCart,
 };

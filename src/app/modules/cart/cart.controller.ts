@@ -73,10 +73,22 @@ const getMyCart = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const getSingleUserCart = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.params.userId;
+  const result = await CartServices.getSingleUserCart(userId);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: 'Cart retrieve',
+    data: result,
+  });
+});
 
 export const CartController = {
   updateCartSingle,
   updateCartMultiple,
   removeProductFromCart,
   getMyCart,
+  getSingleUserCart,
 };
