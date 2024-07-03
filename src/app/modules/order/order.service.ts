@@ -9,8 +9,44 @@ import prisma from '../../../shared/prisma';
 import { ordersSearchableFields } from './order.constant';
 import { IOrderCreate } from './order.interface';
 
-const orderCreate = async (orderData: IOrderCreate): Promise<Order[]> => {
-  const { cartId, shipping_address } = orderData;
+const orderCreate = async (
+  userId: string,
+  userRole: string,
+  orderData: IOrderCreate,
+): Promise<Order[]> => {
+  const { shipping_address } = orderData;
+  let cartId = null;
+  if (userRole === 'STAFF') {
+    const isValidStaff = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+      include: {
+        organization: { include: { owner: { include: { cart: true } } } },
+      },
+    });
+    if (!isValidStaff) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
+    }
+    if (isValidStaff.role !== ('PURCHASE_OFFICER' || 'STAFF_ADMIN')) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Only store purchase officer or admin make order',
+      );
+    }
+    cartId = isValidStaff.organization.owner.cart[0].id;
+  } else {
+    const isValidUser = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { cart: true },
+    });
+    if (!isValidUser) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Not valid user');
+    }
+    cartId = isValidUser?.cart[0].id;
+  }
+  if (!cartId) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Cart information not found');
+  }
+
   const result = await prisma.$transaction(async prisma => {
     // Fetch cart details including items
     const cart = await prisma.cart.findUnique({

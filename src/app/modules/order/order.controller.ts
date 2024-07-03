@@ -9,7 +9,8 @@ import { ordersFilterableFields } from './order.constant';
 import { OrderService } from './order.service';
 
 const orderCreate = catchAsync(async (req: Request, res: Response) => {
-  const result = await OrderService.orderCreate(req.body);
+  const { id: userId, role } = req.user as any;
+  const result = await OrderService.orderCreate(userId, role, req.body);
   sendResponse(res, {
     success: true,
     statusCode: httpStatus.OK,

@@ -17,6 +17,7 @@ router.post(
     ENUM_USER_ROLE.RESELLER,
     ENUM_USER_ROLE.ADMIN,
     ENUM_USER_ROLE.SUPER_ADMIN,
+    ENUM_USER_ROLE.STAFF,
   ),
   validateRequest(OrderValidation.orderCreateValidation),
   OrderController.orderCreate,
@@ -32,6 +33,7 @@ router.get(
     ENUM_USER_ROLE.RESELLER,
     ENUM_USER_ROLE.ADMIN,
     ENUM_USER_ROLE.SUPER_ADMIN,
+    ENUM_USER_ROLE.STAFF,
   ),
   OrderController.getUserIncomingOrders,
 );
@@ -45,6 +47,7 @@ router.get(
     ENUM_USER_ROLE.RESELLER,
     ENUM_USER_ROLE.ADMIN,
     ENUM_USER_ROLE.SUPER_ADMIN,
+    ENUM_USER_ROLE.STAFF,
   ),
   OrderController.searchFilterIncomingOrders,
 );
@@ -58,6 +61,7 @@ router.get(
     ENUM_USER_ROLE.RESELLER,
     ENUM_USER_ROLE.ADMIN,
     ENUM_USER_ROLE.SUPER_ADMIN,
+    ENUM_USER_ROLE.STAFF,
   ),
   OrderController.getUserOutgoingOrders,
 );
@@ -71,6 +75,7 @@ router.get(
     ENUM_USER_ROLE.RESELLER,
     ENUM_USER_ROLE.ADMIN,
     ENUM_USER_ROLE.SUPER_ADMIN,
+    ENUM_USER_ROLE.STAFF,
   ),
   OrderController.searchFilterOutgoingOrders,
 );
@@ -85,6 +90,7 @@ router.patch(
     ENUM_USER_ROLE.RESELLER,
     ENUM_USER_ROLE.ADMIN,
     ENUM_USER_ROLE.SUPER_ADMIN,
+    ENUM_USER_ROLE.STAFF,
   ),
   validateRequest(OrderValidation.updateOrderStatusValidation),
   OrderController.updateOrderStatus,
@@ -99,6 +105,7 @@ router.patch(
     ENUM_USER_ROLE.RESELLER,
     ENUM_USER_ROLE.ADMIN,
     ENUM_USER_ROLE.SUPER_ADMIN,
+    ENUM_USER_ROLE.STAFF,
   ),
   validateRequest(OrderValidation.updatePaymentStatusValidation),
   OrderController.updatePaymentStatus,
@@ -114,6 +121,7 @@ router.get(
     ENUM_USER_ROLE.RESELLER,
     ENUM_USER_ROLE.ADMIN,
     ENUM_USER_ROLE.SUPER_ADMIN,
+    ENUM_USER_ROLE.STAFF,
   ),
   OrderController.getSingle,
 );
