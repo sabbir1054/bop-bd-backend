@@ -25,11 +25,12 @@ const updateCartSingle = catchAsync(async (req: Request, res: Response) => {
 });
 const updateCartMultiple = catchAsync(async (req: Request, res: Response) => {
   const { productId } = req.params;
-  const { id: userId } = req.user as any;
+  const { id: userId, role } = req.user as any;
   const { action, quantity } = req.body;
 
   const result = await CartServices.updateCartMultiple(
     userId,
+    role,
     productId,
     action,
     quantity,
