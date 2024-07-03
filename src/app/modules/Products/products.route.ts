@@ -2,6 +2,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import fs from 'fs';
 import httpStatus from 'http-status';
 import path from 'path';
+import config from '../../../config';
 import { ENUM_USER_ROLE } from '../../../enums/user';
 import ApiError from '../../../errors/ApiError';
 import { FileUploadHelper } from '../../../helpers/fileUpload';
@@ -9,7 +10,6 @@ import auth from '../../middlewares/auth';
 import validateRequest from '../../middlewares/validateRequest';
 import { ProductController } from './products.controller';
 import { ProductsValidation } from './products.validations';
-import config from '../../../config';
 const router = express.Router();
 // Extend Request interface to include files property
 interface MulterRequest extends Request {
@@ -52,6 +52,7 @@ router.delete(
     ENUM_USER_ROLE.MANUFACTURER,
     ENUM_USER_ROLE.WHOLESALER,
     ENUM_USER_ROLE.RESELLER,
+    ENUM_USER_ROLE.STAFF,
   ),
   ProductController.deleteImageFromProduct,
 );
@@ -63,6 +64,7 @@ router.patch(
     ENUM_USER_ROLE.MANUFACTURER,
     ENUM_USER_ROLE.WHOLESALER,
     ENUM_USER_ROLE.RESELLER,
+    ENUM_USER_ROLE.STAFF,
   ),
   FileUploadHelper.upload.array('files', 5), // Ensure 'files' matches the field name used in the form
   async (req: Request, res: Response, next: NextFunction) => {
@@ -91,6 +93,7 @@ router.patch(
     ENUM_USER_ROLE.MANUFACTURER,
     ENUM_USER_ROLE.WHOLESALER,
     ENUM_USER_ROLE.RESELLER,
+    ENUM_USER_ROLE.STAFF,
   ),
   validateRequest(ProductsValidation.updateProductInfoValidation),
   ProductController.updateProductInfo,
@@ -104,6 +107,9 @@ router.delete(
     ENUM_USER_ROLE.MANUFACTURER,
     ENUM_USER_ROLE.WHOLESALER,
     ENUM_USER_ROLE.RESELLER,
+    ENUM_USER_ROLE.STAFF,
+    ENUM_USER_ROLE.ADMIN,
+    ENUM_USER_ROLE.SUPER_ADMIN,
   ),
   ProductController.deleteProduct,
 );

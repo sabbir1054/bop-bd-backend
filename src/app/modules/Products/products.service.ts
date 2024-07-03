@@ -29,10 +29,10 @@ const createNew = async (req: Request): Promise<Product> => {
     if (!isValidStaff) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff  is invalid');
     } else {
-      if (isValidStaff.role !== 'STORE_MANAGER') {
+      if (isValidStaff.role !== ('STORE_MANAGER' || 'STAFF_ADMIN')) {
         throw new ApiError(
           httpStatus.BAD_REQUEST,
-          'Only store manager can create products',
+          'Only store manager and admin can create products',
         );
       }
 
@@ -296,8 +296,30 @@ const getSingle = async (id: string): Promise<Product | null> => {
 const deleteImageFromProduct = async (
   imageId: string,
   productId: string,
-  ownerId: string,
+  userId: string,
+  userRole: string,
 ): Promise<Product | null> => {
+  let ownerId = null;
+
+  if (userRole !== 'STAFF') {
+    const isValidStaff = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+      include: { organization: true },
+    });
+    if (!isValidStaff) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
+    }
+    if (isValidStaff.role !== ('STORE_MANAGER' || 'STAFF_ADMIN')) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Only store manager or admin delete the product image',
+      );
+    }
+    ownerId = isValidStaff.organization.ownerId;
+  } else {
+    ownerId = userId;
+  }
+
   const isProductExist = await prisma.product.findUnique({
     where: { id: productId },
     include: {
@@ -330,8 +352,9 @@ const deleteImageFromProduct = async (
   if (!isProductExist) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Product not found ');
   }
+
   if (isProductExist?.ownerId !== ownerId) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Only owner can update products ');
+    throw new ApiError(httpStatus.NOT_FOUND, 'Invalid staff/owner  ');
   }
 
   const isImageExist = await prisma.image.findUnique({

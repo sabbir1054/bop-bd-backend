@@ -43,12 +43,13 @@ const getSingle = catchAsync(async (req: Request, res: Response) => {
 const deleteImageFromProduct = catchAsync(
   async (req: Request, res: Response) => {
     const { imageId, productId } = req.params;
-    const { id: ownerId } = req.user as any;
+    const { id: userId, role } = req.user as any;
 
     const result = await ProductServices.deleteImageFromProduct(
       imageId,
       productId,
-      ownerId,
+      userId,
+      role,
     );
     sendResponse(res, {
       statusCode: httpStatus.OK,

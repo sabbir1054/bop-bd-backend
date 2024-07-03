@@ -43,7 +43,7 @@ enum PaymentStatus {
 
 enum StaffRole {
   ORDER_SUPERVISOR
-  ADMIN
+  STAFF_ADMIN
   STORE_MANAGER
   DELIVERY_BOY
   ACCOUNTS_MANAGER
