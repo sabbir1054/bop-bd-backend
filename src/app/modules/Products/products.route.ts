@@ -9,6 +9,7 @@ import auth from '../../middlewares/auth';
 import validateRequest from '../../middlewares/validateRequest';
 import { ProductController } from './products.controller';
 import { ProductsValidation } from './products.validations';
+import config from '../../../config';
 const router = express.Router();
 // Extend Request interface to include files property
 interface MulterRequest extends Request {
@@ -22,6 +23,7 @@ router.post(
     ENUM_USER_ROLE.MANUFACTURER,
     ENUM_USER_ROLE.WHOLESALER,
     ENUM_USER_ROLE.RESELLER,
+    ENUM_USER_ROLE.STAFF,
   ),
   FileUploadHelper.upload.array('files', 5),
   (req: Request, res: Response, next: NextFunction) => {
@@ -32,7 +34,7 @@ router.post(
     if (multerReq.files) {
       multerReq.body.fileUrls = multerReq.files.map(
         file =>
-          `https://www.apibop.bopbd.com.bd/api/v1/products/image/${file.filename}`,
+          `${config.api_link_Image}/api/v1/products/image/${file.filename}`,
       );
     }
     return ProductController.createProduct(multerReq, res, next);
@@ -70,7 +72,7 @@ router.patch(
       if (multerReq.files) {
         multerReq.body.fileUrls = multerReq.files.map(
           file =>
-            `https://www.apibop.bopbd.com.bd/api/v1/products/image/${file.filename}`,
+            `${config.api_link_Image}/api/v1/products/image/${file.filename}`,
         );
       }
 

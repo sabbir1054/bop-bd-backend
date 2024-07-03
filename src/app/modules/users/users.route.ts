@@ -8,6 +8,7 @@ import { FileUploadHelper } from '../../../helpers/fileUpload';
 import auth from '../../middlewares/auth';
 import { UsersValidation } from './user.validation';
 import { UserController } from './users.controller';
+import config from '../../../config';
 const router = express.Router();
 
 router.patch(
@@ -30,7 +31,7 @@ router.patch(
     }
 
     if (req.file) {
-      req.body.photo = `https://www.apibop.bopbd.com.bd/api/v1/users/profile/image/${req.file.filename}`;
+      req.body.photo = `${config.api_link_Image}/api/v1/users/profile/image/${req.file.filename}`;
     }
     return UserController.updateUserProfile(req, res, next);
   },

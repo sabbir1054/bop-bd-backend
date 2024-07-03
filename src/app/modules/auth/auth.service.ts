@@ -89,6 +89,7 @@ const userRegistration = async (
           password: encryptedPassword,
           role: othersData.role,
           name: othersData.name,
+          verified: true,
         },
         select: {
           id: true,
@@ -117,21 +118,6 @@ const userRegistration = async (
 
       return result;
     } else {
-      if (!othersData.businessTypeId) {
-        throw new ApiError(
-          httpStatus.BAD_REQUEST,
-          'Please provide your businessTypeId',
-        );
-      }
-      //* business type check
-      const isBusinessTypeExist = await prisma.businessType.findUnique({
-        where: { id: othersData.businessTypeId },
-      });
-
-      if (!isBusinessTypeExist) {
-        throw new ApiError(httpStatus.NOT_FOUND, 'Business type not found');
-      }
-
       if (othersData.role === 'STAFF') {
         if (!othersData.organizationId) {
           throw new ApiError(
@@ -143,7 +129,7 @@ const userRegistration = async (
         if (!othersData.staffRole) {
           throw new ApiError(
             httpStatus.BAD_REQUEST,
-            'For Staff registration , organization id is requied',
+            'For Staff registration , staff role is requied',
           );
         }
         const result = await prisma.user.create({
@@ -152,7 +138,7 @@ const userRegistration = async (
             password: encryptedPassword,
             role: othersData.role,
             name: othersData.name,
-            businessType: { connect: { id: othersData.businessTypeId } },
+            verified: true,
           },
           select: {
             id: true,
@@ -176,11 +162,26 @@ const userRegistration = async (
           data: {
             organization: { connect: { id: othersData.organizationId } },
             role: othersData.staffRole,
+            staffInfo: { connect: { id: result.id } },
           },
         });
 
         return result;
       } else {
+        if (!othersData.businessTypeId) {
+          throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            'Please provide your businessTypeId',
+          );
+        }
+        //* business type check
+        const isBusinessTypeExist = await prisma.businessType.findUnique({
+          where: { id: othersData.businessTypeId },
+        });
+
+        if (!isBusinessTypeExist) {
+          throw new ApiError(httpStatus.NOT_FOUND, 'Business type not found');
+        }
         const result = await prisma.user.create({
           data: {
             phone: phone,

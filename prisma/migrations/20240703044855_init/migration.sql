@@ -17,10 +17,11 @@ CREATE TYPE "StaffRole" AS ENUM ('NORMAL_STAFF', 'ADMIN', 'STORE_MANAGER', 'DELI
 CREATE TABLE "staff" (
     "id" TEXT NOT NULL,
     "role" "StaffRole" NOT NULL,
-    "salary" DOUBLE PRECISION NOT NULL,
+    "salary" DOUBLE PRECISION,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "organizationId" TEXT NOT NULL,
+    "staffInfoId" TEXT NOT NULL,
 
     CONSTRAINT "staff_pkey" PRIMARY KEY ("id")
 );
@@ -28,7 +29,7 @@ CREATE TABLE "staff" (
 -- CreateTable
 CREATE TABLE "organizations" (
     "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
+    "name" TEXT,
     "ownerId" TEXT NOT NULL,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -202,6 +203,9 @@ CREATE TABLE "order_items" (
 );
 
 -- CreateIndex
+CREATE UNIQUE INDEX "staff_staffInfoId_key" ON "staff"("staffInfoId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "organizations_ownerId_key" ON "organizations"("ownerId");
 
 -- CreateIndex
@@ -218,6 +222,9 @@ CREATE UNIQUE INDEX "orders_orderCode_key" ON "orders"("orderCode");
 
 -- AddForeignKey
 ALTER TABLE "staff" ADD CONSTRAINT "staff_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organizations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "staff" ADD CONSTRAINT "staff_staffInfoId_fkey" FOREIGN KEY ("staffInfoId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "organizations" ADD CONSTRAINT "organizations_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

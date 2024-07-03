@@ -14,16 +14,39 @@ interface MulterRequest extends Request {
   files?: Express.Multer.File[];
 }
 const createNew = async (req: Request): Promise<Product> => {
-  const { ownerId, categoryId, fileUrls, ...others } = req.body;
-  const { id: userId } = req.user as any;
-  if (ownerId !== userId) {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
-      'Owner id does not match with user',
-    );
+  const { categoryId, fileUrls, ...others } = req.body;
+  const { id: userId, role } = req.user as any;
+
+  let ownerId = null;
+  if (role === 'STAFF') {
+    const isValidStaff = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+      include: {
+        organization: true,
+      },
+    });
+
+    if (!isValidStaff) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Staff  is invalid');
+    } else {
+      if (isValidStaff.role !== 'STORE_MANAGER') {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          'Only store manager can create products',
+        );
+      }
+
+      ownerId = isValidStaff.organization.ownerId;
+    }
+  } else {
+    ownerId = userId;
+  }
+
+  if (!ownerId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Owner info not found');
   }
   const ownerBusinessTypeCheck = await prisma.user.findUnique({
-    where: { id: userId },
+    where: { id: ownerId },
     include: {
       businessType: {
         include: {
@@ -32,6 +55,9 @@ const createNew = async (req: Request): Promise<Product> => {
       },
     },
   });
+  if (!ownerBusinessTypeCheck?.verified) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Owner is not verified');
+  }
   if (!ownerBusinessTypeCheck || !ownerBusinessTypeCheck?.businessTypeId) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,

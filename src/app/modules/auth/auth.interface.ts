@@ -33,7 +33,7 @@ export type IRegisterInfo = {
   organizationId?: string;
   businessTypeId?: string;
   staffRole?:
-    | 'NORMAL_STAFF'
+    | 'ORDER_SUPERVISOR'
     | 'ADMIN'
     | 'STORE_MANAGER'
     | 'DELIVERY_BOY'

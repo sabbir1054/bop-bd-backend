@@ -42,7 +42,7 @@ enum PaymentStatus {
 }
 
 enum StaffRole {
-  NORMAL_STAFF
+  ORDER_SUPERVISOR
   ADMIN
   STORE_MANAGER
   DELIVERY_BOY
@@ -58,6 +58,8 @@ model Staff {
   updatedAt      DateTime     @updatedAt
   organization   Organization @relation(fields: [organizationId], references: [id])
   organizationId String
+  staffInfo      User         @relation(fields: [staffInfoId], references: [id])
+  staffInfoId    String       @unique
 
   @@map("staff")
 }
@@ -135,6 +137,7 @@ model User {
   token            String?
   isMobileVerified Boolean        @default(false)
   isEmailVerified  Boolean        @default(false)
+  Staff            Staff?
 
   @@map("users")
 }
