@@ -5,6 +5,7 @@ import prisma from '../../../shared/prisma';
 
 const updateCartSingle = async (
   userId: string,
+  userRole: string,
   productId: string,
   action: 'increment' | 'decrement',
 ): Promise<Cart | null> => {
@@ -16,7 +17,28 @@ const updateCartSingle = async (
     throw new ApiError(httpStatus.NOT_FOUND, 'Product not found');
   }
 
-  if (userId === isProductExist.ownerId) {
+  let ownerId = null;
+
+  if (userRole === 'STAFF') {
+    const isValidStaff = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+      include: { organization: true },
+    });
+    if (!isValidStaff) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
+    }
+    if (isValidStaff.role !== ('PURCHASE_OFFICER' || 'STAFF_ADMIN')) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Only puchase officer or admin delete the product image',
+      );
+    }
+    ownerId = isValidStaff.organization.ownerId;
+  } else {
+    ownerId = userId;
+  }
+
+  if (ownerId === isProductExist.ownerId) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
       'You can not add your product in the cart',
@@ -25,7 +47,7 @@ const updateCartSingle = async (
 
   const result = await prisma.$transaction(async prisma => {
     let cart = await prisma.cart.findFirst({
-      where: { userId: userId },
+      where: { userId: ownerId },
       include: { CartItem: true },
     });
 
@@ -37,7 +59,7 @@ const updateCartSingle = async (
         );
       } else {
         cart = await prisma.cart.create({
-          data: { userId: userId },
+          data: { userId: ownerId },
           include: { CartItem: true },
         });
       }

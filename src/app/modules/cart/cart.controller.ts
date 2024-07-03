@@ -6,10 +6,15 @@ import { CartServices } from './cart.service';
 
 const updateCartSingle = catchAsync(async (req: Request, res: Response) => {
   const { productId } = req.params;
-  const { id: userId } = req.user as any;
+  const { id: userId, role } = req.user as any;
   const { action } = req.body;
 
-  const result = await CartServices.updateCartSingle(userId, productId, action);
+  const result = await CartServices.updateCartSingle(
+    userId,
+    role,
+    productId,
+    action,
+  );
 
   sendResponse(res, {
     success: true,
