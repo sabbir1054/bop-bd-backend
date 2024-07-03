@@ -535,12 +535,35 @@ const addNewImageForProduct = async (req: Request): Promise<Product | null> => {
 
 const updateProductInfo = async (
   productId: string,
-  ownerId: string,
+  userId: string,
+  userRole: string,
   payload?: IUpdateProductInput,
 ): Promise<Product | null> => {
   if (!payload) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'No update data provided');
   }
+
+  let ownerId = null;
+
+  if (userRole !== 'STAFF') {
+    const isValidStaff = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+      include: { organization: true },
+    });
+    if (!isValidStaff) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
+    }
+    if (isValidStaff.role !== ('STORE_MANAGER' || 'STAFF_ADMIN')) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Only store manager or admin update product info',
+      );
+    }
+    ownerId = isValidStaff.organization.ownerId;
+  } else {
+    ownerId = userId;
+  }
+
   const { categoryId, ...othersInfo } = payload;
 
   const isProductExist = await prisma.product.findUnique({

@@ -71,12 +71,13 @@ const addImageToProduct = catchAsync(async (req: Request, res: Response) => {
 });
 const updateProductInfo = catchAsync(async (req: Request, res: Response) => {
   const { productId } = req.params;
-  const { id: ownerId } = req.user as any;
+  const { id: userId, role } = req.user as any;
   const payload = req.body;
 
   const result = await ProductServices.updateProductInfo(
     productId,
-    ownerId,
+    userId,
+    role,
     payload,
   );
   sendResponse(res, {
