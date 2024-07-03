@@ -561,17 +561,8 @@ const updateProductInfo = async (
     }
     ownerId = isValidStaff.organization.ownerId;
   } else {
-    if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') {
-      const productOwner = await prisma.product.findUnique({
-        where: { id: productId },
-      });
-
-      ownerId = productOwner?.ownerId;
-    } else {
-      ownerId = userId;
-    }
+    ownerId = userId;
   }
-
   const { categoryId, ...othersInfo } = payload;
 
   const isProductExist = await prisma.product.findUnique({
@@ -607,7 +598,7 @@ const updateProductInfo = async (
     throw new ApiError(httpStatus.NOT_FOUND, 'Product not found ');
   }
   if (isProductExist?.ownerId !== ownerId) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Only owner can update products ');
+    throw new ApiError(httpStatus.NOT_FOUND, 'Invalid owner info ');
   }
 
   const result = await prisma.product.update({
@@ -628,7 +619,7 @@ const deleteProduct = async (
 ): Promise<Product | null> => {
   let ownerId = null;
 
-  if (userRole !== 'STAFF') {
+  if (userRole === 'STAFF') {
     const isValidStaff = await prisma.staff.findUnique({
       where: { staffInfoId: userId },
       include: { organization: true },
@@ -639,12 +630,20 @@ const deleteProduct = async (
     if (isValidStaff.role !== ('STORE_MANAGER' || 'STAFF_ADMIN')) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
-        'Only store manager or admin delete the product image',
+        'Only store manager or admin delete product info',
       );
     }
     ownerId = isValidStaff.organization.ownerId;
   } else {
-    ownerId = userId;
+    if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') {
+      const productOwner = await prisma.product.findUnique({
+        where: { id: productId },
+      });
+
+      ownerId = productOwner?.ownerId;
+    } else {
+      ownerId = userId;
+    }
   }
 
   // Check if the product exists
@@ -661,10 +660,7 @@ const deleteProduct = async (
 
   // Check if the owner is the same as the one making the request
   if (isProductExist.ownerId !== ownerId) {
-    throw new ApiError(
-      httpStatus.FORBIDDEN,
-      'Only product owner can delete products',
-    );
+    throw new ApiError(httpStatus.FORBIDDEN, 'Invalid owner info');
   }
   const result = await prisma.$transaction(async prisma => {
     // Delete images from the server
