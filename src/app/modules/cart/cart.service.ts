@@ -151,7 +151,7 @@ const updateCartMultiple = async (
     if (isValidStaff.role !== ('PURCHASE_OFFICER' || 'STAFF_ADMIN')) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
-        'Only store manager or admin delete the product image',
+        'Only store purchase officer or admin delete the product image',
       );
     }
     ownerId = isValidStaff.organization.ownerId;
