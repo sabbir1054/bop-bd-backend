@@ -420,9 +420,28 @@ const deleteImageFromProduct = async (
 
 const addNewImageForProduct = async (req: Request): Promise<Product | null> => {
   const { productId } = req.params;
-  const { id: ownerId } = req.user as any;
+  const { id: userId, role: userRole } = req.user as any;
   const { fileUrls } = req.body;
+  let ownerId = null;
 
+  if (userRole !== 'STAFF') {
+    const isValidStaff = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+      include: { organization: true },
+    });
+    if (!isValidStaff) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
+    }
+    if (isValidStaff.role !== ('STORE_MANAGER' || 'STAFF_ADMIN')) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Only store manager or admin add the product image',
+      );
+    }
+    ownerId = isValidStaff.organization.ownerId;
+  } else {
+    ownerId = userId;
+  }
   const isProductExist = await prisma.product.findUnique({
     where: { id: productId },
     include: {
