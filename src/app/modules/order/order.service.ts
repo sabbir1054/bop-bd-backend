@@ -2,6 +2,7 @@ import { Order, OrderStatus, PaymentStatus } from '@prisma/client';
 import httpStatus from 'http-status';
 import ApiError from '../../../errors/ApiError';
 import { orderCodeGenerator } from '../../../helpers/orderIdcodeGenerator';
+import { generateOTP, sendOTP } from '../../../helpers/otpHelpers';
 import { paginationHelpers } from '../../../helpers/paginationHelper';
 import { IGenericResponse } from '../../../interfaces/common';
 import { IPaginationOptions } from '../../../interfaces/pagination';
@@ -451,14 +452,18 @@ const updateOrderStatus = async (
 ): Promise<Order> => {
   const isExistOrder = await prisma.order.findUnique({
     where: { id: orderId },
+    include: {
+      customer: true,
+    },
   });
 
   if (!isExistOrder) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Order not exist ');
   }
+  const customerPhone = isExistOrder.customer.phone;
 
   let ownerId = null;
-
+  //* here ensure only owner,staff admin,order supervisor, delivery boy update status
   if (userRole === 'STAFF') {
     const isValidStaff = await prisma.staff.findUnique({
       where: { staffInfoId: userId },
@@ -488,28 +493,71 @@ const updateOrderStatus = async (
       'Only order supervisor and staff admin can change the status',
     );
   }
-
+  //* here ensure that Ddelivered status update by only staff admin and delivery boy
   if (status === 'DELIVERED') {
+    // confirm staff role
+    let staffRole = null;
     if (userRole === 'STAFF') {
       const isValidStaff = await prisma.staff.findUnique({
         where: { staffInfoId: userId },
         include: { organization: true },
       });
-
-      if (isValidStaff?.role !== 'DELIVERY_BOY') {
+      staffRole = isValidStaff?.role;
+      if (isValidStaff?.role !== ('DELIVERY_BOY' || 'STAFF_ADMIN')) {
         throw new ApiError(
           httpStatus.BAD_REQUEST,
           'Only delivery boy change status to delivered',
         );
       }
     }
-    const result = await prisma.order.update({
-      where: { id: orderId },
-      data: { orderStatus: status },
-    });
+    if (staffRole === 'DELIVERY_BOY') {
+      //* order delivery update with verification by delivery boy
+      const result = await prisma.$transaction(async prisma => {
+        const otp = generateOTP();
+        const sendOtp = await sendOTP(
+          customerPhone,
+          otp,
+          `From BOP-BD, Your order delivery verification code is ${otp}`,
+        );
 
-    return result;
+        if (sendOtp == null || sendOtp.Status != 0) {
+          throw new ApiError(
+            httpStatus.INTERNAL_SERVER_ERROR,
+            'Otp not send please try again',
+          );
+        }
+
+        const makeOtpForUser = await prisma.oneTimePassword.create({
+          data: {
+            phone: customerPhone,
+            otpCode: otp,
+            checkCounter: 0,
+            resendCounter: 0,
+          },
+        });
+
+        if (!makeOtpForUser) {
+          throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Otp not set');
+        }
+        const result = await prisma.order.update({
+          where: { id: orderId },
+          data: { orderStatus: status },
+        });
+
+        return result;
+      });
+      return result;
+    } else {
+      //* order delivery update without verification by staff admin
+      const result = await prisma.order.update({
+        where: { id: orderId },
+        data: { orderStatus: status },
+      });
+
+      return result;
+    }
   } else {
+    //* here ensure orders others status update by owner admin and order supervisor
     if (userRole === 'STAFF') {
       const isValidStaff = await prisma.staff.findUnique({
         where: { staffInfoId: userId },
