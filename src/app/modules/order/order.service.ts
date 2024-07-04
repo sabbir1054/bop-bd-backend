@@ -193,9 +193,9 @@ const orderCreate = async (
   return result;
 };
 
-const getUserIncomingOrders = async (userId: string): Promise<Order[]> => {
+const getUserIncomingOrders = async (ownerId: string): Promise<Order[]> => {
   const result = await prisma.order.findMany({
-    where: { product_seller_id: userId },
+    where: { product_seller_id: ownerId },
     include: {
       customer: {
         select: {
@@ -385,13 +385,35 @@ const getSingle = async (id: string): Promise<Order | null> => {
 };
 
 const searchFilterIncomingOrders = async (
-  ownerId: string,
+  userId: string,
+  userRole: string,
   filters: any,
   options: IPaginationOptions,
 ): Promise<IGenericResponse<Order[]>> => {
   const { limit, page, skip } = paginationHelpers.calculatePagination(options);
   const { searchTerm, phone, ...filtersData } = filters;
   const andConditions: any[] = [];
+
+  let ownerId = null;
+
+  if (userRole === 'STAFF') {
+    const isValidStaff = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+      include: { organization: true },
+    });
+    if (!isValidStaff) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
+    }
+    if (isValidStaff.role !== ('ORDER_SUPERVISOR' || 'STAFF_ADMIN')) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'You are not allowed to see incoming orders',
+      );
+    }
+    ownerId = isValidStaff.organization.ownerId;
+  } else {
+    ownerId = userId;
+  }
 
   if (searchTerm) {
     andConditions.push({
@@ -463,13 +485,38 @@ const searchFilterIncomingOrders = async (
   };
 };
 const searchFilterOutgoingOrders = async (
-  ownerId: string,
+  userId: string,
+  userRole: string,
   filters: any,
   options: IPaginationOptions,
 ): Promise<IGenericResponse<Order[]>> => {
   const { limit, page, skip } = paginationHelpers.calculatePagination(options);
   const { searchTerm, phone, ...filtersData } = filters;
   const andConditions: any[] = [];
+
+  let ownerId = null;
+
+  if (userRole === 'STAFF') {
+    const isValidStaff = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+      include: { organization: true },
+    });
+    if (!isValidStaff) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
+    }
+    if (
+      isValidStaff.role !==
+      ('PURCHASE_OFFICER' || 'ORDER_SUPERVISOR' || 'STAFF_ADMIN')
+    ) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'You are not allowed to see outgoing orders',
+      );
+    }
+    ownerId = isValidStaff.organization.ownerId;
+  } else {
+    ownerId = userId;
+  }
 
   if (searchTerm) {
     andConditions.push({

@@ -24,18 +24,14 @@ router.post(
 );
 
 router.get(
-  '/incomingOrders',
-  auth(
-    ENUM_USER_ROLE.DEALER,
-    ENUM_USER_ROLE.IMPORTER,
-    ENUM_USER_ROLE.MANUFACTURER,
-    ENUM_USER_ROLE.WHOLESALER,
-    ENUM_USER_ROLE.RESELLER,
-    ENUM_USER_ROLE.ADMIN,
-    ENUM_USER_ROLE.SUPER_ADMIN,
-    ENUM_USER_ROLE.STAFF,
-  ),
+  '/incomingOrders/user/:id',
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
   OrderController.getUserIncomingOrders,
+);
+router.get(
+  '/outgoingOrders/user/:id',
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  OrderController.getUserOutgoingOrders,
 );
 router.get(
   '/incomingOrders/find',
@@ -51,20 +47,7 @@ router.get(
   ),
   OrderController.searchFilterIncomingOrders,
 );
-router.get(
-  '/outgoingOrders',
-  auth(
-    ENUM_USER_ROLE.DEALER,
-    ENUM_USER_ROLE.IMPORTER,
-    ENUM_USER_ROLE.MANUFACTURER,
-    ENUM_USER_ROLE.WHOLESALER,
-    ENUM_USER_ROLE.RESELLER,
-    ENUM_USER_ROLE.ADMIN,
-    ENUM_USER_ROLE.SUPER_ADMIN,
-    ENUM_USER_ROLE.STAFF,
-  ),
-  OrderController.getUserOutgoingOrders,
-);
+
 router.get(
   '/outgoingOrders/find',
   auth(

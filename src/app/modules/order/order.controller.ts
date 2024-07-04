@@ -20,7 +20,7 @@ const orderCreate = catchAsync(async (req: Request, res: Response) => {
 });
 const getUserIncomingOrders = catchAsync(
   async (req: Request, res: Response) => {
-    const { id: userId } = req.user as any;
+    const { id: userId } = req.params;
     const result = await OrderService.getUserIncomingOrders(userId);
     sendResponse(res, {
       success: true,
@@ -32,7 +32,7 @@ const getUserIncomingOrders = catchAsync(
 );
 const getUserOutgoingOrders = catchAsync(
   async (req: Request, res: Response) => {
-    const { id: userId } = req.user as any;
+    const { id: userId } = req.params;
     const result = await OrderService.getUserOutgoingOrders(userId);
     sendResponse(res, {
       success: true,
@@ -84,9 +84,10 @@ const searchFilterIncomingOrders = catchAsync(
   async (req: Request, res: Response) => {
     const filters = pick(req.query, ordersFilterableFields);
     const options = pick(req.query, paginationFields);
-    const { id: userId } = req.user as any;
+    const { id: userId, role } = req.user as any;
     const result = await OrderService.searchFilterIncomingOrders(
       userId,
+      role,
       filters,
       options,
     );
@@ -103,9 +104,10 @@ const searchFilterOutgoingOrders = catchAsync(
   async (req: Request, res: Response) => {
     const filters = pick(req.query, ordersFilterableFields);
     const options = pick(req.query, paginationFields);
-    const { id: userId } = req.user as any;
+    const { id: userId, role } = req.user as any;
     const result = await OrderService.searchFilterOutgoingOrders(
       userId,
+      role,
       filters,
       options,
     );
