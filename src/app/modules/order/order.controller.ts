@@ -21,7 +21,8 @@ const orderCreate = catchAsync(async (req: Request, res: Response) => {
 const getUserIncomingOrders = catchAsync(
   async (req: Request, res: Response) => {
     const { id: userId } = req.params;
-    const result = await OrderService.getUserIncomingOrders(userId);
+    const options = pick(req.query, paginationFields);
+    const result = await OrderService.getUserIncomingOrders(userId, options);
     sendResponse(res, {
       success: true,
       statusCode: httpStatus.OK,
@@ -33,7 +34,8 @@ const getUserIncomingOrders = catchAsync(
 const getUserOutgoingOrders = catchAsync(
   async (req: Request, res: Response) => {
     const { id: userId } = req.params;
-    const result = await OrderService.getUserOutgoingOrders(userId);
+    const options = pick(req.query, paginationFields);
+    const result = await OrderService.getUserOutgoingOrders(userId, options);
     sendResponse(res, {
       success: true,
       statusCode: httpStatus.OK,

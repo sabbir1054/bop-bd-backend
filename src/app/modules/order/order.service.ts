@@ -193,9 +193,21 @@ const orderCreate = async (
   return result;
 };
 
-const getUserIncomingOrders = async (ownerId: string): Promise<Order[]> => {
+const getUserIncomingOrders = async (
+  ownerId: string,
+  options: IPaginationOptions,
+): Promise<IGenericResponse<Order[]>> => {
+  const { limit, page, skip } = paginationHelpers.calculatePagination(options);
   const result = await prisma.order.findMany({
     where: { product_seller_id: ownerId },
+    skip,
+    take: limit,
+    orderBy:
+      options.sortBy && options.sortOrder
+        ? { [options.sortBy]: options.sortOrder }
+        : {
+            createdAt: 'desc',
+          },
     include: {
       customer: {
         select: {
@@ -229,12 +241,33 @@ const getUserIncomingOrders = async (ownerId: string): Promise<Order[]> => {
   if (!result) {
     throw new ApiError(httpStatus.NOT_FOUND, 'User incoming order not found');
   }
-
-  return result;
+  const total = await prisma.order.count({
+    where: { product_seller_id: ownerId },
+  });
+  return {
+    meta: {
+      total,
+      page,
+      limit,
+    },
+    data: result,
+  };
 };
-const getUserOutgoingOrders = async (userId: string): Promise<Order[]> => {
+const getUserOutgoingOrders = async (
+  userId: string,
+  options: IPaginationOptions,
+): Promise<IGenericResponse<Order[]>> => {
+  const { limit, page, skip } = paginationHelpers.calculatePagination(options);
   const result = await prisma.order.findMany({
     where: { customerId: userId },
+    skip,
+    take: limit,
+    orderBy:
+      options.sortBy && options.sortOrder
+        ? { [options.sortBy]: options.sortOrder }
+        : {
+            createdAt: 'desc',
+          },
     include: {
       product_seller: {
         select: {
@@ -265,7 +298,17 @@ const getUserOutgoingOrders = async (userId: string): Promise<Order[]> => {
     throw new ApiError(httpStatus.NOT_FOUND, 'User incoming order not found');
   }
 
-  return result;
+  const total = await prisma.order.count({
+    where: { customerId: userId },
+  });
+  return {
+    meta: {
+      total,
+      page,
+      limit,
+    },
+    data: result,
+  };
 };
 
 const updateOrderStatus = async (
