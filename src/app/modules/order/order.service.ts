@@ -8,7 +8,7 @@ import { IGenericResponse } from '../../../interfaces/common';
 import { IPaginationOptions } from '../../../interfaces/pagination';
 import prisma from '../../../shared/prisma';
 import { ordersSearchableFields } from './order.constant';
-import { IOrderCreate } from './order.interface';
+import { IOrderCreate, IVerificationDeliveryPayload } from './order.interface';
 
 const orderCreate = async (
   userId: string,
@@ -449,7 +449,7 @@ const updateOrderStatus = async (
   userRole: string,
   orderId: string,
   status: OrderStatus,
-): Promise<Order> => {
+) => {
   const isExistOrder = await prisma.order.findUnique({
     where: { id: orderId },
     include: {
@@ -539,10 +539,7 @@ const updateOrderStatus = async (
         if (!makeOtpForUser) {
           throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Otp not set');
         }
-        const result = await prisma.order.update({
-          where: { id: orderId },
-          data: { orderStatus: status },
-        });
+        const result = { message: 'Otp send successfully' };
 
         return result;
       });
@@ -580,6 +577,55 @@ const updateOrderStatus = async (
   }
 };
 
+const verifyDeliveryOtp = async (
+  userId: string,
+  userRole: string,
+  payload: IVerificationDeliveryPayload,
+) => {
+  const isValidStaff = await prisma.staff.findUnique({
+    where: { staffInfoId: userId },
+    include: { organization: true },
+  });
+  if (!isValidStaff) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
+  }
+  if (isValidStaff.role !== 'DELIVERY_BOY') {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'You can not submit delivery verification code.',
+    );
+  }
+  const isExistOrder = await prisma.order.findUnique({
+    where: { id: payload.orderId },
+    include: {
+      customer: true,
+    },
+  });
+
+  if (!isExistOrder) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Order not exist ');
+  }
+  const customerPhone = isExistOrder.customer.phone;
+
+  const result = await prisma.$transaction(async prisma => {
+    const findOtp = await prisma.oneTimePassword.findUnique({
+      where: { phone: customerPhone },
+    });
+
+    if (!findOtp) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Otp info not found');
+    }
+    if (payload.givenOtp !== findOtp.otpCode) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Delivery otp not match');
+    } else {
+      const result = await prisma.order.update({
+        where: { id: payload.orderId },
+        data: { orderStatus: 'DELIVERED' },
+      });
+      return result;
+    }
+  });
+};
 const updatePaymentStatus = async (
   userId: string,
   orderId: string,
