@@ -34,6 +34,16 @@ router.get(
   OrderController.getUserOutgoingOrders,
 );
 router.get(
+  '/incomingOrders/organization/:id',
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  OrderController.getOrganizationIncomingOrders,
+);
+router.get(
+  '/outgoingOrders/organization/:id',
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  OrderController.getOrganizationOutgoingOrders,
+);
+router.get(
   '/incomingOrders/find',
   auth(
     ENUM_USER_ROLE.DEALER,

@@ -14,3 +14,5 @@ export const ordersFilterableFields: string[] = [
   'orderStatus',
   'paymentStatus',
 ];
+
+export const ordersSearchableFieldsAdmin: string[] = ['category'];

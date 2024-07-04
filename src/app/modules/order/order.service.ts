@@ -311,6 +311,138 @@ const getUserOutgoingOrders = async (
   };
 };
 
+const getOrganizationIncomingOrders = async (
+  organizationId: string,
+  options: IPaginationOptions,
+): Promise<IGenericResponse<Order[]>> => {
+  const isValidOrganization = await prisma.organization.findUnique({
+    where: { id: organizationId },
+  });
+  if (!isValidOrganization) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organizaion info not found');
+  }
+  const ownerId = isValidOrganization.ownerId;
+  const { limit, page, skip } = paginationHelpers.calculatePagination(options);
+  const result = await prisma.order.findMany({
+    where: { product_seller_id: ownerId },
+    skip,
+    take: limit,
+    orderBy:
+      options.sortBy && options.sortOrder
+        ? { [options.sortBy]: options.sortOrder }
+        : {
+            createdAt: 'desc',
+          },
+    include: {
+      customer: {
+        select: {
+          id: true,
+          role: true,
+          email: true,
+          license: true,
+          nid: true,
+          memberCategory: true,
+          verified: true,
+          name: true,
+          phone: true,
+          address: true,
+          photo: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
+      orderItems: {
+        include: {
+          product: {
+            include: {
+              images: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!result) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User incoming order not found');
+  }
+  const total = await prisma.order.count({
+    where: { product_seller_id: ownerId },
+  });
+  return {
+    meta: {
+      total,
+      page,
+      limit,
+    },
+    data: result,
+  };
+};
+const getOrganizationOutgoingOrders = async (
+  organizationId: string,
+  options: IPaginationOptions,
+): Promise<IGenericResponse<Order[]>> => {
+  const isValidOrganization = await prisma.organization.findUnique({
+    where: { id: organizationId },
+  });
+  if (!isValidOrganization) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organizaion info not found');
+  }
+  const userId = isValidOrganization.ownerId;
+  const { limit, page, skip } = paginationHelpers.calculatePagination(options);
+  const result = await prisma.order.findMany({
+    where: { customerId: userId },
+    skip,
+    take: limit,
+    orderBy:
+      options.sortBy && options.sortOrder
+        ? { [options.sortBy]: options.sortOrder }
+        : {
+            createdAt: 'desc',
+          },
+    include: {
+      product_seller: {
+        select: {
+          id: true,
+          role: true,
+          email: true,
+          license: true,
+          nid: true,
+          memberCategory: true,
+          verified: true,
+          name: true,
+          phone: true,
+          address: true,
+          photo: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
+      orderItems: {
+        include: {
+          product: true,
+        },
+      },
+    },
+  });
+
+  if (!result) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User incoming order not found');
+  }
+
+  const total = await prisma.order.count({
+    where: { customerId: userId },
+  });
+  return {
+    meta: {
+      total,
+      page,
+      limit,
+    },
+    data: result,
+  };
+};
+
 const updateOrderStatus = async (
   userId: string,
   orderId: string,
@@ -640,4 +772,6 @@ export const OrderService = {
   getSingle,
   searchFilterIncomingOrders,
   searchFilterOutgoingOrders,
+  getOrganizationOutgoingOrders,
+  getOrganizationIncomingOrders,
 };
