@@ -445,6 +445,7 @@ const getOrganizationOutgoingOrders = async (
 
 const updateOrderStatus = async (
   userId: string,
+  userRole: string,
   orderId: string,
   status: OrderStatus,
 ): Promise<Order> => {
@@ -455,18 +456,80 @@ const updateOrderStatus = async (
   if (!isExistOrder) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Order not exist ');
   }
-  if (userId !== isExistOrder.product_seller_id) {
+
+  let ownerId = null;
+
+  if (userRole === 'STAFF') {
+    const isValidStaff = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+      include: { organization: true },
+    });
+    if (!isValidStaff) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
+    }
+
+    if (
+      isValidStaff.role !==
+      ('ORDER_SUPERVISOR' || 'STAFF_ADMIN' || 'DELIVERY_BOY')
+    ) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'You are not able to change order status',
+      );
+    }
+    ownerId = isValidStaff.organization.ownerId;
+  } else {
+    ownerId = userId;
+  }
+
+  if (ownerId !== isExistOrder.product_seller_id) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
-      'Only product seller can change the status',
+      'Only order supervisor and staff admin can change the status',
     );
   }
-  const result = await prisma.order.update({
-    where: { id: orderId },
-    data: { orderStatus: status },
-  });
 
-  return result;
+  if (status === 'DELIVERED') {
+    if (userRole === 'STAFF') {
+      const isValidStaff = await prisma.staff.findUnique({
+        where: { staffInfoId: userId },
+        include: { organization: true },
+      });
+
+      if (isValidStaff?.role !== 'DELIVERY_BOY') {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          'Only delivery boy change status to delivered',
+        );
+      }
+    }
+    const result = await prisma.order.update({
+      where: { id: orderId },
+      data: { orderStatus: status },
+    });
+
+    return result;
+  } else {
+    if (userRole === 'STAFF') {
+      const isValidStaff = await prisma.staff.findUnique({
+        where: { staffInfoId: userId },
+        include: { organization: true },
+      });
+
+      if (isValidStaff?.role === 'DELIVERY_BOY') {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          'Delivery boy not change other order status',
+        );
+      }
+    }
+    const result = await prisma.order.update({
+      where: { id: orderId },
+      data: { orderStatus: status },
+    });
+
+    return result;
+  }
 };
 
 const updatePaymentStatus = async (
