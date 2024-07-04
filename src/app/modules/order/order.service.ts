@@ -472,11 +472,9 @@ const updateOrderStatus = async (
     if (!isValidStaff) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
+    const validStaffRole = ['ORDER_SUPERVISOR', 'STAFF_ADMIN', 'DELIVERY_BOY'];
 
-    if (
-      isValidStaff.role !==
-      ('ORDER_SUPERVISOR' || 'STAFF_ADMIN' || 'DELIVERY_BOY')
-    ) {
+    if (!validStaffRole.includes(isValidStaff.role)) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
         'You are not able to change order status',
@@ -510,6 +508,7 @@ const updateOrderStatus = async (
         );
       }
     }
+
     if (staffRole === 'DELIVERY_BOY') {
       //* order delivery update with verification by delivery boy
       const result = await prisma.$transaction(async prisma => {
@@ -618,6 +617,9 @@ const verifyDeliveryOtp = async (
     if (payload.givenOtp !== findOtp.otpCode) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Delivery otp not match');
     } else {
+      //delete otp
+      await prisma.oneTimePassword.delete({ where: { phone: customerPhone } });
+
       const result = await prisma.order.update({
         where: { id: payload.orderId },
         data: { orderStatus: 'DELIVERED' },
@@ -625,6 +627,7 @@ const verifyDeliveryOtp = async (
       return result;
     }
   });
+  return result;
 };
 const updatePaymentStatus = async (
   userId: string,
@@ -931,4 +934,5 @@ export const OrderService = {
   searchFilterOutgoingOrders,
   getOrganizationOutgoingOrders,
   getOrganizationIncomingOrders,
+  verifyDeliveryOtp,
 };

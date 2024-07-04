@@ -160,6 +160,19 @@ const searchFilterOutgoingOrders = catchAsync(
     });
   },
 );
+
+const verifyDeliveryOtp = catchAsync(async (req: Request, res: Response) => {
+  const { id: userId, role } = req.user as any;
+  const result = await OrderService.verifyDeliveryOtp(userId, role, req.body);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Order delivered !!',
+    data: result,
+  });
+});
+
 export const OrderController = {
   orderCreate,
   getUserIncomingOrders,
@@ -171,4 +184,5 @@ export const OrderController = {
   searchFilterOutgoingOrders,
   getOrganizationOutgoingOrders,
   getOrganizationIncomingOrders,
+  verifyDeliveryOtp,
 };

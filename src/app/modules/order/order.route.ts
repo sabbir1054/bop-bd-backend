@@ -119,4 +119,10 @@ router.get(
   OrderController.getSingle,
 );
 
+router.post(
+  '/verifyDelivery',
+  auth(ENUM_USER_ROLE.STAFF),
+  OrderController.verifyDeliveryOtp,
+);
+
 export const OrderRoutes = router;
