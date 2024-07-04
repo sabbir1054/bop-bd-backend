@@ -7,7 +7,10 @@ import { paginationHelpers } from '../../../helpers/paginationHelper';
 import { IGenericResponse } from '../../../interfaces/common';
 import { IPaginationOptions } from '../../../interfaces/pagination';
 import prisma from '../../../shared/prisma';
-import { ordersSearchableFields } from './order.constant';
+import {
+  ordersSearchableFields,
+  validStaffRoleForOrderStatusUpdate,
+} from './order.constant';
 import { IOrderCreate, IVerificationDeliveryPayload } from './order.interface';
 
 const orderCreate = async (
@@ -472,9 +475,8 @@ const updateOrderStatus = async (
     if (!isValidStaff) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
-    const validStaffRole = ['ORDER_SUPERVISOR', 'STAFF_ADMIN', 'DELIVERY_BOY'];
 
-    if (!validStaffRole.includes(isValidStaff.role)) {
+    if (!validStaffRoleForOrderStatusUpdate.includes(isValidStaff.role)) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
         'You are not able to change order status',
