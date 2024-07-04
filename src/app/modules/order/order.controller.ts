@@ -78,10 +78,15 @@ const getOrganizationOutgoingOrders = catchAsync(
   },
 );
 const updateOrderStatus = catchAsync(async (req: Request, res: Response) => {
-  const { id: userId } = req.user as any;
+  const { id: userId, role } = req.user as any;
   const { orderId } = req.params;
   const { status } = req.body;
-  const result = await OrderService.updateOrderStatus(userId, orderId, status);
+  const result = await OrderService.updateOrderStatus(
+    userId,
+    role,
+    orderId,
+    status,
+  );
   sendResponse(res, {
     success: true,
     statusCode: httpStatus.OK,
