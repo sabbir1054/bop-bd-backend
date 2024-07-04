@@ -37,6 +37,10 @@ const updateCartSingle = async (
   } else {
     ownerId = userId;
   }
+  const isValidOwner = await prisma.user.findUnique({ where: { id: ownerId } });
+  if (!isValidOwner || !isValidOwner.verified) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Owner is not verified');
+  }
 
   if (ownerId === isProductExist.ownerId) {
     throw new ApiError(
@@ -157,6 +161,13 @@ const updateCartMultiple = async (
     ownerId = isValidStaff.organization.ownerId;
   } else {
     ownerId = userId;
+  }
+
+  const isValidOwner = await prisma.user.findUnique({
+    where: { id: ownerId },
+  });
+  if (!isValidOwner || !isValidOwner.verified) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Owner is not verified');
   }
 
   if (ownerId === isProductExist.ownerId) {
