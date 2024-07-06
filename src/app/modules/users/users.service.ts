@@ -39,6 +39,14 @@ const updateUserProfile = async (
   }
   //* make updated data
   const { businessTypeId, ...others } = req.body;
+
+  if (others.shop_name) {
+    await prisma.organization.update({
+      where: { ownerId: isUserExist.id },
+      data: { name: others.shop_name },
+    });
+  }
+
   const updatedData = others;
 
   if (businessTypeId) {
@@ -272,10 +280,31 @@ const deleteUnverifiedOtp = async (phone: string) => {
   return result;
 };
 
+const userVerifiedStatusChange = async (
+  status: boolean,
+  userId: string,
+  role: string,
+) => {
+  const isUserExist = await prisma.user.findUnique({ where: { id: userId } });
+  if (!isUserExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+  }
+  if (role !== ('ADMIN' || 'SUPER_ADMIN')) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'You are not able to change');
+  }
+  const result = await prisma.user.update({
+    where: { id: userId },
+    data: { verified: status },
+  });
+
+  return result;
+};
+
 export const UserServices = {
   updateUserProfile,
   removeProfilePicture,
   getAll,
   getSingle,
   deleteUnverifiedOtp,
+  userVerifiedStatusChange,
 };

@@ -5,7 +5,6 @@ const updateUserProfileValidation = z.object({
   memberCategory: z
     .enum([...memberCategory] as [string, ...string[]])
     .optional(),
-  verified: z.boolean().optional(),
   name: z.string().optional(),
   email: z.string().optional(),
   address: z.string().optional(),

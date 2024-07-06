@@ -16,13 +16,30 @@ const updateUserProfile = catchAsync(
     });
   },
 );
+const userVerifiedStatusChange = catchAsync(
+  async (req: Request, res: Response) => {
+    const { userId, status } = req.body;
+    const { role } = req.user as any;
+    const result = await UserServices.userVerifiedStatusChange(
+      status,
+      userId,
+      role,
+    );
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'User updated ',
+      data: result,
+    });
+  },
+);
 const removeProfilePicture = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.user as any;
   const result = await UserServices.removeProfilePicture(id);
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: 'User photo removed ',
+    message: 'User profile remove ',
     data: result,
   });
 });
