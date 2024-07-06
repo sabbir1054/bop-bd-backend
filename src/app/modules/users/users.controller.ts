@@ -81,4 +81,5 @@ export const UserController = {
   getAll,
   getSingle,
   deleteUnverifiedOtp,
+  userVerifiedStatusChange,
 };

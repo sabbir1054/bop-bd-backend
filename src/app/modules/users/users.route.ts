@@ -2,13 +2,14 @@ import express, { NextFunction, Request, Response } from 'express';
 import fs from 'fs';
 import httpStatus from 'http-status';
 import path from 'path';
+import config from '../../../config';
 import { ENUM_USER_ROLE } from '../../../enums/user';
 import ApiError from '../../../errors/ApiError';
 import { FileUploadHelper } from '../../../helpers/fileUpload';
 import auth from '../../middlewares/auth';
+import validateRequest from '../../middlewares/validateRequest';
 import { UsersValidation } from './user.validation';
 import { UserController } from './users.controller';
-import config from '../../../config';
 const router = express.Router();
 
 router.patch(
@@ -87,5 +88,10 @@ router.get('/profile/image/:fileName', (req: Request, res: Response) => {
 });
 
 router.delete('/deleteUnverified', UserController.deleteUnverifiedOtp);
-
+router.post(
+  '/update/status',
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  validateRequest(UsersValidation.userVerifiedStatusChangeValidation),
+  UserController.userVerifiedStatusChange,
+);
 export const UsersRoutes = router;

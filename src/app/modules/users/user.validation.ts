@@ -13,7 +13,13 @@ const updateUserProfileValidation = z.object({
   businessTypeId: z.string().optional(),
   shop_name: z.string().optional(),
 });
-
+const userVerifiedStatusChangeValidation = z.object({
+  body: z.object({
+    status: z.boolean({ required_error: 'Status is required' }),
+    userId: z.string({ required_error: 'User id is required' }),
+  }),
+});
 export const UsersValidation = {
   updateUserProfileValidation,
+  userVerifiedStatusChangeValidation,
 };
