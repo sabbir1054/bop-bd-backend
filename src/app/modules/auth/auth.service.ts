@@ -472,6 +472,135 @@ const refreshToken = async (token: string): Promise<IRefreshTokenResponse> => {
   };
 };
 
+const forgetPasswordOtp = async (phone: string) => {
+  const isUserExist = await prisma.user.findUnique({ where: { phone: phone } });
+  if (!isUserExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User info not exist');
+  }
+  const otp = generateOTP();
+  const sendOtp = await sendOTP(
+    phone,
+    otp,
+    `From BOP-BD, password reset verification code is ${otp}`,
+  );
+
+  if (sendOtp == null || sendOtp.Status != 0) {
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      'Otp not send please try again',
+    );
+  }
+
+  const makeOtpForUser = await prisma.oneTimePassword.create({
+    data: {
+      phone: phone,
+      otpCode: otp,
+      checkCounter: 0,
+      resendCounter: 0,
+    },
+  });
+
+  if (!makeOtpForUser) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Otp not set');
+  }
+
+  return makeOtpForUser;
+};
+
+const resendForgetpasswordOtp = async (phone: string) => {
+  const isUserExist = await prisma.user.findUnique({
+    where: { phone: phone },
+  });
+  if (!isUserExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User info not exist');
+  }
+
+  const isOtpExist = await prisma.oneTimePassword.findUnique({
+    where: { phone: phone },
+  });
+  const otp = generateOTP();
+
+  const sendOtp = await sendOTP(
+    phone,
+    otp,
+    `From BOP-BD, password reset verification code is ${otp}`,
+  );
+
+  if (sendOtp == null || sendOtp.Status != 0) {
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      'Otp not send please try again',
+    );
+  }
+
+  if (isOtpExist) {
+    if (isOtpExist?.resendCounter >= 3) {
+      await prisma.oneTimePassword.delete({ where: { phone: phone } });
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'You exceed the limit, please try again after some time',
+      );
+    }
+    const makeOtpForUser = await prisma.oneTimePassword.update({
+      where: { phone: phone },
+      data: {
+        phone: phone,
+        otpCode: otp,
+        checkCounter: 0,
+        resendCounter: { increment: 1 },
+      },
+    });
+
+    if (!makeOtpForUser) {
+      throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Otp not set');
+    }
+
+    return makeOtpForUser;
+  } else {
+    const makeOtpForUser = await prisma.oneTimePassword.create({
+      data: {
+        phone: phone,
+        otpCode: otp,
+        checkCounter: 0,
+        resendCounter: 0,
+      },
+    });
+
+    if (!makeOtpForUser) {
+      throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Otp not set');
+    }
+
+    return makeOtpForUser;
+  }
+};
+
+const verifyForgotPasswordOtp = async (phone: string, otp: string) => {
+  const isUserExist = await prisma.user.findUnique({
+    where: { phone: phone },
+  });
+  if (!isUserExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User info not exist');
+  }
+  const isOtpExist = await prisma.oneTimePassword.findUnique({
+    where: { phone: phone },
+  });
+  if (!isOtpExist) {
+    throw new ApiError(
+      httpStatus.NOT_FOUND,
+      'Otp info not exist, please resend it.',
+    );
+  }
+
+  if (isOtpExist.otpCode !== otp) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Otp not matched');
+  } else {
+    const result = await prisma.oneTimePassword.delete({
+      where: { phone: phone },
+    });
+    return 'Otp matched';
+  }
+};
+
 export const AuthServices = {
   userRegistration,
   userLogin,
