@@ -9,10 +9,8 @@ const userRegistrationValidation = z.object({
     role: z.enum([...userRole] as [string, ...string[]], {
       required_error: 'Role is required',
     }),
-    businessTypeId: z
-      .string({ required_error: 'Business type is required' })
-      .optional(),
-    organizationId: z.string({ required_error: '' }).optional(),
+    businessTypeId: z.string().optional(),
+    organizationId: z.string().optional(),
     staffRole: z.enum([...staffRole] as [string, ...string[]]).optional(),
   }),
 });
