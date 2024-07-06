@@ -607,4 +607,7 @@ export const AuthServices = {
   refreshToken,
   verifyOTP,
   resendOtp,
+  forgetPasswordOtp,
+  resendForgetpasswordOtp,
+  verifyForgotPasswordOtp,
 };

@@ -73,10 +73,47 @@ const resendOtp = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const forgetPasswordOtp = catchAsync(async (req: Request, res: Response) => {
+  const result = await AuthServices.forgetPasswordOtp(req.body.phone);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Otp send done',
+    data: result,
+  });
+});
+const resendForgetpasswordOtp = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await AuthServices.resendForgetpasswordOtp(req.body.phone);
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Otp re send done',
+      data: result,
+    });
+  },
+);
+
+const verifyForgotPasswordOtp = catchAsync(
+  async (req: Request, res: Response) => {
+    const { phone, otp } = req.body;
+    const result = await AuthServices.verifyForgotPasswordOtp(phone, otp);
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Otp matched',
+      data: result,
+    });
+  },
+);
+
 export const AuthController = {
   userRegistration,
   userLogin,
   refreshToken,
   verifyOtp,
   resendOtp,
+  forgetPasswordOtp,
+  resendForgetpasswordOtp,
+  verifyForgotPasswordOtp,
 };

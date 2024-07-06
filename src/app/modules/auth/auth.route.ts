@@ -23,4 +23,13 @@ router.post(
 );
 router.post('/verifyOtp', AuthController.verifyOtp);
 router.post('/resendOtp', AuthController.resendOtp);
+router.post('/forgetPassword/sendOtp', AuthController.forgetPasswordOtp);
+router.post(
+  '/forgetPassword/resendOtp',
+  AuthController.resendForgetpasswordOtp,
+);
+router.post(
+  '/forgetPassword/verifyOtp',
+  AuthController.verifyForgotPasswordOtp,
+);
 export const AuthRoutes = router;
