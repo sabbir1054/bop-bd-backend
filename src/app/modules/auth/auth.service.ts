@@ -56,7 +56,7 @@ const userRegistration = async (
     //otp process
     const otp = generateOTP();
 
-    /* const sendOtp = await sendOTP(
+    const sendOtp = await sendOTP(
       payload.phone,
       otp,
       `Your BOP-BD registration verification code is ${otp}`,
@@ -67,7 +67,7 @@ const userRegistration = async (
         httpStatus.INTERNAL_SERVER_ERROR,
         'Otp not send please try again',
       );
-    } */
+    }
 
     const makeOtpForUser = await prisma.oneTimePassword.create({
       data: {
