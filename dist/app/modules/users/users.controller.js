@@ -26,13 +26,24 @@ const updateUserProfile = (0, catchAsync_1.default)((req, res, next) => __awaite
         data: result,
     });
 }));
+const userVerifiedStatusChange = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { userId, status } = req.body;
+    const { role } = req.user;
+    const result = yield users_service_1.UserServices.userVerifiedStatusChange(status, userId, role);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: 'User updated ',
+        data: result,
+    });
+}));
 const removeProfilePicture = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.user;
     const result = yield users_service_1.UserServices.removeProfilePicture(id);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,
-        message: 'User photo removed ',
+        message: 'User profile remove ',
         data: result,
     });
 }));
@@ -56,9 +67,20 @@ const getSingle = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void
         data: result,
     });
 }));
+const deleteUnverifiedOtp = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield users_service_1.UserServices.deleteUnverifiedOtp(req.body.phone);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: 'User deleted',
+        data: result,
+    });
+}));
 exports.UserController = {
     updateUserProfile,
     removeProfilePicture,
     getAll,
     getSingle,
+    deleteUnverifiedOtp,
+    userVerifiedStatusChange,
 };

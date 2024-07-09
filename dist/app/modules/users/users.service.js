@@ -49,6 +49,12 @@ const updateUserProfile = (req, next) => __awaiter(void 0, void 0, void 0, funct
     }
     //* make updated data
     const _a = req.body, { businessTypeId } = _a, others = __rest(_a, ["businessTypeId"]);
+    if (others.shop_name) {
+        yield prisma_1.default.organization.update({
+            where: { ownerId: isUserExist.id },
+            data: { name: others.shop_name },
+        });
+    }
     const updatedData = others;
     if (businessTypeId) {
         updatedData.businessType = { connect: { id: businessTypeId } };
@@ -66,6 +72,8 @@ const updateUserProfile = (req, next) => __awaiter(void 0, void 0, void 0, funct
                 role: true,
                 memberCategory: true,
                 verified: true,
+                organization: true,
+                isMobileVerified: true,
                 name: true,
                 email: true,
                 phone: true,
@@ -96,6 +104,8 @@ const updateUserProfile = (req, next) => __awaiter(void 0, void 0, void 0, funct
                 role: true,
                 memberCategory: true,
                 verified: true,
+                organization: true,
+                isMobileVerified: true,
                 name: true,
                 email: true,
                 phone: true,
@@ -144,6 +154,8 @@ const removeProfilePicture = (userId) => __awaiter(void 0, void 0, void 0, funct
             role: true,
             memberCategory: true,
             verified: true,
+            organization: true,
+            isMobileVerified: true,
             name: true,
             email: true,
             phone: true,
@@ -172,6 +184,8 @@ const getAll = () => __awaiter(void 0, void 0, void 0, function* () {
             role: true,
             memberCategory: true,
             verified: true,
+            organization: true,
+            isMobileVerified: true,
             name: true,
             email: true,
             phone: true,
@@ -189,6 +203,20 @@ const getAll = () => __awaiter(void 0, void 0, void 0, function* () {
     return result;
 });
 const getSingle = (userId, profileId, role) => __awaiter(void 0, void 0, void 0, function* () {
+    if (role === 'STAFF') {
+        let result = yield prisma_1.default.staff.findUnique({
+            where: { id: profileId },
+            include: {
+                organization: true,
+                staffInfo: true,
+            },
+        });
+        if (!result) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User not found !');
+        }
+        result.staffInfo.password = '';
+        return result;
+    }
     let result = yield prisma_1.default.user.findUnique({
         where: { id: profileId },
         include: {
@@ -206,6 +234,7 @@ const getSingle = (userId, profileId, role) => __awaiter(void 0, void 0, void 0,
                 include: { orderItems: true },
             },
             businessType: true,
+            organization: true,
         },
     });
     if (!result) {
@@ -224,9 +253,50 @@ const getSingle = (userId, profileId, role) => __awaiter(void 0, void 0, void 0,
         }
     }
 });
+const deleteUnverifiedOtp = (phone) => __awaiter(void 0, void 0, void 0, function* () {
+    const isUserExist = yield prisma_1.default.user.findUnique({ where: { phone: phone } });
+    const isOtpCreate = yield prisma_1.default.oneTimePassword.findUnique({
+        where: { phone: phone },
+    });
+    if (isUserExist === null || isUserExist === void 0 ? void 0 : isUserExist.isMobileVerified) {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'User is verified. Please contact with admin for delete');
+    }
+    const result = yield prisma_1.default.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {
+        if (isUserExist && isOtpCreate) {
+            yield prisma.user.delete({ where: { phone: phone } });
+            yield prisma.oneTimePassword.delete({ where: { phone: phone } });
+        }
+        else {
+            if (isUserExist) {
+                yield prisma.user.delete({ where: { phone: phone } });
+            }
+            if (isOtpCreate) {
+                yield prisma.oneTimePassword.delete({ where: { phone: phone } });
+            }
+        }
+        return 'Delete user';
+    }));
+    return result;
+});
+const userVerifiedStatusChange = (status, userId, role) => __awaiter(void 0, void 0, void 0, function* () {
+    const isUserExist = yield prisma_1.default.user.findUnique({ where: { id: userId } });
+    if (!isUserExist) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User not found');
+    }
+    if (role !== ('ADMIN' || 'SUPER_ADMIN')) {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'You are not able to change');
+    }
+    const result = yield prisma_1.default.user.update({
+        where: { id: userId },
+        data: { verified: status },
+    });
+    return result;
+});
 exports.UserServices = {
     updateUserProfile,
     removeProfilePicture,
     getAll,
     getSingle,
+    deleteUnverifiedOtp,
+    userVerifiedStatusChange,
 };

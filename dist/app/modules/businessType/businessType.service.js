@@ -70,6 +70,8 @@ const getAllProductBusinessType = (id) => __awaiter(void 0, void 0, void 0, func
                                     role: true,
                                     memberCategory: true,
                                     verified: true,
+                                    organization: true,
+                                    isEmailVerified: true,
                                     name: true,
                                     email: true,
                                     phone: true,

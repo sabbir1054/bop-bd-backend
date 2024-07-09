@@ -19,9 +19,9 @@ const sendResponse_1 = __importDefault(require("../../../shared/sendResponse"));
 const cart_service_1 = require("./cart.service");
 const updateCartSingle = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { productId } = req.params;
-    const { id: userId } = req.user;
+    const { id: userId, role } = req.user;
     const { action } = req.body;
-    const result = yield cart_service_1.CartServices.updateCartSingle(userId, productId, action);
+    const result = yield cart_service_1.CartServices.updateCartSingle(userId, role, productId, action);
     (0, sendResponse_1.default)(res, {
         success: true,
         statusCode: http_status_1.default.OK,
@@ -31,9 +31,9 @@ const updateCartSingle = (0, catchAsync_1.default)((req, res) => __awaiter(void 
 }));
 const updateCartMultiple = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { productId } = req.params;
-    const { id: userId } = req.user;
+    const { id: userId, role } = req.user;
     const { action, quantity } = req.body;
-    const result = yield cart_service_1.CartServices.updateCartMultiple(userId, productId, action, quantity);
+    const result = yield cart_service_1.CartServices.updateCartMultiple(userId, role, productId, action, quantity);
     (0, sendResponse_1.default)(res, {
         success: true,
         statusCode: http_status_1.default.OK,
@@ -42,9 +42,9 @@ const updateCartMultiple = (0, catchAsync_1.default)((req, res) => __awaiter(voi
     });
 }));
 const removeProductFromCart = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id: userId } = req.user;
+    const { id: userId, role } = req.user;
     const { cartItemIds } = req.body;
-    const result = yield cart_service_1.CartServices.removeItemsFromCart(userId, cartItemIds);
+    const result = yield cart_service_1.CartServices.removeItemsFromCart(userId, role, cartItemIds);
     (0, sendResponse_1.default)(res, {
         success: true,
         statusCode: http_status_1.default.OK,
@@ -52,9 +52,19 @@ const removeProductFromCart = (0, catchAsync_1.default)((req, res) => __awaiter(
         data: result,
     });
 }));
-const getAll = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id: userId } = req.user;
-    const result = yield cart_service_1.CartServices.getAll(userId);
+const getMyCart = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id: userId, role } = req.user;
+    const result = yield cart_service_1.CartServices.getMyCart(userId, role);
+    (0, sendResponse_1.default)(res, {
+        success: true,
+        statusCode: http_status_1.default.OK,
+        message: 'Cart retrieve',
+        data: result,
+    });
+}));
+const getSingleUserCart = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const userId = req.params.userId;
+    const result = yield cart_service_1.CartServices.getSingleUserCart(userId);
     (0, sendResponse_1.default)(res, {
         success: true,
         statusCode: http_status_1.default.OK,
@@ -66,5 +76,6 @@ exports.CartController = {
     updateCartSingle,
     updateCartMultiple,
     removeProductFromCart,
-    getAll,
+    getMyCart,
+    getSingleUserCart,
 };

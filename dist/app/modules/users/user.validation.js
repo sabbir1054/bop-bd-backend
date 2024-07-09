@@ -10,7 +10,6 @@ const updateUserProfileValidation = zod_1.default.object({
     memberCategory: zod_1.default
         .enum([...user_constant_1.memberCategory])
         .optional(),
-    verified: zod_1.default.boolean().optional(),
     name: zod_1.default.string().optional(),
     email: zod_1.default.string().optional(),
     address: zod_1.default.string().optional(),
@@ -19,6 +18,13 @@ const updateUserProfileValidation = zod_1.default.object({
     businessTypeId: zod_1.default.string().optional(),
     shop_name: zod_1.default.string().optional(),
 });
+const userVerifiedStatusChangeValidation = zod_1.default.object({
+    body: zod_1.default.object({
+        status: zod_1.default.boolean({ required_error: 'Status is required' }),
+        userId: zod_1.default.string({ required_error: 'User id is required' }),
+    }),
+});
 exports.UsersValidation = {
     updateUserProfileValidation,
+    userVerifiedStatusChangeValidation,
 };

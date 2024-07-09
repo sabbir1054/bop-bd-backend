@@ -8,7 +8,6 @@ const zod_1 = __importDefault(require("zod"));
 const order_constant_1 = require("./order.constant");
 const orderCreateValidation = zod_1.default.object({
     body: zod_1.default.object({
-        cartId: zod_1.default.string({ required_error: 'Cart id is required' }),
         shipping_address: zod_1.default.string({
             required_error: 'Shipping address is required',
         }),

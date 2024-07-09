@@ -17,6 +17,7 @@ const express_1 = __importDefault(require("express"));
 const fs_1 = __importDefault(require("fs"));
 const http_status_1 = __importDefault(require("http-status"));
 const path_1 = __importDefault(require("path"));
+const config_1 = __importDefault(require("../../../config"));
 const user_1 = require("../../../enums/user");
 const ApiError_1 = __importDefault(require("../../../errors/ApiError"));
 const fileUpload_1 = require("../../../helpers/fileUpload");
@@ -25,23 +26,23 @@ const validateRequest_1 = __importDefault(require("../../middlewares/validateReq
 const products_controller_1 = require("./products.controller");
 const products_validations_1 = require("./products.validations");
 const router = express_1.default.Router();
-router.post('/createProduct', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.RESELLER), fileUpload_1.FileUploadHelper.upload.array('files', 5), (req, res, next) => {
+router.post('/createProduct', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.RESELLER, user_1.ENUM_USER_ROLE.STAFF), fileUpload_1.FileUploadHelper.upload.array('files', 5), (req, res, next) => {
     const multerReq = req;
     multerReq.body = products_validations_1.ProductsValidation.createProductValidation.parse(JSON.parse(multerReq.body.data));
     if (multerReq.files) {
-        multerReq.body.fileUrls = multerReq.files.map(file => `https://www.apibop.bopbd.com.bd/api/v1/products/image/${file.filename}`);
+        multerReq.body.fileUrls = multerReq.files.map(file => `${config_1.default.api_link_Image}/api/v1/products/image/${file.filename}`);
     }
     return products_controller_1.ProductController.createProduct(multerReq, res, next);
 });
 router.get('/:id', products_controller_1.ProductController.getSingle);
 router.get('/', products_controller_1.ProductController.getAllProducts);
-router.delete('/deleteProductImage/:imageId/:productId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.RESELLER), products_controller_1.ProductController.deleteImageFromProduct);
-router.patch('/addImages/:productId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.RESELLER), fileUpload_1.FileUploadHelper.upload.array('files', 5), // Ensure 'files' matches the field name used in the form
+router.delete('/deleteProductImage/:imageId/:productId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.RESELLER, user_1.ENUM_USER_ROLE.STAFF), products_controller_1.ProductController.deleteImageFromProduct);
+router.patch('/addImages/:productId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.RESELLER, user_1.ENUM_USER_ROLE.STAFF), fileUpload_1.FileUploadHelper.upload.array('files', 5), // Ensure 'files' matches the field name used in the form
 (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const multerReq = req;
     try {
         if (multerReq.files) {
-            multerReq.body.fileUrls = multerReq.files.map(file => `https://www.apibop.bopbd.com.bd/api/v1/products/image/${file.filename}`);
+            multerReq.body.fileUrls = multerReq.files.map(file => `${config_1.default.api_link_Image}/api/v1/products/image/${file.filename}`);
         }
         return yield products_controller_1.ProductController.addImageToProduct(multerReq, res, next);
     }
@@ -49,8 +50,8 @@ router.patch('/addImages/:productId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.
         return next(error); // Forward the error to the error handler
     }
 }));
-router.patch('/infoUpdate/:productId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.RESELLER), (0, validateRequest_1.default)(products_validations_1.ProductsValidation.updateProductInfoValidation), products_controller_1.ProductController.updateProductInfo);
-router.delete('/:productId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.RESELLER), products_controller_1.ProductController.deleteProduct);
+router.patch('/infoUpdate/:productId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.RESELLER, user_1.ENUM_USER_ROLE.STAFF), (0, validateRequest_1.default)(products_validations_1.ProductsValidation.updateProductInfoValidation), products_controller_1.ProductController.updateProductInfo);
+router.delete('/:productId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.RESELLER, user_1.ENUM_USER_ROLE.STAFF, user_1.ENUM_USER_ROLE.ADMIN, user_1.ENUM_USER_ROLE.SUPER_ADMIN), products_controller_1.ProductController.deleteProduct);
 router.get('/image/:fileName', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const filePath = yield path_1.default.join(process.cwd(), 'uploads', path_1.default.basename(req.params.fileName));
     // Check if the file exists

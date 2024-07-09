@@ -1,4 +1,4 @@
-import { User } from '@prisma/client';
+import { Staff, User } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
 import httpStatus from 'http-status';
 import catchAsync from '../../../shared/catchAsync';
@@ -57,7 +57,7 @@ const getSingle = catchAsync(async (req: Request, res: Response) => {
   const { id: userId, role } = req.user as any;
   const { profileId } = req.params;
   const result = await UserServices.getSingle(userId, profileId, role);
-  sendResponse<User>(res, {
+  sendResponse<User | Staff>(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: 'User profile retrieve',

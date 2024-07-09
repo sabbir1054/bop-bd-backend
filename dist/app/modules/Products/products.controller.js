@@ -52,8 +52,8 @@ const getSingle = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void
 }));
 const deleteImageFromProduct = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { imageId, productId } = req.params;
-    const { id: ownerId } = req.user;
-    const result = yield products_service_1.ProductServices.deleteImageFromProduct(imageId, productId, ownerId);
+    const { id: userId, role } = req.user;
+    const result = yield products_service_1.ProductServices.deleteImageFromProduct(imageId, productId, userId, role);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,
@@ -72,9 +72,9 @@ const addImageToProduct = (0, catchAsync_1.default)((req, res) => __awaiter(void
 }));
 const updateProductInfo = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { productId } = req.params;
-    const { id: ownerId } = req.user;
+    const { id: userId, role } = req.user;
     const payload = req.body;
-    const result = yield products_service_1.ProductServices.updateProductInfo(productId, ownerId, payload);
+    const result = yield products_service_1.ProductServices.updateProductInfo(productId, userId, role, payload);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,
@@ -84,8 +84,8 @@ const updateProductInfo = (0, catchAsync_1.default)((req, res) => __awaiter(void
 }));
 const deleteProduct = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { productId } = req.params;
-    const { id: ownerId } = req.user;
-    const result = yield products_service_1.ProductServices.deleteProduct(productId, ownerId);
+    const { id: userId, role } = req.user;
+    const result = yield products_service_1.ProductServices.deleteProduct(productId, userId, role);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,

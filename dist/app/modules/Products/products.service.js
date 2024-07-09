@@ -33,13 +33,34 @@ const prisma_1 = __importDefault(require("../../../shared/prisma"));
 const product_constant_1 = require("./product.constant");
 const createNew = (req) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    const _b = req.body, { ownerId, categoryId, fileUrls } = _b, others = __rest(_b, ["ownerId", "categoryId", "fileUrls"]);
-    const { id: userId } = req.user;
-    if (ownerId !== userId) {
-        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Owner id does not match with user');
+    const _b = req.body, { categoryId, fileUrls } = _b, others = __rest(_b, ["categoryId", "fileUrls"]);
+    const { id: userId, role } = req.user;
+    let ownerId = null;
+    if (role === 'STAFF') {
+        const isValidStaff = yield prisma_1.default.staff.findUnique({
+            where: { staffInfoId: userId },
+            include: {
+                organization: true,
+            },
+        });
+        if (!isValidStaff) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff  is invalid');
+        }
+        else {
+            if (isValidStaff.role !== ('STORE_MANAGER' || 'STAFF_ADMIN')) {
+                throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only store manager and admin can create products');
+            }
+            ownerId = isValidStaff.organization.ownerId;
+        }
+    }
+    else {
+        ownerId = userId;
+    }
+    if (!ownerId) {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Owner info not found');
     }
     const ownerBusinessTypeCheck = yield prisma_1.default.user.findUnique({
-        where: { id: userId },
+        where: { id: ownerId },
         include: {
             businessType: {
                 include: {
@@ -48,6 +69,9 @@ const createNew = (req) => __awaiter(void 0, void 0, void 0, function* () {
             },
         },
     });
+    if (!(ownerBusinessTypeCheck === null || ownerBusinessTypeCheck === void 0 ? void 0 : ownerBusinessTypeCheck.verified)) {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Owner is not verified');
+    }
     if (!ownerBusinessTypeCheck || !(ownerBusinessTypeCheck === null || ownerBusinessTypeCheck === void 0 ? void 0 : ownerBusinessTypeCheck.businessTypeId)) {
         throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Please set user business type and complete profile');
     }
@@ -69,6 +93,8 @@ const createNew = (req) => __awaiter(void 0, void 0, void 0, function* () {
                     role: true,
                     memberCategory: true,
                     verified: true,
+                    organization: true,
+                    isMobileVerified: true,
                     name: true,
                     email: true,
                     phone: true,
@@ -164,6 +190,8 @@ const getAllProduct = (filters, options) => __awaiter(void 0, void 0, void 0, fu
                     role: true,
                     memberCategory: true,
                     verified: true,
+                    organization: true,
+                    isMobileVerified: true,
                     name: true,
                     email: true,
                     phone: true,
@@ -205,6 +233,8 @@ const getSingle = (id) => __awaiter(void 0, void 0, void 0, function* () {
                     role: true,
                     memberCategory: true,
                     verified: true,
+                    organization: true,
+                    isMobileVerified: true,
                     name: true,
                     phone: true,
                     address: true,
@@ -223,6 +253,8 @@ const getSingle = (id) => __awaiter(void 0, void 0, void 0, function* () {
                             id: true,
                             memberCategory: true,
                             verified: true,
+                            organization: true,
+                            isMobileVerified: true,
                             name: true,
                             phone: true,
                             address: true,
@@ -242,7 +274,24 @@ const getSingle = (id) => __awaiter(void 0, void 0, void 0, function* () {
     }
     return result;
 });
-const deleteImageFromProduct = (imageId, productId, ownerId) => __awaiter(void 0, void 0, void 0, function* () {
+const deleteImageFromProduct = (imageId, productId, userId, userRole) => __awaiter(void 0, void 0, void 0, function* () {
+    let ownerId = null;
+    if (userRole === 'STAFF') {
+        const isValidStaff = yield prisma_1.default.staff.findUnique({
+            where: { staffInfoId: userId },
+            include: { organization: true },
+        });
+        if (!isValidStaff) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
+        }
+        if (isValidStaff.role !== ('STORE_MANAGER' || 'STAFF_ADMIN')) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only store manager or admin delete the product image');
+        }
+        ownerId = isValidStaff.organization.ownerId;
+    }
+    else {
+        ownerId = userId;
+    }
     const isProductExist = yield prisma_1.default.product.findUnique({
         where: { id: productId },
         include: {
@@ -252,6 +301,8 @@ const deleteImageFromProduct = (imageId, productId, ownerId) => __awaiter(void 0
                     role: true,
                     memberCategory: true,
                     verified: true,
+                    organization: true,
+                    isMobileVerified: true,
                     name: true,
                     email: true,
                     phone: true,
@@ -275,7 +326,7 @@ const deleteImageFromProduct = (imageId, productId, ownerId) => __awaiter(void 0
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Product not found ');
     }
     if ((isProductExist === null || isProductExist === void 0 ? void 0 : isProductExist.ownerId) !== ownerId) {
-        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Only owner can update products ');
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Invalid staff/owner  ');
     }
     const isImageExist = yield prisma_1.default.image.findUnique({
         where: { id: imageId, productId: productId },
@@ -303,6 +354,8 @@ const deleteImageFromProduct = (imageId, productId, ownerId) => __awaiter(void 0
                     role: true,
                     memberCategory: true,
                     verified: true,
+                    organization: true,
+                    isMobileVerified: true,
                     name: true,
                     email: true,
                     phone: true,
@@ -327,8 +380,25 @@ const deleteImageFromProduct = (imageId, productId, ownerId) => __awaiter(void 0
 });
 const addNewImageForProduct = (req) => __awaiter(void 0, void 0, void 0, function* () {
     const { productId } = req.params;
-    const { id: ownerId } = req.user;
+    const { id: userId, role: userRole } = req.user;
     const { fileUrls } = req.body;
+    let ownerId = null;
+    if (userRole === 'STAFF') {
+        const isValidStaff = yield prisma_1.default.staff.findUnique({
+            where: { staffInfoId: userId },
+            include: { organization: true },
+        });
+        if (!isValidStaff) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
+        }
+        if (isValidStaff.role !== ('STORE_MANAGER' || 'STAFF_ADMIN')) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only store manager or admin add the product image');
+        }
+        ownerId = isValidStaff.organization.ownerId;
+    }
+    else {
+        ownerId = userId;
+    }
     const isProductExist = yield prisma_1.default.product.findUnique({
         where: { id: productId },
         include: {
@@ -337,6 +407,8 @@ const addNewImageForProduct = (req) => __awaiter(void 0, void 0, void 0, functio
                     id: true,
                     memberCategory: true,
                     verified: true,
+                    organization: true,
+                    isMobileVerified: true,
                     name: true,
                     phone: true,
                     address: true,
@@ -389,6 +461,8 @@ const addNewImageForProduct = (req) => __awaiter(void 0, void 0, void 0, functio
                     id: true,
                     memberCategory: true,
                     verified: true,
+                    organization: true,
+                    isMobileVerified: true,
                     name: true,
                     phone: true,
                     address: true,
@@ -404,9 +478,26 @@ const addNewImageForProduct = (req) => __awaiter(void 0, void 0, void 0, functio
     });
     return result;
 });
-const updateProductInfo = (productId, ownerId, payload) => __awaiter(void 0, void 0, void 0, function* () {
+const updateProductInfo = (productId, userId, userRole, payload) => __awaiter(void 0, void 0, void 0, function* () {
     if (!payload) {
         throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'No update data provided');
+    }
+    let ownerId = null;
+    if (userRole === 'STAFF') {
+        const isValidStaff = yield prisma_1.default.staff.findUnique({
+            where: { staffInfoId: userId },
+            include: { organization: true },
+        });
+        if (!isValidStaff) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
+        }
+        if (isValidStaff.role !== ('STORE_MANAGER' || 'STAFF_ADMIN')) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only store manager or admin update product info');
+        }
+        ownerId = isValidStaff.organization.ownerId;
+    }
+    else {
+        ownerId = userId;
     }
     const { categoryId } = payload, othersInfo = __rest(payload, ["categoryId"]);
     const isProductExist = yield prisma_1.default.product.findUnique({
@@ -418,6 +509,8 @@ const updateProductInfo = (productId, ownerId, payload) => __awaiter(void 0, voi
                     role: true,
                     memberCategory: true,
                     verified: true,
+                    organization: true,
+                    isMobileVerified: true,
                     name: true,
                     email: true,
                     phone: true,
@@ -441,7 +534,7 @@ const updateProductInfo = (productId, ownerId, payload) => __awaiter(void 0, voi
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Product not found ');
     }
     if ((isProductExist === null || isProductExist === void 0 ? void 0 : isProductExist.ownerId) !== ownerId) {
-        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Only owner can update products ');
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Invalid owner info ');
     }
     const result = yield prisma_1.default.product.update({
         where: { id: productId },
@@ -449,7 +542,32 @@ const updateProductInfo = (productId, ownerId, payload) => __awaiter(void 0, voi
     });
     return result;
 });
-const deleteProduct = (productId, ownerId) => __awaiter(void 0, void 0, void 0, function* () {
+const deleteProduct = (productId, userId, userRole) => __awaiter(void 0, void 0, void 0, function* () {
+    let ownerId = null;
+    if (userRole === 'STAFF') {
+        const isValidStaff = yield prisma_1.default.staff.findUnique({
+            where: { staffInfoId: userId },
+            include: { organization: true },
+        });
+        if (!isValidStaff) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
+        }
+        if (isValidStaff.role !== ('STORE_MANAGER' || 'STAFF_ADMIN')) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only store manager or admin delete product info');
+        }
+        ownerId = isValidStaff.organization.ownerId;
+    }
+    else {
+        if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') {
+            const productOwner = yield prisma_1.default.product.findUnique({
+                where: { id: productId },
+            });
+            ownerId = productOwner === null || productOwner === void 0 ? void 0 : productOwner.ownerId;
+        }
+        else {
+            ownerId = userId;
+        }
+    }
     // Check if the product exists
     const isProductExist = yield prisma_1.default.product.findUnique({
         where: { id: productId },
@@ -462,7 +580,7 @@ const deleteProduct = (productId, ownerId) => __awaiter(void 0, void 0, void 0, 
     }
     // Check if the owner is the same as the one making the request
     if (isProductExist.ownerId !== ownerId) {
-        throw new ApiError_1.default(http_status_1.default.FORBIDDEN, 'Only product owner can delete products');
+        throw new ApiError_1.default(http_status_1.default.FORBIDDEN, 'Invalid owner info');
     }
     const result = yield prisma_1.default.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {
         // Delete images from the server

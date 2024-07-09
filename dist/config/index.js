@@ -14,6 +14,7 @@ exports.default = {
     database_url: process.env.DATABASE_URL,
     bycrypt_salt_rounds: process.env.BCRYPT_SALT_ROUNDS,
     base_url_frontend: process.env.BASE_URL_FRONTEND,
+    api_link_Image: process.env.API_LINK_OF_IMAGE,
     email_host: {
         name: process.env.EMAIL_HOST_NAME,
         port: process.env.EMAIL_HOST_PORT,
@@ -25,5 +26,10 @@ exports.default = {
         refresh_secret: process.env.JWT_REFRESH_SECRET,
         expires_in: process.env.JWT_EXPIRES_IN,
         refresh_expires_in: process.env.JWT_REFRESH_EXPIRES_IN,
+    },
+    mobileOTP: {
+        apiKey: process.env.MOBILE_OTP_API_KEY,
+        secretKey: process.env.MOBILE_OTP_SECRET_KEY,
+        callerId: process.env.MOBILE_OTP_CALLER_ID,
     },
 };

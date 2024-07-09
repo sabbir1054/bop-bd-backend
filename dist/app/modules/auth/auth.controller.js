@@ -70,8 +70,59 @@ const refreshToken = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, v
         data: result,
     });
 }));
+const verifyOtp = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield auth_service_1.AuthServices.verifyOTP(req.body);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: result === null || result === void 0 ? void 0 : result.message,
+        data: result === null || result === void 0 ? void 0 : result.result,
+    });
+}));
+const resendOtp = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield auth_service_1.AuthServices.resendOtp(req.body.phone);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: 'Otp resend done',
+        data: result,
+    });
+}));
+const forgetPasswordOtp = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield auth_service_1.AuthServices.forgetPasswordOtp(req.body.phone);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: 'Otp send done',
+        data: result,
+    });
+}));
+const resendForgetpasswordOtp = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield auth_service_1.AuthServices.resendForgetpasswordOtp(req.body.phone);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: 'Otp re send done',
+        data: result,
+    });
+}));
+const verifyForgotPasswordOtp = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { phone, otp } = req.body;
+    const result = yield auth_service_1.AuthServices.verifyForgotPasswordOtp(phone, otp);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: 'Otp matched',
+        data: result,
+    });
+}));
 exports.AuthController = {
     userRegistration,
     userLogin,
     refreshToken,
+    verifyOtp,
+    resendOtp,
+    forgetPasswordOtp,
+    resendForgetpasswordOtp,
+    verifyForgotPasswordOtp,
 };
