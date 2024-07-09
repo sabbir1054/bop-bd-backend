@@ -220,7 +220,7 @@ const getSingle = async (
 ): Promise<User | null | Staff> => {
   if (role === 'STAFF') {
     let result = await prisma.staff.findUnique({
-      where: { id: profileId },
+      where: { staffInfoId: profileId },
       include: {
         organization: true,
         staffInfo: true,
