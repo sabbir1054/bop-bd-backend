@@ -70,6 +70,8 @@ const getAllProductBusinessType = async (id: string): Promise<Category[]> => {
                   role: true,
                   memberCategory: true,
                   verified: true,
+                  organization: true,
+                  isEmailVerified: true,
                   name: true,
                   email: true,
                   phone: true,

@@ -195,6 +195,7 @@ const userRegistration = async (
             role: true,
             memberCategory: true,
             verified: true,
+            isMobileVerified: true,
             name: true,
             email: true,
             phone: true,
@@ -212,6 +213,7 @@ const userRegistration = async (
             incoming_order: true,
             businessType: true,
             businessTypeId: true,
+            organizationId: true,
           },
         });
         await prisma.organization.create({

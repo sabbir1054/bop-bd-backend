@@ -62,6 +62,7 @@ router.get(
     ENUM_USER_ROLE.RESELLER,
     ENUM_USER_ROLE.SUPER_ADMIN,
     ENUM_USER_ROLE.WHOLESALER,
+    ENUM_USER_ROLE.STAFF,
   ),
   UserController.getSingle,
 );

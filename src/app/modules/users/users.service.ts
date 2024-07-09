@@ -1,4 +1,4 @@
-import { User } from '@prisma/client';
+import { Staff, User } from '@prisma/client';
 import { NextFunction, Request } from 'express';
 import fs from 'fs';
 import httpStatus from 'http-status';
@@ -68,6 +68,8 @@ const updateUserProfile = async (
         role: true,
         memberCategory: true,
         verified: true,
+        organization: true,
+        isMobileVerified: true,
         name: true,
         email: true,
         phone: true,
@@ -100,6 +102,8 @@ const updateUserProfile = async (
         role: true,
         memberCategory: true,
         verified: true,
+        organization: true,
+        isMobileVerified: true,
         name: true,
         email: true,
         phone: true,
@@ -158,6 +162,8 @@ const removeProfilePicture = async (userId: string): Promise<Partial<User>> => {
       role: true,
       memberCategory: true,
       verified: true,
+      organization: true,
+      isMobileVerified: true,
       name: true,
       email: true,
       phone: true,
@@ -188,6 +194,8 @@ const getAll = async (): Promise<Partial<User>[]> => {
       role: true,
       memberCategory: true,
       verified: true,
+      organization: true,
+      isMobileVerified: true,
       name: true,
       email: true,
       phone: true,
@@ -209,7 +217,24 @@ const getSingle = async (
   userId: string,
   profileId: string,
   role: string,
-): Promise<User | null> => {
+): Promise<User | null | Staff> => {
+  if (role === 'STAFF') {
+    let result = await prisma.staff.findUnique({
+      where: { id: profileId },
+      include: {
+        organization: true,
+        staffInfo: true,
+      },
+    });
+
+    if (!result) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'User not found !');
+    }
+    result.staffInfo.password = '';
+
+    return result;
+  }
+
   let result = await prisma.user.findUnique({
     where: { id: profileId },
     include: {
@@ -227,6 +252,7 @@ const getSingle = async (
         include: { orderItems: true },
       },
       businessType: true,
+      organization: true,
     },
   });
 
