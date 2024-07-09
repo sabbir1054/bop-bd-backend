@@ -82,7 +82,7 @@ const userRegistration = async (
       throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Otp not set');
     }
 
-    if (othersData.role === ('ADMIN' || 'SUPER_ADMIN')) {
+    if (othersData.role === 'ADMIN' || othersData.role === 'SUPER_ADMIN') {
       const result = await prisma.user.create({
         data: {
           phone: phone,
