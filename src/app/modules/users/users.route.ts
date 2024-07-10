@@ -22,6 +22,7 @@ router.patch(
     ENUM_USER_ROLE.RESELLER,
     ENUM_USER_ROLE.SUPER_ADMIN,
     ENUM_USER_ROLE.WHOLESALER,
+    ENUM_USER_ROLE.STAFF,
   ),
   FileUploadHelper.uploadProfile.single('file'),
   (req: Request, res: Response, next: NextFunction) => {
