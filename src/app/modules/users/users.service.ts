@@ -222,7 +222,11 @@ const getSingle = async (
     let result = await prisma.staff.findUnique({
       where: { staffInfoId: profileId },
       include: {
-        organization: true,
+        organization: {
+          include: {
+            owner: true,
+          },
+        },
         staffInfo: true,
       },
     });
