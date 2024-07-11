@@ -95,11 +95,12 @@ const updateOrderStatus = catchAsync(async (req: Request, res: Response) => {
   });
 });
 const updatePaymentStatus = catchAsync(async (req: Request, res: Response) => {
-  const { id: userId } = req.user as any;
+  const { id: userId, role } = req.user as any;
   const { orderId } = req.params;
   const { status } = req.body;
   const result = await OrderService.updatePaymentStatus(
     userId,
+    role,
     orderId,
     status,
   );
