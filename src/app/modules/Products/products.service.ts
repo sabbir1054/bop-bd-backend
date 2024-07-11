@@ -29,14 +29,17 @@ const createNew = async (req: Request): Promise<Product> => {
     if (!isValidStaff) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff  is invalid');
     } else {
-      if (isValidStaff.role !== ('STORE_MANAGER' || 'STAFF_ADMIN')) {
+      if (
+        isValidStaff.role === 'STORE_MANAGER' ||
+        isValidStaff.role === 'STAFF_ADMIN'
+      ) {
+        ownerId = isValidStaff.organization.ownerId;
+      } else {
         throw new ApiError(
           httpStatus.BAD_REQUEST,
-          'Only store manager and admin can create products',
+          'Only store manager or admin update product info',
         );
       }
-
-      ownerId = isValidStaff.organization.ownerId;
     }
   } else {
     ownerId = userId;
@@ -317,13 +320,17 @@ const deleteImageFromProduct = async (
     if (!isValidStaff) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
-    if (isValidStaff.role !== ('STORE_MANAGER' || 'STAFF_ADMIN')) {
+    if (
+      isValidStaff.role === 'STORE_MANAGER' ||
+      isValidStaff.role === 'STAFF_ADMIN'
+    ) {
+      ownerId = isValidStaff.organization.ownerId;
+    } else {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
-        'Only store manager or admin delete the product image',
+        'Only store manager or admin update product info',
       );
     }
-    ownerId = isValidStaff.organization.ownerId;
   } else {
     ownerId = userId;
   }
@@ -444,13 +451,17 @@ const addNewImageForProduct = async (req: Request): Promise<Product | null> => {
     if (!isValidStaff) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
-    if (isValidStaff.role !== ('STORE_MANAGER' || 'STAFF_ADMIN')) {
+    if (
+      isValidStaff.role === 'STORE_MANAGER' ||
+      isValidStaff.role === 'STAFF_ADMIN'
+    ) {
+      ownerId = isValidStaff.organization.ownerId;
+    } else {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
-        'Only store manager or admin add the product image',
+        'Only store manager or admin update product info',
       );
     }
-    ownerId = isValidStaff.organization.ownerId;
   } else {
     ownerId = userId;
   }
@@ -649,13 +660,17 @@ const deleteProduct = async (
     if (!isValidStaff) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
-    if (isValidStaff.role !== ('STORE_MANAGER' || 'STAFF_ADMIN')) {
+    if (
+      isValidStaff.role === 'STORE_MANAGER' ||
+      isValidStaff.role === 'STAFF_ADMIN'
+    ) {
+      ownerId = isValidStaff.organization.ownerId;
+    } else {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
-        'Only store manager or admin delete product info',
+        'Only store manager or admin update product info',
       );
     }
-    ownerId = isValidStaff.organization.ownerId;
   } else {
     if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') {
       const productOwner = await prisma.product.findUnique({
