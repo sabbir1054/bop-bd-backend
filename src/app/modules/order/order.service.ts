@@ -30,13 +30,17 @@ const orderCreate = async (
     if (!isValidStaff) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
-    if (isValidStaff.role !== ('PURCHASE_OFFICER' || 'STAFF_ADMIN')) {
+    if (
+      isValidStaff.role === 'PURCHASE_OFFICER' ||
+      isValidStaff.role === 'STAFF_ADMIN'
+    ) {
+      cartId = isValidStaff.organization.owner.cart[0].id;
+    } else {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
         'Only store purchase officer or admin make order',
       );
     }
-    cartId = isValidStaff.organization.owner.cart[0].id;
   } else {
     const isValidUser = await prisma.user.findUnique({
       where: { id: userId },
@@ -510,8 +514,17 @@ const updateOrderStatus = async (
         where: { staffInfoId: userId },
         include: { organization: true },
       });
+
+      if (!isValidStaff) {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          'Only delivery boy change status to delivered',
+        );
+      }
       staffRole = isValidStaff?.role;
-      if (isValidStaff?.role !== ('DELIVERY_BOY' || 'STAFF_ADMIN')) {
+      const validRole = ['DELIVERY_BOY', 'STAFF_ADMIN'];
+
+      if (!validRole.includes(staffRole)) {
         throw new ApiError(
           httpStatus.BAD_REQUEST,
           'Only delivery boy change status to delivered',
@@ -641,6 +654,7 @@ const verifyDeliveryOtp = async (
 };
 const updatePaymentStatus = async (
   userId: string,
+  userRole: string,
   orderId: string,
   status: PaymentStatus,
 ): Promise<Order> => {
@@ -651,12 +665,29 @@ const updatePaymentStatus = async (
   if (!isExistOrder) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Order not exist ');
   }
-  if (userId !== isExistOrder.product_seller_id) {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
-      'Only product seller can change the status',
-    );
+
+  let ownerId = null;
+  //* here ensure only owner,staff admin,order supervisor, delivery boy update status
+  if (userRole === 'STAFF') {
+    const isValidStaff = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+      include: { organization: true },
+    });
+    if (!isValidStaff) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
+    }
+
+    if (!validStaffRoleForOrderStatusUpdate.includes(isValidStaff.role)) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'You are not able to change order status',
+      );
+    }
+    ownerId = isValidStaff.organization.ownerId;
+  } else {
+    ownerId = userId;
   }
+
   const result = await prisma.order.update({
     where: { id: orderId },
     data: { paymentStatus: status },
