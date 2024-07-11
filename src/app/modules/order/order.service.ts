@@ -784,13 +784,15 @@ const searchFilterIncomingOrders = async (
     if (!isValidStaff) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
-    if (isValidStaff.role !== ('ORDER_SUPERVISOR' || 'STAFF_ADMIN')) {
+    const validUser = ['ORDER_SUPERVISOR', 'STAFF_ADMIN'];
+    if (validUser.includes(isValidStaff.role)) {
+      ownerId = isValidStaff.organization.ownerId;
+    } else {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
-        'You are not allowed to see incoming orders',
+        'You are not allowed to see outgoing orders',
       );
     }
-    ownerId = isValidStaff.organization.ownerId;
   } else {
     ownerId = userId;
   }
@@ -884,16 +886,15 @@ const searchFilterOutgoingOrders = async (
     if (!isValidStaff) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
-    if (
-      isValidStaff.role !==
-      ('PURCHASE_OFFICER' || 'ORDER_SUPERVISOR' || 'STAFF_ADMIN')
-    ) {
+    const validUser = ['PURCHASE_OFFICER', 'ORDER_SUPERVISOR', 'STAFF_ADMIN'];
+    if (validUser.includes(isValidStaff.role)) {
+      ownerId = isValidStaff.organization.ownerId;
+    } else {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
         'You are not allowed to see outgoing orders',
       );
     }
-    ownerId = isValidStaff.organization.ownerId;
   } else {
     ownerId = userId;
   }
