@@ -569,13 +569,17 @@ const updateProductInfo = async (
     if (!isValidStaff) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
-    if (isValidStaff.role !== ('STORE_MANAGER' || 'STAFF_ADMIN')) {
+    if (
+      isValidStaff.role === 'STORE_MANAGER' ||
+      isValidStaff.role === 'STAFF_ADMIN'
+    ) {
+      ownerId = isValidStaff.organization.ownerId;
+    } else {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
         'Only store manager or admin update product info',
       );
     }
-    ownerId = isValidStaff.organization.ownerId;
   } else {
     ownerId = userId;
   }
