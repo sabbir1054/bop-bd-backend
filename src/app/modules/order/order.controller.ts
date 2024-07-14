@@ -173,6 +173,18 @@ const verifyDeliveryOtp = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const assigndForDelivery = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.user as any;
+
+  const result = await OrderService.assignForDelivery(id, req.body);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Delivery assigned',
+    data: result,
+  });
+});
 
 export const OrderController = {
   orderCreate,
@@ -186,4 +198,5 @@ export const OrderController = {
   getOrganizationOutgoingOrders,
   getOrganizationIncomingOrders,
   verifyDeliveryOtp,
+  assigndForDelivery,
 };

@@ -11,7 +11,11 @@ import {
   ordersSearchableFields,
   validStaffRoleForOrderStatusUpdate,
 } from './order.constant';
-import { IOrderCreate, IVerificationDeliveryPayload } from './order.interface';
+import {
+  IDeliveryAssignData,
+  IOrderCreate,
+  IVerificationDeliveryPayload,
+} from './order.interface';
 
 const orderCreate = async (
   userId: string,
@@ -968,7 +972,67 @@ const searchFilterOutgoingOrders = async (
     data: result,
   };
 };
+const assignForDelivery = async (
+  userId: string,
+  payload: IDeliveryAssignData,
+) => {
+  const IsValidUserRole = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { Staff: { include: { organization: true } } },
+  });
+  console.log(IsValidUserRole);
 
+  if (!IsValidUserRole?.Staff) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User info not found');
+  }
+
+  const validStaffRole = ['ORDER_SUPERVISOR', 'STAFF_ADMIN'];
+  if (!validStaffRole.includes(IsValidUserRole.Staff.role)) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'Only order supervisor and staff admin can assign delivery boy',
+    );
+  }
+
+  const isDeliveryBoyExist = await prisma.staff.findUnique({
+    where: { id: payload.deliveryBoyId },
+  });
+
+  if (!isDeliveryBoyExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Delivery boy info not found');
+  }
+  if (isDeliveryBoyExist.role !== 'DELIVERY_BOY') {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'Please provide valid delivery boy id',
+    );
+  }
+
+  const isOrderExist = await prisma.order.findUnique({
+    where: { id: payload.orderId },
+  });
+
+  if (!isOrderExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Order info not found');
+  }
+
+  if (
+    isOrderExist.product_seller_id !==
+    IsValidUserRole.Staff.organization.ownerId
+  ) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Order id not valid ');
+  }
+
+  const result = await prisma.assigndForDelivery.create({
+    data: {
+      assignedby: { connect: { id: IsValidUserRole.Staff.id } },
+      deliveryBoy: { connect: { id: payload.deliveryBoyId } },
+      order: { connect: { id: payload.orderId } },
+    },
+  });
+
+  return result;
+};
 export const OrderService = {
   orderCreate,
   getUserIncomingOrders,
@@ -981,4 +1045,5 @@ export const OrderService = {
   getOrganizationOutgoingOrders,
   getOrganizationIncomingOrders,
   verifyDeliveryOtp,
+  assignForDelivery,
 };

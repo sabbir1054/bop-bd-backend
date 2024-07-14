@@ -27,10 +27,11 @@ const updateCartSingle = async (
     if (!isValidStaff) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
-    if (isValidStaff.role !== ('PURCHASE_OFFICER' || 'STAFF_ADMIN')) {
+    const validPurchaseRole = ['PURCHASE_OFFICER', 'STAFF_ADMIN'];
+    if (!validPurchaseRole.includes(isValidStaff.role)) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
-        'Only puchase officer or admin delete the product image',
+        'Only puchase officer or admin change cart',
       );
     }
     ownerId = isValidStaff.organization.ownerId;

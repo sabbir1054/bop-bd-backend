@@ -125,4 +125,11 @@ router.post(
   OrderController.verifyDeliveryOtp,
 );
 
+router.post(
+  '/assignDeliveryBoy',
+  validateRequest(OrderValidation.assignForDeliveryValidation),
+  auth(ENUM_USER_ROLE.STAFF),
+  OrderController.assigndForDelivery,
+);
+
 export const OrderRoutes = router;

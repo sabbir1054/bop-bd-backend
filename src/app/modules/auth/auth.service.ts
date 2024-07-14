@@ -56,31 +56,31 @@ const userRegistration = async (
     //otp process
     const otp = generateOTP();
 
-    const sendOtp = await sendOTP(
-      payload.phone,
-      otp,
-      `Your BOP-BD registration verification code is ${otp}`,
-    );
+    // const sendOtp = await sendOTP(
+    //   payload.phone,
+    //   otp,
+    //   `Your BOP-BD registration verification code is ${otp}`,
+    // );
 
-    if (sendOtp == null || sendOtp.Status != 0) {
-      throw new ApiError(
-        httpStatus.INTERNAL_SERVER_ERROR,
-        'Otp not send please try again',
-      );
-    }
+    // if (sendOtp == null || sendOtp.Status != 0) {
+    //   throw new ApiError(
+    //     httpStatus.INTERNAL_SERVER_ERROR,
+    //     'Otp not send please try again',
+    //   );
+    // }
 
-    const makeOtpForUser = await prisma.oneTimePassword.create({
-      data: {
-        phone: payload.phone,
-        otpCode: otp,
-        checkCounter: 0,
-        resendCounter: 0,
-      },
-    });
+    // const makeOtpForUser = await prisma.oneTimePassword.create({
+    //   data: {
+    //     phone: payload.phone,
+    //     otpCode: otp,
+    //     checkCounter: 0,
+    //     resendCounter: 0,
+    //   },
+    // });
 
-    if (!makeOtpForUser) {
-      throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Otp not set');
-    }
+    // if (!makeOtpForUser) {
+    //   throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Otp not set');
+    // }
 
     if (othersData.role === 'ADMIN' || othersData.role === 'SUPER_ADMIN') {
       const result = await prisma.user.create({

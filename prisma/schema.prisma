@@ -50,20 +50,6 @@ enum StaffRole {
   PURCHASE_OFFICER
 }
 
-model Staff {
-  id             String       @id @default(uuid())
-  role           StaffRole
-  salary         Float?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  organizationId String
-  staffInfo      User         @relation(fields: [staffInfoId], references: [id])
-  staffInfoId    String       @unique
-
-  @@map("staff")
-}
-
 model Organization {
   id        String   @id @default(uuid())
   name      String?
@@ -228,19 +214,20 @@ model CartItem {
 }
 
 model Order {
-  id                String        @id @default(uuid())
-  orderCode         String        @unique
-  total             Float
-  orderStatus       OrderStatus   @default(PENDING)
-  paymentStatus     PaymentStatus @default(PENDING)
-  customer          User          @relation("customer_orders", fields: [customerId], references: [id])
-  customerId        String
-  product_seller    User          @relation("product_seller_orders", fields: [product_seller_id], references: [id])
-  product_seller_id String
-  shipping_address  String
-  updatedAt         DateTime      @updatedAt
-  createdAt         DateTime      @default(now())
-  orderItems        OrderItem[]
+  id                 String               @id @default(uuid())
+  orderCode          String               @unique
+  total              Float
+  orderStatus        OrderStatus          @default(PENDING)
+  paymentStatus      PaymentStatus        @default(PENDING)
+  customer           User                 @relation("customer_orders", fields: [customerId], references: [id])
+  customerId         String
+  product_seller     User                 @relation("product_seller_orders", fields: [product_seller_id], references: [id])
+  product_seller_id  String
+  shipping_address   String
+  updatedAt          DateTime             @updatedAt
+  createdAt          DateTime             @default(now())
+  orderItems         OrderItem[]
+  AssigndForDelivery AssigndForDelivery[]
 
   @@map("orders")
 }
@@ -257,4 +244,35 @@ model OrderItem {
   orderId   String
 
   @@map("order_items")
+}
+
+model Staff {
+  id                 String               @id @default(uuid())
+  role               StaffRole
+  salary             Float?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  organization       Organization         @relation(fields: [organizationId], references: [id])
+  organizationId     String
+  staffInfo          User                 @relation(fields: [staffInfoId], references: [id])
+  staffInfoId        String               @unique
+  assignedBy         AssigndForDelivery[] @relation("assignedByStaff")
+  AssigndForDelivery AssigndForDelivery[] @relation("deliveryBy")
+  deliveryArea       String?
+
+  @@map("staff")
+}
+
+model AssigndForDelivery {
+  id                String   @id @default(uuid())
+  updatedAt         DateTime @updatedAt
+  createdAt         DateTime @default(now())
+  assignedby        Staff    @relation("assignedByStaff", fields: [assignedbyStaffId], references: [id])
+  assignedbyStaffId String
+  deliveryBoy       Staff    @relation("deliveryBy", fields: [deliveryBoyId], references: [id])
+  deliveryBoyId     String
+  order             Order    @relation(fields: [orderId], references: [id])
+  orderId           String
+  
+  @@map("assigned_for_delivery")
 }
