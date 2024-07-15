@@ -1007,6 +1007,12 @@ const assignForDelivery = async (
       'Please provide valid delivery boy id',
     );
   }
+  if (!isDeliveryBoyExist.deliveryArea) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'Delivery have not any specific area for percel delivery',
+    );
+  }
 
   const isOrderExist = await prisma.order.findUnique({
     where: { id: payload.orderId },

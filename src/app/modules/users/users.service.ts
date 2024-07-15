@@ -5,6 +5,7 @@ import httpStatus from 'http-status';
 import path from 'path';
 import ApiError from '../../../errors/ApiError';
 import prisma from '../../../shared/prisma';
+import { IStaffRole } from './user.interface';
 const updateUserProfile = async (
   req: Request,
   next: NextFunction,
@@ -330,6 +331,128 @@ const userVerifiedStatusChange = async (
   return result;
 };
 
+const getOrganizationStaff = async (
+  userId: string,
+  userRole: string,
+  role?: IStaffRole,
+) => {
+  const andConditions: any[] = [];
+  let ownerId: string | null = null;
+
+  if (userRole === 'STAFF') {
+    const findOwnerId = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { Staff: { include: { organization: true } } },
+    });
+
+    if (findOwnerId?.Staff?.role !== 'STAFF_ADMIN') {
+      throw new ApiError(
+        httpStatus.FORBIDDEN,
+        'Only staff admins can see this',
+      );
+    }
+
+    if (!findOwnerId?.Staff?.organization.ownerId) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
+    }
+
+    ownerId = findOwnerId.Staff?.organization.ownerId;
+  } else {
+    ownerId = userId;
+  }
+
+  if (!ownerId) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Owner ID is required');
+  }
+
+  const organization = await prisma.organization.findUnique({
+    where: { ownerId },
+  });
+
+  if (!organization) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization not found');
+  }
+
+  andConditions.push({ organizationId: organization.id });
+
+  if (role?.staffRole) {
+    andConditions.push({ role: role.staffRole });
+  }
+
+  const staffMembers = await prisma.staff.findMany({
+    where: {
+      AND: andConditions,
+    },
+    include: {
+      staffInfo: {
+        select: {
+          id: true,
+          role: true,
+          memberCategory: true,
+          verified: true,
+          name: true,
+          email: true,
+          phone: true,
+          address: true,
+          isMobileVerified: true,
+        },
+      },
+    },
+  });
+
+  return staffMembers;
+};
+
+const getMyDeliveryBoy = async (userId: string) => {
+  const isExistStaff = await prisma.staff.findUnique({
+    where: { staffInfoId: userId },
+  });
+
+  if (!isExistStaff) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not found');
+  }
+  if (isExistStaff.role !== 'ORDER_SUPERVISOR') {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'Only order supervisor can get this',
+    );
+  }
+  const organization = await prisma.organization.findUnique({
+    where: { id: isExistStaff.organizationId },
+  });
+
+  if (!organization) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization not found');
+  }
+  const andConditions: any[] = [];
+
+  andConditions.push({ organizationId: organization.id });
+  andConditions.push({ role: 'DELIVERY_BOY' });
+
+  const staffMembers = await prisma.staff.findMany({
+    where: {
+      AND: andConditions,
+    },
+    include: {
+      staffInfo: {
+        select: {
+          id: true,
+          role: true,
+          memberCategory: true,
+          verified: true,
+          name: true,
+          email: true,
+          phone: true,
+          address: true,
+          isMobileVerified: true,
+        },
+      },
+    },
+  });
+
+  return staffMembers;
+};
+
 export const UserServices = {
   updateUserProfile,
   removeProfilePicture,
@@ -337,4 +460,6 @@ export const UserServices = {
   getSingle,
   deleteUnverifiedOtp,
   userVerifiedStatusChange,
+  getOrganizationStaff,
+  getMyDeliveryBoy,
 };

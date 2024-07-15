@@ -39,4 +39,5 @@ export type IRegisterInfo = {
     | 'DELIVERY_BOY'
     | 'ACCOUNTS_MANAGER'
     | 'PURCHASE_OFFICER';
+  deliveryArea?: string;
 };

@@ -11,7 +11,25 @@ import validateRequest from '../../middlewares/validateRequest';
 import { UsersValidation } from './user.validation';
 import { UserController } from './users.controller';
 const router = express.Router();
-
+router.get(
+  '/getStaff',
+  validateRequest(UsersValidation.getStaffValidation),
+  auth(
+    ENUM_USER_ROLE.DEALER,
+    ENUM_USER_ROLE.IMPORTER,
+    ENUM_USER_ROLE.MANUFACTURER,
+    ENUM_USER_ROLE.RESELLER,
+    ENUM_USER_ROLE.WHOLESALER,
+    ENUM_USER_ROLE.STAFF,
+  ),
+  UserController.getOrganizationStaff,
+);
+router.get(
+  '/myDeliveryBoy',
+  validateRequest(UsersValidation.getStaffValidation),
+  auth(ENUM_USER_ROLE.STAFF),
+  UserController.getMyDeliveryBoy,
+);
 router.patch(
   '/updateProfile',
   auth(
@@ -96,4 +114,5 @@ router.post(
   validateRequest(UsersValidation.userVerifiedStatusChangeValidation),
   UserController.userVerifiedStatusChange,
 );
+
 export const UsersRoutes = router;

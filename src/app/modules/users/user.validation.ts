@@ -1,5 +1,5 @@
 import z from 'zod';
-import { memberCategory } from './user.constant';
+import { memberCategory, StaffRole } from './user.constant';
 
 const updateUserProfileValidation = z.object({
   memberCategory: z
@@ -19,7 +19,15 @@ const userVerifiedStatusChangeValidation = z.object({
     userId: z.string({ required_error: 'User id is required' }),
   }),
 });
+
+const getStaffValidation = z.object({
+  body: z.object({
+    staffInfo: z.enum([...StaffRole] as [string, ...string[]]).optional(),
+  }),
+});
+
 export const UsersValidation = {
   updateUserProfileValidation,
   userVerifiedStatusChangeValidation,
+  getStaffValidation,
 };

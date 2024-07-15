@@ -75,6 +75,35 @@ const deleteUnverifiedOtp = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getOrganizationStaff = catchAsync(async (req: Request, res: Response) => {
+  const { id: userId, role } = req.user as any;
+
+  const result = await UserServices.getOrganizationStaff(
+    userId,
+    role,
+    req.body,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'User retrieve',
+    data: result,
+  });
+});
+const getMyDeliveryBoy = catchAsync(async (req: Request, res: Response) => {
+  const { id: userId } = req.user as any;
+
+  const result = await UserServices.getMyDeliveryBoy(userId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'User retrieve',
+    data: result,
+  });
+});
+
 export const UserController = {
   updateUserProfile,
   removeProfilePicture,
@@ -82,4 +111,6 @@ export const UserController = {
   getSingle,
   deleteUnverifiedOtp,
   userVerifiedStatusChange,
+  getOrganizationStaff,
+  getMyDeliveryBoy,
 };

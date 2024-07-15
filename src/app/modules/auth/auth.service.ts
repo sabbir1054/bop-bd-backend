@@ -132,6 +132,16 @@ const userRegistration = async (
             'For Staff registration , staff role is requied',
           );
         }
+
+        if (
+          othersData.staffRole === 'DELIVERY_BOY' &&
+          !othersData.deliveryArea
+        ) {
+          throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            'Give delivery boy area information',
+          );
+        }
         const result = await prisma.user.create({
           data: {
             phone: phone,
