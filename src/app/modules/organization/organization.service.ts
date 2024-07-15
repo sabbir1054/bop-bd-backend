@@ -1,6 +1,7 @@
 import httpStatus from 'http-status';
 import ApiError from '../../../errors/ApiError';
 import prisma from '../../../shared/prisma';
+import { IRangeOfDate } from './organization.interface';
 
 const getDashboardMatrics = async (userId: string, userRole: string) => {
   let ownerId = null;
@@ -88,7 +89,67 @@ const getDashboardMatrics = async (userId: string, userRole: string) => {
   });
   return result;
 };
-// const getOrdersInfoByDate= async(userId:string,userRole:string)
+const getOutgoingOrdersByDate = async (
+  userId: string,
+  userRole: string,
+  date: IRangeOfDate,
+) => {
+  // formate date
+  const start = new Date(date.startDate);
+  const end = new Date(date.endDate);
+  let ownerId = null;
+
+  if (userRole === 'STAFF') {
+    const isValidStaff = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+      include: {
+        organization: true,
+      },
+    });
+    if (!isValidStaff) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not found');
+    }
+    const validStaffRole = ['STAFF_ADMIN', 'ACCOUNTS_MANAGER'];
+    if (!validStaffRole.includes(isValidStaff.role)) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Staff role not valid');
+    }
+    ownerId = isValidStaff.organization.ownerId;
+  } else {
+    ownerId = userId;
+  }
+
+  if (!ownerId) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Owner info not found');
+  }
+  const result = await prisma.$transaction(async prisma => {
+    // Total outgoing orders within date range
+    const outgoingOrders = await prisma.order.findMany({
+      where: {
+        product_seller_id: userId,
+        createdAt: {
+          gte: start,
+          lte: end,
+        },
+      },
+    });
+    // Total cost from outgoing orders within date range
+    const totalCostOutgoingOrders = await prisma.order.aggregate({
+      where: {
+        product_seller_id: userId,
+        createdAt: {
+          gte: start,
+          lte: end,
+        },
+      },
+      _sum: { total: true },
+    });
+    return {
+      outgoingOrders: outgoingOrders,
+      outgoingOrderCost: totalCostOutgoingOrders,
+      date: date,
+    };
+  });
+};
 export const OrganizaionServices = {
   getDashboardMatrics,
 };

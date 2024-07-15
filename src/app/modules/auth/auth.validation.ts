@@ -12,6 +12,7 @@ const userRegistrationValidation = z.object({
     businessTypeId: z.string().optional(),
     organizationId: z.string().optional(),
     staffRole: z.enum([...staffRole] as [string, ...string[]]).optional(),
+    deliveryAre: z.string().optional(),
   }),
 });
 
