@@ -221,6 +221,7 @@ const getUserIncomingOrders = async (
             createdAt: 'desc',
           },
     include: {
+      assigndForDelivery: true,
       customer: {
         select: {
           id: true,
@@ -283,6 +284,7 @@ const getUserOutgoingOrders = async (
             createdAt: 'desc',
           },
     include: {
+      assigndForDelivery: true,
       product_seller: {
         select: {
           id: true,
@@ -350,6 +352,7 @@ const getOrganizationIncomingOrders = async (
             createdAt: 'desc',
           },
     include: {
+      assigndForDelivery: true,
       customer: {
         select: {
           id: true,
@@ -419,6 +422,7 @@ const getOrganizationOutgoingOrders = async (
             createdAt: 'desc',
           },
     include: {
+      assigndForDelivery: true,
       product_seller: {
         select: {
           id: true,
@@ -597,6 +601,9 @@ const updateOrderStatus = async (
     const result = await prisma.order.update({
       where: { id: orderId },
       data: { orderStatus: status },
+      include: {
+        assigndForDelivery: true,
+      },
     });
 
     return result;
@@ -847,6 +854,7 @@ const searchFilterIncomingOrders = async (
             createdAt: 'desc',
           },
     include: {
+      assigndForDelivery: true,
       orderItems: {
         include: {
           product: {
@@ -949,6 +957,7 @@ const searchFilterOutgoingOrders = async (
             createdAt: 'desc',
           },
     include: {
+      assigndForDelivery: true,
       orderItems: {
         include: {
           product: {
