@@ -88,7 +88,7 @@ const getDashboardMatrics = async (userId: string, userRole: string) => {
   });
   return result;
 };
-
+// const getOrdersInfoByDate= async(userId:string,userRole:string)
 export const OrganizaionServices = {
   getDashboardMatrics,
 };
