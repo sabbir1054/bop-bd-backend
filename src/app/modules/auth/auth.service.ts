@@ -168,13 +168,24 @@ const userRegistration = async (
           },
         });
 
-        await prisma.staff.create({
-          data: {
-            organization: { connect: { id: othersData.organizationId } },
-            role: othersData.staffRole,
-            staffInfo: { connect: { id: result.id } },
-          },
-        });
+        if (othersData.staffRole === 'DELIVERY_BOY') {
+          await prisma.staff.create({
+            data: {
+              organization: { connect: { id: othersData.organizationId } },
+              role: othersData.staffRole,
+              deliveryArea: othersData.deliveryArea,
+              staffInfo: { connect: { id: result.id } },
+            },
+          });
+        } else {
+          await prisma.staff.create({
+            data: {
+              organization: { connect: { id: othersData.organizationId } },
+              role: othersData.staffRole,
+              staffInfo: { connect: { id: result.id } },
+            },
+          });
+        }
 
         return result;
       } else {
