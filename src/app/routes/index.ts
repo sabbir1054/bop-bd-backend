@@ -6,6 +6,7 @@ import { BusinessTypeRoutes } from '../modules/businessType/businessType.route';
 import { CartRoutes } from '../modules/cart/cart.routes';
 import { FeedbackRoutes } from '../modules/feedback/feedback.routes';
 import { OrderRoutes } from '../modules/order/order.route';
+import { OrganizationRoutes } from '../modules/organization/organization.route';
 import { UsersRoutes } from '../modules/users/users.route';
 
 const router = express.Router();
@@ -43,6 +44,10 @@ const moduleRoutes = [
   {
     path: '/feedback',
     route: FeedbackRoutes,
+  },
+  {
+    path: '/organization',
+    route: OrganizationRoutes,
   },
 ];
 
