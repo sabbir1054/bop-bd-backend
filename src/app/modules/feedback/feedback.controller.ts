@@ -6,8 +6,8 @@ import sendResponse from '../../../shared/sendResponse';
 import { FeedbackService } from './feedback.service';
 
 const createNew = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.user as any;
-  const result = await FeedbackService.createNew(id, req.body);
+  const { id, role } = req.user as any;
+  const result = await FeedbackService.createNew(id, role, req.body);
   sendResponse<Feedback>(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -36,10 +36,15 @@ const getSingle = catchAsync(async (req: Request, res: Response) => {
   });
 });
 const updateSingle = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.user as any;
+  const { id, role } = req.user as any;
   const { feedbackId } = req.params;
 
-  const result = await FeedbackService.updateSingle(id, feedbackId, req.body);
+  const result = await FeedbackService.updateSingle(
+    id,
+    role,
+    feedbackId,
+    req.body,
+  );
   sendResponse<Feedback>(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -48,10 +53,10 @@ const updateSingle = catchAsync(async (req: Request, res: Response) => {
   });
 });
 const deleteSingle = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.user as any;
+  const { id, role } = req.user as any;
   const { feedbackId } = req.params;
 
-  const result = await FeedbackService.deleteSingle(id, feedbackId);
+  const result = await FeedbackService.deleteSingle(id, role, feedbackId);
   sendResponse<Feedback>(res, {
     statusCode: httpStatus.OK,
     success: true,

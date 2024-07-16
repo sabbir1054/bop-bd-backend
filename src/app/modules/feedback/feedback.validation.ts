@@ -6,7 +6,6 @@ const createFeedbackValidation = z.object({
       .number({ required_error: 'Rating is required' })
       .max(5, { message: 'Rating cannot be more than 5' }),
     comment: z.string({ required_error: 'Comment is required' }),
-    userId: z.string({ required_error: 'User id is required' }),
     productId: z.string({ required_error: 'Product id is required' }),
   }),
 });

@@ -2,16 +2,43 @@ import { Feedback } from '@prisma/client';
 import httpStatus from 'http-status';
 import ApiError from '../../../errors/ApiError';
 import prisma from '../../../shared/prisma';
-import { IFeedbackUpdate } from './feedback.Interface';
+import { IFeedbackCreate, IFeedbackUpdate } from './feedback.Interface';
 
-const createNew = async (id: string, payload: Feedback): Promise<Feedback> => {
-  const { userId, productId, rating, comment } = payload;
+const createNew = async (
+  id: string,
+  userRole: string,
+  payload: IFeedbackCreate,
+): Promise<Feedback> => {
+  const { productId, rating, comment } = payload;
+  let ownerId = null;
+
+  if (userRole === 'STAFF') {
+    const isValidStaff = await prisma.staff.findUnique({
+      where: { staffInfoId: id },
+      include: {
+        organization: true,
+      },
+    });
+    if (!isValidStaff) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not found');
+    }
+    const validStaffRole = ['STAFF_ADMIN'];
+    if (!validStaffRole.includes(isValidStaff.role)) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Staff role not valid');
+    }
+    ownerId = isValidStaff.organization.ownerId;
+  } else {
+    ownerId = id;
+  }
+
+  if (!ownerId) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Owner info not found');
+  }
+
   if (rating > 5) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Rating not more than 5');
   }
-  if (id !== userId) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'User id not match');
-  }
+
   const isProductExist = await prisma.product.findUnique({
     where: { id: productId },
   });
@@ -20,7 +47,7 @@ const createNew = async (id: string, payload: Feedback): Promise<Feedback> => {
   }
   const orders = await prisma.order.findMany({
     where: {
-      customerId: userId,
+      customerId: ownerId,
       orderItems: {
         some: {
           productId: productId,
@@ -49,7 +76,7 @@ const createNew = async (id: string, payload: Feedback): Promise<Feedback> => {
   //* Count the number of feedbacks the user has already given for the product
   const feedbackCount = await prisma.feedback.count({
     where: {
-      userId: userId,
+      userId: ownerId,
       productId: productId,
     },
   });
@@ -64,7 +91,7 @@ const createNew = async (id: string, payload: Feedback): Promise<Feedback> => {
     data: {
       rating,
       comment,
-      user: { connect: { id: userId } },
+      user: { connect: { id: ownerId } },
       product: { connect: { id: productId } },
     },
   });
@@ -72,14 +99,38 @@ const createNew = async (id: string, payload: Feedback): Promise<Feedback> => {
 };
 
 const getAll = async (role: string, userId: string): Promise<Feedback[]> => {
+  let ownerId = null;
+
+  if (role === 'STAFF') {
+    const isValidStaff = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+      include: {
+        organization: true,
+      },
+    });
+    if (!isValidStaff) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not found');
+    }
+    const validStaffRole = ['STAFF_ADMIN'];
+    if (!validStaffRole.includes(isValidStaff.role)) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Staff role not valid');
+    }
+    ownerId = isValidStaff.organization.ownerId;
+  } else {
+    ownerId = userId;
+  }
+
   if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
     const result = await prisma.feedback.findMany({
       include: { user: true, product: true },
     });
     return result;
   } else {
+    if (!ownerId) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Owner info not found');
+    }
     const result = await prisma.feedback.findMany({
-      where: { userId: userId },
+      where: { userId: ownerId },
       include: { user: true, product: true },
     });
     return result;
@@ -153,6 +204,7 @@ const getSingle = async (feedbackId: string): Promise<Feedback | null> => {
 
 const updateSingle = async (
   userId: string,
+  role: string,
   feedbackId: string,
   payload: IFeedbackUpdate,
 ): Promise<Feedback | null> => {
@@ -166,7 +218,28 @@ const updateSingle = async (
     throw new ApiError(httpStatus.NOT_FOUND, 'Feedback not found');
   }
 
-  if (userId !== isFeedbackExist.userId) {
+  let ownerId = null;
+
+  if (role === 'STAFF') {
+    const isValidStaff = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+      include: {
+        organization: true,
+      },
+    });
+    if (!isValidStaff) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not found');
+    }
+    const validStaffRole = ['STAFF_ADMIN'];
+    if (!validStaffRole.includes(isValidStaff.role)) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Staff role not valid');
+    }
+    ownerId = isValidStaff.organization.ownerId;
+  } else {
+    ownerId = userId;
+  }
+
+  if (ownerId !== isFeedbackExist.userId) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
       'You can not change others feedback',
@@ -181,6 +254,8 @@ const updateSingle = async (
 };
 const deleteSingle = async (
   userId: string,
+
+  role: string,
   feedbackId: string,
 ): Promise<Feedback | null> => {
   const isFeedbackExist = await prisma.feedback.findUnique({
@@ -189,8 +264,31 @@ const deleteSingle = async (
   if (!isFeedbackExist) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Feedback not found');
   }
+  let ownerId = null;
 
-  if (userId !== isFeedbackExist.userId) {
+  if (role === 'STAFF') {
+    const isValidStaff = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+      include: {
+        organization: true,
+      },
+    });
+    if (!isValidStaff) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not found');
+    }
+    const validStaffRole = ['STAFF_ADMIN'];
+    if (!validStaffRole.includes(isValidStaff.role)) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Staff role not valid');
+    }
+    ownerId = isValidStaff.organization.ownerId;
+  } else {
+    ownerId = userId;
+  }
+  if (!ownerId) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Owner info not found');
+  }
+
+  if (ownerId !== isFeedbackExist.userId) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
       'You can not delete others feedback',
