@@ -1065,7 +1065,15 @@ const getMyOrderForDelivery = async (userId: string) => {
   const result = await prisma.assigndForDelivery.findMany({
     where: { deliveryBoyId: isValidStaff.id },
     include: {
-      order: true,
+      order: {
+        include: {
+          orderItems: {
+            include: {
+              product: true,
+            },
+          },
+        },
+      },
     },
   });
   return result;
