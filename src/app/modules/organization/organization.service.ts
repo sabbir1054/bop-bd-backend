@@ -205,8 +205,8 @@ const getIncomingOrdersByDate = async (
       _sum: { total: true },
     });
     return {
-      outgoingOrders: incomingOrders,
-      outgoingOrderCost: totalEarnIncomingOrders,
+      incomingOrders: incomingOrders,
+      incomingOrderEarning: totalEarnIncomingOrders,
       date: date,
     };
   });
