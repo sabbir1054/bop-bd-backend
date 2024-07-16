@@ -1048,6 +1048,29 @@ const assignForDelivery = async (
 
   return result;
 };
+
+const getMyOrderForDelivery = async (userId: string) => {
+  const isValidStaff = await prisma.staff.findUnique({
+    where: { staffInfoId: userId },
+  });
+
+  if (!isValidStaff) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not found');
+  }
+
+  if (isValidStaff.role !== 'DELIVERY_BOY') {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Delivery boy only access it');
+  }
+
+  const result = await prisma.assigndForDelivery.findMany({
+    where: { deliveryBoyId: isValidStaff.id },
+    include: {
+      order: true,
+    },
+  });
+  return result;
+};
+
 export const OrderService = {
   orderCreate,
   getUserIncomingOrders,
@@ -1061,4 +1084,5 @@ export const OrderService = {
   getOrganizationIncomingOrders,
   verifyDeliveryOtp,
   assignForDelivery,
+  getMyOrderForDelivery,
 };

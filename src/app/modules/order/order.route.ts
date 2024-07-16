@@ -105,6 +105,12 @@ router.patch(
 );
 
 router.get(
+  '/forDelivery/list',
+  auth(ENUM_USER_ROLE.STAFF),
+  OrderController.getMyOrderForDelivery,
+);
+
+router.get(
   '/:id',
   auth(
     ENUM_USER_ROLE.DEALER,
