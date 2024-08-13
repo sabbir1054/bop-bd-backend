@@ -64,8 +64,17 @@ router.delete(
 router.patch(
   '/:id',
   auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
-  validateRequest(CategoryZodValidation.updateCategoryValidation),
-  CategoryController.updateSingle,
+  FileUploadHelper.uploadCategoryPhoto.single('file'),
+  (req: Request, res: Response, next: NextFunction) => {
+    const multerReq = req as MulterRequest;
+    multerReq.body = CategoryZodValidation?.updateCategoryValidation?.parse(
+      JSON?.parse(multerReq.body?.data),
+    );
+    if (multerReq.file) {
+      multerReq.body.photo = `${config.api_link_Image}/api/v1/category/image/${multerReq.file.filename}`;
+    }
+    return CategoryController.updateSingle(multerReq, res, next);
+  },
 );
 router.delete(
   '/:id',

@@ -1,5 +1,5 @@
 import { Category } from '@prisma/client';
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import httpStatus from 'http-status';
 import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
@@ -46,17 +46,17 @@ const getSingle = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const updateSingle = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const data = req.body;
-  const result = await CategoryServices.updateSingle(id, data);
-  sendResponse<Category>(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: 'Category updated !',
-    data: result,
-  });
-});
+const updateSingle = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const result = await CategoryServices.updateSingle(req, next);
+    sendResponse<Category>(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Category updated !',
+      data: result,
+    });
+  },
+);
 
 const deleteSingle = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;

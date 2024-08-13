@@ -1,4 +1,5 @@
 import { Category } from '@prisma/client';
+import { NextFunction } from 'express';
 import fs from 'fs';
 import httpStatus from 'http-status';
 import path from 'path';
@@ -96,15 +97,38 @@ const getSingle = async (id: string): Promise<Category | null> => {
   return result;
 };
 const updateSingle = async (
-  id: string,
-  data: Partial<Category>,
+  req: any,
+  next: NextFunction,
 ): Promise<Category | null> => {
-  const { businessTypeId, ...othersData } = data;
+  const deletePhoto = (photoLink: string) => {
+    // Delete the image file from the server
+    const filePath = path.join(
+      process.cwd(),
+      'uploads/categoryPhoto',
+      path.basename(photoLink),
+    );
+    fs.unlink(filePath, err => {
+      if (err) {
+        deletePhoto(req.body.photo);
+        next(
+          new ApiError(
+            httpStatus.BAD_REQUEST,
+            `Failed to delete previous image, try again for update,photo `,
+          ),
+        );
+      }
+    });
+  };
+  const { id } = req.params;
   const isExist = await prisma.category.findUnique({ where: { id } });
 
   if (!isExist) {
+    //* delete uploaded photo
+    deletePhoto(req.body.photo);
     throw new ApiError(httpStatus.NOT_FOUND, 'Category not found !');
   }
+
+  const { businessTypeId, ...othersData } = req.body;
 
   const updateData: any = {};
 
@@ -116,6 +140,10 @@ const updateSingle = async (
   }
   if (othersData.eng_name) {
     updateData.eng_name = othersData.eng_name;
+  }
+
+  if (othersData.photo) {
+    updateData.photo = othersData.photo;
   }
 
   const result = await prisma.category.update({

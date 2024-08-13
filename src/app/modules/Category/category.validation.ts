@@ -7,10 +7,9 @@ const createCategoryValidation = z.object({
   photo: z.string().optional(),
 });
 const updateCategoryValidation = z.object({
-  body: z.object({
-    eng_name: z.string().optional(),
-    bn_name: z.string().optional(),
-  }),
+  eng_name: z.string().optional(),
+  bn_name: z.string().optional(),
+  photo: z.string().optional(),
 });
 
 export const CategoryZodValidation = {
