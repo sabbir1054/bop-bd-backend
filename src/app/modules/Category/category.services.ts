@@ -1,7 +1,10 @@
 import { Category } from '@prisma/client';
+import fs from 'fs';
 import httpStatus from 'http-status';
+import path from 'path';
 import ApiError from '../../../errors/ApiError';
 import prisma from '../../../shared/prisma';
+
 interface MulterRequest extends Request {
   file?: Express.Multer.File;
 }
@@ -20,6 +23,37 @@ const createNew = async (req: any): Promise<Category> => {
       eng_name: eng_name,
       bn_name: bn_name,
       businessType: { connect: { id: businessTypeId } },
+    },
+  });
+  return result;
+};
+const removePhoto = async (categoryId: string) => {
+  const isCategoryExist = await prisma.category.findUnique({
+    where: { id: categoryId },
+  });
+  if (!isCategoryExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Category not exist ');
+  }
+  if (!isCategoryExist.photo) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Category has not any picture');
+  }
+  const filePath = path.join(
+    process.cwd(),
+    'uploads/categoryPhoto',
+    path.basename(isCategoryExist.photo),
+  );
+  fs.unlink(filePath, err => {
+    if (err) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        `Failed to delete image: ${filePath}`,
+      );
+    }
+  });
+  const result = await prisma.category.update({
+    where: { id: categoryId },
+    data: {
+      photo: '',
     },
   });
   return result;
@@ -108,4 +142,5 @@ export const CategoryServices = {
   getSingle,
   updateSingle,
   deleteSingle,
+  removePhoto,
 };

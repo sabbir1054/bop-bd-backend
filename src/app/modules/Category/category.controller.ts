@@ -7,12 +7,23 @@ import { CategoryServices } from './category.services';
 
 const createNew = catchAsync(async (req: Request, res: Response) => {
   const result = await CategoryServices.createNew(req);
-  console.log(req);
 
   sendResponse<Category>(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: 'Category created',
+    data: result,
+  });
+});
+
+const removePhoto = catchAsync(async (req: Request, res: Response) => {
+  const { categoryId } = req.params;
+  const result = await CategoryServices.removePhoto(categoryId);
+
+  sendResponse<Category>(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Category photo delete',
     data: result,
   });
 });
@@ -64,4 +75,5 @@ export const CategoryController = {
   getSingle,
   updateSingle,
   deleteSingle,
+  removePhoto,
 };

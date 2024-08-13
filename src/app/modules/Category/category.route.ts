@@ -54,6 +54,13 @@ router.get('/image/:fileName', (req: Request, res: Response) => {
   });
 });
 
+//remove photo
+router.delete(
+  '/removePhoto/:categoryId',
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  CategoryController.removePhoto,
+);
+
 router.patch(
   '/:id',
   auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
