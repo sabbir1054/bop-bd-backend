@@ -34,7 +34,21 @@ const profilePhotoStorage = multer.diskStorage({
 
 const uploadProfile = multer({ storage: profilePhotoStorage });
 
+const categoryPhotoStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/categoryPhoto/');
+  },
+  filename: (req, file, cb) => {
+    // Use a unique name for each file to avoid conflicts
+    const uniqueSuffix = Date.now() + '--' + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + '-' + file.originalname);
+  },
+});
+
+const uploadCategoryPhoto = multer({ storage: categoryPhotoStorage });
+
 export const FileUploadHelper = {
   upload,
   uploadProfile,
+  uploadCategoryPhoto,
 };

@@ -132,6 +132,7 @@ model Category {
   id             String       @id @default(uuid())
   eng_name       String
   bn_name        String
+  photo          String?
   products       Product[]
   businessType   BusinessType @relation(fields: [businessTypeId], references: [id])
   businessTypeId String
