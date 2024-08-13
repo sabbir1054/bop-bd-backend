@@ -2,8 +2,29 @@ import { Category } from '@prisma/client';
 import httpStatus from 'http-status';
 import ApiError from '../../../errors/ApiError';
 import prisma from '../../../shared/prisma';
+interface MulterRequest extends Request {
+  file?: Express.Multer.File;
+}
+const createNew = async (req: any): Promise<Category> => {
+  const { businessTypeId, eng_name, bn_name, photo } = req.body;
+  const isBusinessTypeExist = await prisma.businessType.findUnique({
+    where: { id: businessTypeId },
+  });
+  if (!isBusinessTypeExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Business type not found !');
+  }
 
-const createNew = async (payload: Category): Promise<Category> => {
+  const result = await prisma.category.create({
+    data: {
+      photo: photo ? photo : '',
+      eng_name: eng_name,
+      bn_name: bn_name,
+      businessType: { connect: { id: businessTypeId } },
+    },
+  });
+  return result;
+};
+/* const createNew = async (payload: Category): Promise<Category> => {
   const isBusinessTypeExist = await prisma.businessType.findUnique({
     where: { id: payload.businessTypeId },
   });
@@ -19,7 +40,7 @@ const createNew = async (payload: Category): Promise<Category> => {
     },
   });
   return result;
-};
+}; */
 
 const getAll = async (): Promise<Category[]> => {
   const result = await prisma.category.findMany({
