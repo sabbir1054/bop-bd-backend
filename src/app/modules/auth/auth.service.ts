@@ -624,6 +624,29 @@ const verifyForgotPasswordOtp = async (phone: string, otp: string) => {
   }
 };
 
+const updatePassword = async (newPassword: string, phone: string) => {
+  const isUserExist = await prisma.user.findUnique({
+    where: { phone: phone },
+  });
+  if (!isUserExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User info not exist');
+  }
+  // password validity check
+  const passwordValidity = checkPasswordStrength(newPassword, phone);
+
+  if (!passwordValidity.validity) {
+    throw new ApiError(httpStatus.BAD_REQUEST, passwordValidity.msg);
+  }
+
+  const encryptNewPass = await encryptPassword(newPassword);
+  const result = await prisma.user.update({
+    where: { phone: phone },
+    data: { password: encryptNewPass },
+  });
+
+  return result;
+};
+
 export const AuthServices = {
   userRegistration,
   userLogin,
@@ -633,4 +656,5 @@ export const AuthServices = {
   forgetPasswordOtp,
   resendForgetpasswordOtp,
   verifyForgotPasswordOtp,
+  updatePassword,
 };

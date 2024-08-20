@@ -22,6 +22,12 @@ const userLoginValidation = z.object({
     password: z.string({ required_error: 'Password is required' }),
   }),
 });
+const userPasswordValidation = z.object({
+  body: z.object({
+    phone: z.string({ required_error: 'Phone number is required' }),
+    newPassword: z.string({ required_error: 'Password is required' }),
+  }),
+});
 const refreshTokenZodSchema = z.object({
   cookies: z.object({
     refreshToken: z.string({ required_error: 'Refresh Token is required' }),
@@ -31,4 +37,5 @@ export const AuthValidation = {
   userRegistrationValidation,
   userLoginValidation,
   refreshTokenZodSchema,
+  userPasswordValidation,
 };

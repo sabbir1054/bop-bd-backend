@@ -107,6 +107,17 @@ const verifyForgotPasswordOtp = catchAsync(
   },
 );
 
+const updatePassword = catchAsync(async (req: Request, res: Response) => {
+  const { phone, newPassword } = req.body;
+  const result = await AuthServices.updatePassword(newPassword, phone);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Passwod changed',
+    data: result,
+  });
+});
+
 export const AuthController = {
   userRegistration,
   userLogin,
@@ -116,4 +127,5 @@ export const AuthController = {
   forgetPasswordOtp,
   resendForgetpasswordOtp,
   verifyForgotPasswordOtp,
+  updatePassword,
 };
