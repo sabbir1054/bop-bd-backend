@@ -19,4 +19,5 @@ export const ordersSearchableFieldsAdmin: string[] = ['category'];
 export const validStaffRoleForOrderStatusUpdate = [
   'ORDER_SUPERVISOR',
   'STAFF_ADMIN',
+  'DELIVERY_BOY',
 ];
