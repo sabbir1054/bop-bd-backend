@@ -95,6 +95,20 @@ model OneTimePassword {
   @@map("one_time_password")
 }
 
+model OrderOtp {
+  id         String   @id @default(uuid())
+  phone      String
+  otpCode    String
+  countSend  Int
+  orderId    String   @unique
+  isVerified Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  Order      Order    @relation(fields: [orderId], references: [id])
+
+  @@map("orderOtp")
+}
+
 model User {
   id               String         @id @default(uuid())
   role             Role
@@ -229,6 +243,7 @@ model Order {
   createdAt          DateTime            @default(now())
   orderItems         OrderItem[]
   assigndForDelivery AssigndForDelivery?
+  OrderOtp           OrderOtp[]
 
   @@map("orders")
 }

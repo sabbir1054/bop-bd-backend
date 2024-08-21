@@ -557,12 +557,12 @@ const updateOrderStatus = async (
           );
         }
 
-        const makeOtpForUser = await prisma.oneTimePassword.create({
+        const makeOtpForUser = await prisma.orderOtp.create({
           data: {
             phone: customerPhone,
+            orderId: orderId,
             otpCode: otp,
-            checkCounter: 0,
-            resendCounter: 0,
+            countSend: 1,
           },
         });
 
@@ -641,24 +641,44 @@ const verifyDeliveryOtp = async (
   const customerPhone = isExistOrder.customer.phone;
 
   const result = await prisma.$transaction(async prisma => {
-    const findOtp = await prisma.oneTimePassword.findUnique({
-      where: { phone: customerPhone },
+    const findOtp = await prisma.orderOtp.findUnique({
+      where: { orderId: isExistOrder.id, phone: customerPhone },
     });
 
     if (!findOtp) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Otp info not found');
     }
+
+    if (findOtp.isVerified === true) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Delivery otp already verified',
+      );
+    }
+
     if (payload.givenOtp !== findOtp.otpCode) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Delivery otp not match');
     } else {
-      //delete otp
-      await prisma.oneTimePassword.delete({ where: { phone: customerPhone } });
-
-      const result = await prisma.order.update({
-        where: { id: payload.orderId },
-        data: { orderStatus: 'DELIVERED' },
+      await prisma.orderOtp.update({
+        where: { orderId: isExistOrder.id, phone: customerPhone },
+        data: {
+          isVerified: true,
+        },
       });
-      return result;
+
+      if (isExistOrder.paymentStatus === 'PAID') {
+        const result = await prisma.order.update({
+          where: { id: payload.orderId },
+          data: { orderStatus: 'DELIVERED' },
+        });
+        return result;
+      } else {
+        const result = await prisma.order.update({
+          where: { id: payload.orderId },
+          data: { orderStatus: 'DELIVERED', paymentStatus: 'PAID' },
+        });
+        return result;
+      }
     }
   });
   return result;
