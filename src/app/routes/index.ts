@@ -7,6 +7,7 @@ import { CartRoutes } from '../modules/cart/cart.routes';
 import { FeedbackRoutes } from '../modules/feedback/feedback.routes';
 import { OrderRoutes } from '../modules/order/order.route';
 import { OrganizationRoutes } from '../modules/organization/organization.route';
+import { StaffRoutes } from '../modules/staff/staff.route';
 import { UsersRoutes } from '../modules/users/users.route';
 
 const router = express.Router();
@@ -48,6 +49,10 @@ const moduleRoutes = [
   {
     path: '/organization',
     route: OrganizationRoutes,
+  },
+  {
+    path: '/staff',
+    route: StaffRoutes,
   },
 ];
 
