@@ -4,14 +4,18 @@ import ApiError from '../../../errors/ApiError';
 import prisma from '../../../shared/prisma';
 
 const getAll = async (userId: string): Promise<User[]> => {
+  const andConditions: any[] = [];
   const isUserExist = await prisma.user.findUnique({ where: { id: userId } });
   if (!isUserExist) {
     throw new ApiError(httpStatus.NOT_FOUND, 'User not valid');
   }
   const organizationId = isUserExist.organizationId;
 
+  andConditions.push({ organizationId: organizationId });
+  andConditions.push({ role: 'STAFF' });
+
   const result = await prisma.user.findMany({
-    where: { organizationId: organizationId, role: 'STAFF' },
+    where: { AND: andConditions },
     include: {
       Staff: true,
     },
