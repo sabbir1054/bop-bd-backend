@@ -173,8 +173,8 @@ model Product {
     feedbacks      Feedback[]
     OrderItem      OrderItem[]
     CartItem       CartItem[]
-    organizarion   Organization? @relation(fields: [organizationId], references: [id])
-    organizationId String?
+    organization   Organization @relation(fields: [organizationId], references: [id])
+    organizationId String
 
     @@map("products")
 }

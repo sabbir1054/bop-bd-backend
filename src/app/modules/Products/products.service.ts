@@ -17,7 +17,7 @@ const createNew = async (req: Request): Promise<Product> => {
   const { categoryId, fileUrls, ...others } = req.body;
   const { id: userId, role } = req.user as any;
 
-  let ownerId = null;
+  let orgId = null;
   if (role === 'STAFF') {
     const isValidStaff = await prisma.staff.findUnique({
       where: { staffInfoId: userId },
@@ -33,7 +33,7 @@ const createNew = async (req: Request): Promise<Product> => {
         isValidStaff.role === 'STORE_MANAGER' ||
         isValidStaff.role === 'STAFF_ADMIN'
       ) {
-        ownerId = isValidStaff.organization.ownerId;
+        orgId = isValidStaff.organization.id;
       } else {
         throw new ApiError(
           httpStatus.BAD_REQUEST,
@@ -42,33 +42,34 @@ const createNew = async (req: Request): Promise<Product> => {
       }
     }
   } else {
-    ownerId = userId;
+    const isExistUser = await prisma.user.findUnique({ where: { id: userId } });
+    if (!isExistUser) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'No user found');
+    }
+    orgId = isExistUser.organizationId;
   }
 
-  if (!ownerId) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Owner info not found');
+  if (!orgId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Organization info not found');
   }
-  const ownerBusinessTypeCheck = await prisma.user.findUnique({
-    where: { id: ownerId },
-    include: {
-      businessType: {
-        include: {
-          category: true,
-        },
-      },
-    },
+  //* organization info
+  const organizationInfo = await prisma.organization.findUnique({
+    where: { id: orgId },
+    include: { owner: true, BusinessType: { include: { category: true } } },
   });
-  if (!ownerBusinessTypeCheck?.verified) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Owner is not verified');
+
+  if (!organizationInfo?.owner.verified) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Organization not verified');
   }
-  if (!ownerBusinessTypeCheck || !ownerBusinessTypeCheck?.businessTypeId) {
+
+  if (!organizationInfo?.businessTypeId) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
       'Please set user business type and complete profile',
     );
   }
   // Extract the array of category IDs
-  const categoryIds = ownerBusinessTypeCheck.businessType?.category.map(
+  const categoryIds = organizationInfo.BusinessType?.category.map(
     cat => cat.id,
   );
 
@@ -83,36 +84,15 @@ const createNew = async (req: Request): Promise<Product> => {
   }
   const result = await prisma.product.create({
     data: {
-      owner: { connect: { id: ownerId } },
-      category: { connect: { id: categoryId } },
+      organizationId: organizationInfo.id,
+      categoryId: categoryId,
       images: {
         create: fileUrls.map((url: string) => ({ url })),
       },
       ...others,
     },
     include: {
-      owner: {
-        select: {
-          id: true,
-          role: true,
-          memberCategory: true,
-          verified: true,
-          organization: true,
-          isMobileVerified: true,
-          name: true,
-          email: true,
-          phone: true,
-          address: true,
-          photo: true,
-          license: true,
-          nid: true,
-          shop_name: true,
-          createdAt: true,
-          updatedAt: true,
-          businessType: true,
-          businessTypeId: true,
-        },
-      },
+      organization: true,
       images: true,
       category: true,
     },
@@ -210,28 +190,7 @@ const getAllProduct = async (
             createdAt: 'desc',
           },
     include: {
-      owner: {
-        select: {
-          id: true,
-          role: true,
-          memberCategory: true,
-          verified: true,
-          organization: true,
-          isMobileVerified: true,
-          name: true,
-          email: true,
-          phone: true,
-          address: true,
-          photo: true,
-          license: true,
-          nid: true,
-          shop_name: true,
-          createdAt: true,
-          updatedAt: true,
-          businessType: true,
-          businessTypeId: true,
-        },
-      },
+      organization: true,
       category: true,
       images: true,
       feedbacks: true,
@@ -256,44 +215,16 @@ const getSingle = async (id: string): Promise<Product | null> => {
   const result = await prisma.product.findUnique({
     where: { id },
     include: {
-      owner: {
-        select: {
-          id: true,
-          role: true,
-          memberCategory: true,
-          verified: true,
-          organization: true,
-          isMobileVerified: true,
-          name: true,
-          phone: true,
-          address: true,
-          photo: true,
-          createdAt: true,
-          updatedAt: true,
-          businessType: true,
+      organization: {
+        include: {
+          owner: true,
         },
       },
       category: true,
       images: true,
       feedbacks: {
         include: {
-          user: {
-            select: {
-              id: true,
-              memberCategory: true,
-              verified: true,
-              organization: true,
-              isMobileVerified: true,
-              name: true,
-              phone: true,
-              address: true,
-              photo: true,
-              createdAt: true,
-              updatedAt: true,
-              businessType: true,
-              role: true,
-            },
-          },
+          Organization: true,
         },
       },
     },
@@ -310,7 +241,7 @@ const deleteImageFromProduct = async (
   userId: string,
   userRole: string,
 ): Promise<Product | null> => {
-  let ownerId = null;
+  let orgId = null;
 
   if (userRole === 'STAFF') {
     const isValidStaff = await prisma.staff.findUnique({
@@ -324,7 +255,7 @@ const deleteImageFromProduct = async (
       isValidStaff.role === 'STORE_MANAGER' ||
       isValidStaff.role === 'STAFF_ADMIN'
     ) {
-      ownerId = isValidStaff.organization.ownerId;
+      orgId = isValidStaff.organization.id;
     } else {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
@@ -332,34 +263,17 @@ const deleteImageFromProduct = async (
       );
     }
   } else {
-    ownerId = userId;
+    if (!userId) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'User info not found');
+    }
+    const isUserExist = await prisma.user.findUnique({ where: { id: userId } });
+    orgId = isUserExist?.organizationId;
   }
 
   const isProductExist = await prisma.product.findUnique({
     where: { id: productId },
     include: {
-      owner: {
-        select: {
-          id: true,
-          role: true,
-          memberCategory: true,
-          verified: true,
-          organization: true,
-          isMobileVerified: true,
-          name: true,
-          email: true,
-          phone: true,
-          address: true,
-          photo: true,
-          license: true,
-          nid: true,
-          shop_name: true,
-          createdAt: true,
-          updatedAt: true,
-          businessType: true,
-          businessTypeId: true,
-        },
-      },
+      organization: true,
       category: true,
       images: true,
       feedbacks: true,
@@ -370,7 +284,7 @@ const deleteImageFromProduct = async (
     throw new ApiError(httpStatus.NOT_FOUND, 'Product not found ');
   }
 
-  if (isProductExist?.ownerId !== ownerId) {
+  if (isProductExist?.organizationId !== orgId) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Invalid staff/owner  ');
   }
 
@@ -405,29 +319,7 @@ const deleteImageFromProduct = async (
   const result = await prisma.product.findUnique({
     where: { id: productId },
     include: {
-      owner: {
-        select: {
-          id: true,
-          role: true,
-          memberCategory: true,
-          verified: true,
-          organization: true,
-          isMobileVerified: true,
-          name: true,
-          email: true,
-          phone: true,
-          address: true,
-          photo: true,
-          license: true,
-          nid: true,
-          shop_name: true,
-          createdAt: true,
-          updatedAt: true,
-          feedbacks: true,
-          businessType: true,
-          businessTypeId: true,
-        },
-      },
+      organization: true,
       category: true,
       images: true,
       feedbacks: true,
@@ -441,7 +333,7 @@ const addNewImageForProduct = async (req: Request): Promise<Product | null> => {
   const { productId } = req.params;
   const { id: userId, role: userRole } = req.user as any;
   const { fileUrls } = req.body;
-  let ownerId = null;
+  let orgId = null;
 
   if (userRole === 'STAFF') {
     const isValidStaff = await prisma.staff.findUnique({
@@ -455,7 +347,7 @@ const addNewImageForProduct = async (req: Request): Promise<Product | null> => {
       isValidStaff.role === 'STORE_MANAGER' ||
       isValidStaff.role === 'STAFF_ADMIN'
     ) {
-      ownerId = isValidStaff.organization.ownerId;
+      orgId = isValidStaff.organization.id;
     } else {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
@@ -463,36 +355,27 @@ const addNewImageForProduct = async (req: Request): Promise<Product | null> => {
       );
     }
   } else {
-    ownerId = userId;
+    const isUserExist = await prisma.user.findUnique({ where: { id: userId } });
+    orgId = isUserExist?.organizationId;
   }
   const isProductExist = await prisma.product.findUnique({
     where: { id: productId },
     include: {
-      owner: {
-        select: {
-          id: true,
-          memberCategory: true,
-          verified: true,
-          organization: true,
-          isMobileVerified: true,
-          name: true,
-          phone: true,
-          address: true,
-          photo: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      },
+      organization: true,
       category: true,
       images: true,
       feedbacks: true,
     },
   });
 
+  if (!orgId) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
+  }
+
   if (!isProductExist) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Product not found ');
   }
-  if (isProductExist?.ownerId !== ownerId) {
+  if (isProductExist?.organizationId !== orgId) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Only owner can update products ');
   }
 
@@ -537,21 +420,7 @@ const addNewImageForProduct = async (req: Request): Promise<Product | null> => {
       },
     },
     include: {
-      owner: {
-        select: {
-          id: true,
-          memberCategory: true,
-          verified: true,
-          organization: true,
-          isMobileVerified: true,
-          name: true,
-          phone: true,
-          address: true,
-          photo: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      },
+      organization: true,
       category: true,
       images: true,
       feedbacks: true,
@@ -570,7 +439,7 @@ const updateProductInfo = async (
     throw new ApiError(httpStatus.BAD_REQUEST, 'No update data provided');
   }
 
-  let ownerId = null;
+  let orgId = null;
 
   if (userRole === 'STAFF') {
     const isValidStaff = await prisma.staff.findUnique({
@@ -584,7 +453,7 @@ const updateProductInfo = async (
       isValidStaff.role === 'STORE_MANAGER' ||
       isValidStaff.role === 'STAFF_ADMIN'
     ) {
-      ownerId = isValidStaff.organization.ownerId;
+      orgId = isValidStaff.organization.id;
     } else {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
@@ -592,35 +461,15 @@ const updateProductInfo = async (
       );
     }
   } else {
-    ownerId = userId;
+    const isUserExist = await prisma.user.findUnique({ where: { id: userId } });
+    orgId = isUserExist?.organizationId;
   }
   const { categoryId, ...othersInfo } = payload;
 
   const isProductExist = await prisma.product.findUnique({
     where: { id: productId },
     include: {
-      owner: {
-        select: {
-          id: true,
-          role: true,
-          memberCategory: true,
-          verified: true,
-          organization: true,
-          isMobileVerified: true,
-          name: true,
-          email: true,
-          phone: true,
-          address: true,
-          photo: true,
-          license: true,
-          nid: true,
-          shop_name: true,
-          createdAt: true,
-          updatedAt: true,
-          businessType: true,
-          businessTypeId: true,
-        },
-      },
+      organization:true,
       category: true,
       images: true,
       feedbacks: true,
@@ -630,7 +479,10 @@ const updateProductInfo = async (
   if (!isProductExist) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Product not found ');
   }
-  if (isProductExist?.ownerId !== ownerId) {
+  if (!orgId) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
+  }
+  if (isProductExist?.organizationId !== orgId) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Invalid owner info ');
   }
 
@@ -650,7 +502,7 @@ const deleteProduct = async (
   userId: string,
   userRole: string,
 ): Promise<Product | null> => {
-  let ownerId = null;
+  let orgId = null;
 
   if (userRole === 'STAFF') {
     const isValidStaff = await prisma.staff.findUnique({
@@ -664,7 +516,7 @@ const deleteProduct = async (
       isValidStaff.role === 'STORE_MANAGER' ||
       isValidStaff.role === 'STAFF_ADMIN'
     ) {
-      ownerId = isValidStaff.organization.ownerId;
+      orgId = isValidStaff.organization.id;
     } else {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
@@ -677,9 +529,12 @@ const deleteProduct = async (
         where: { id: productId },
       });
 
-      ownerId = productOwner?.ownerId;
+      orgId = productOwner?.organizationId;
     } else {
-      ownerId = userId;
+      const isUserExist = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+      orgId = isUserExist?.organizationId;
     }
   }
 
@@ -694,9 +549,11 @@ const deleteProduct = async (
   if (!isProductExist) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Product not found');
   }
-
+if (!orgId) {
+  throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
+}
   // Check if the owner is the same as the one making the request
-  if (isProductExist.ownerId !== ownerId) {
+  if (isProductExist.organizationId !== orgId) {
     throw new ApiError(httpStatus.FORBIDDEN, 'Invalid owner info');
   }
   const result = await prisma.$transaction(async prisma => {
