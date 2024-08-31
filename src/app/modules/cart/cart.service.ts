@@ -11,13 +11,14 @@ const updateCartSingle = async (
 ): Promise<Cart | null> => {
   const isProductExist = await prisma.product.findUnique({
     where: { id: productId },
+    include: { organization: true },
   });
 
   if (!isProductExist) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Product not found');
   }
 
-  let ownerId = null;
+  let orgId = null;
 
   if (userRole === 'STAFF') {
     const isValidStaff = await prisma.staff.findUnique({
@@ -34,16 +35,29 @@ const updateCartSingle = async (
         'Only puchase officer or admin change cart',
       );
     }
-    ownerId = isValidStaff.organization.ownerId;
+    orgId = isValidStaff.organization.id;
   } else {
-    ownerId = userId;
+    const isUserExist = await prisma.user.findUnique({ where: { id: userId } });
+    if (!isUserExist) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+    }
+    orgId = isUserExist.organizationId;
   }
-  const isValidOwner = await prisma.user.findUnique({ where: { id: ownerId } });
-  if (!isValidOwner || !isValidOwner.verified) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Owner is not verified');
+  if (!orgId) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
+  }
+  const organizationInfo = await prisma.organization.findUnique({
+    where: { id: orgId },
+    include: { owner: true },
+  });
+  const isValidOwner = await prisma.user.findUnique({
+    where: { id: organizationInfo?.owner.id },
+  });
+  if (!isValidOwner?.verified) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Organization is not verified');
   }
 
-  if (ownerId === isProductExist.ownerId) {
+  if (orgId === isProductExist.organizationId) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
       'You can not add your product in the cart',
@@ -52,7 +66,7 @@ const updateCartSingle = async (
 
   const result = await prisma.$transaction(async prisma => {
     let cart = await prisma.cart.findFirst({
-      where: { userId: ownerId },
+      where: { organizationId: orgId },
       include: { CartItem: true },
     });
 
@@ -64,7 +78,7 @@ const updateCartSingle = async (
         );
       } else {
         cart = await prisma.cart.create({
-          data: { userId: ownerId },
+          data: { organizationId: orgId },
           include: { CartItem: true },
         });
       }
@@ -143,7 +157,7 @@ const updateCartMultiple = async (
     throw new ApiError(httpStatus.NOT_FOUND, 'Product not found');
   }
 
-  let ownerId = null;
+  let orgId = null;
 
   if (userRole === 'STAFF') {
     const isValidStaff = await prisma.staff.findUnique({
@@ -159,19 +173,30 @@ const updateCartMultiple = async (
         'Only store purchase officer or admin delete the product image',
       );
     }
-    ownerId = isValidStaff.organization.ownerId;
+    orgId = isValidStaff.organization.id;
   } else {
-    ownerId = userId;
+    const isUserExist = await prisma.user.findUnique({ where: { id: userId } });
+    if (!isUserExist) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+    }
+    orgId = isUserExist.organizationId;
   }
 
-  const isValidOwner = await prisma.user.findUnique({
-    where: { id: ownerId },
+  if (!orgId) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
+  }
+  const organizationInfo = await prisma.organization.findUnique({
+    where: { id: orgId },
+    include: { owner: true },
   });
-  if (!isValidOwner || !isValidOwner.verified) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Owner is not verified');
+  const isValidOwner = await prisma.user.findUnique({
+    where: { id: organizationInfo?.owner.id },
+  });
+  if (!isValidOwner?.verified) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Organization is not verified');
   }
 
-  if (ownerId === isProductExist.ownerId) {
+  if (orgId === isProductExist.organizationId) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
       'You can not add your product in the cart',
@@ -180,7 +205,7 @@ const updateCartMultiple = async (
 
   const result = await prisma.$transaction(async prisma => {
     let cart = await prisma.cart.findFirst({
-      where: { userId: ownerId },
+      where: { organizationId: orgId },
       include: { CartItem: true },
     });
 
@@ -192,7 +217,7 @@ const updateCartMultiple = async (
         );
       } else {
         cart = await prisma.cart.create({
-          data: { userId: ownerId },
+          data: { organizationId: orgId },
           include: { CartItem: true },
         });
       }
@@ -264,7 +289,7 @@ const removeItemsFromCart = async (
       cart: true,
     },
   });
-  let ownerId = null;
+  let orgId = null;
 
   if (userRole === 'STAFF') {
     const isValidStaff = await prisma.staff.findUnique({
@@ -280,12 +305,16 @@ const removeItemsFromCart = async (
         'Only store manager or admin delete the product image',
       );
     }
-    ownerId = isValidStaff.organization.ownerId;
+    orgId = isValidStaff.organization;
   } else {
-    ownerId = userId;
+    const isUserExist = await prisma.user.findUnique({ where: { id: userId } });
+    if (!isUserExist) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+    }
+    orgId = isUserExist.organizationId;
   }
 
-  if ((cartItems[0] && cartItems[0].cart.userId) !== ownerId) {
+  if ((cartItems[0] && cartItems[0].cart.organizationId) !== orgId) {
     throw new ApiError(httpStatus.BAD_REQUEST, "You can't change other cart");
   }
 
@@ -308,7 +337,7 @@ const removeItemsFromCart = async (
 };
 
 const getMyCart = async (userId: string, userRole: string) => {
-  let ownerId = null;
+  let orgId = null;
 
   if (userRole === 'STAFF') {
     const isValidStaff = await prisma.staff.findUnique({
@@ -324,13 +353,19 @@ const getMyCart = async (userId: string, userRole: string) => {
         'Only store manager or admin delete the product image',
       );
     }
-    ownerId = isValidStaff.organization.ownerId;
+    orgId = isValidStaff.organization.id;
   } else {
-    ownerId = userId;
+    const isUserExist = await prisma.user.findUnique({ where: { id: userId } });
+    if (!isUserExist) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+    }
+    orgId = isUserExist.organizationId;
   }
-
-  const isUserExist = await prisma.user.findUnique({
-    where: { id: ownerId },
+  if (!orgId) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
+  }
+  const organizationCart = await prisma.organization.findUnique({
+    where: { id: orgId },
     include: {
       cart: {
         include: {
@@ -348,16 +383,23 @@ const getMyCart = async (userId: string, userRole: string) => {
     },
   });
 
-  if (!isUserExist) {
+  if (!organizationCart) {
     throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
   }
-  const result = isUserExist.cart;
+  const result = organizationCart.cart;
   return result;
 };
 
 const getSingleUserCart = async (userId: string) => {
-  const isUserExist = await prisma.user.findUnique({
-    where: { id: userId },
+  const isUserExist = await prisma.user.findUnique({ where: { id: userId } });
+  if (!isUserExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+  }
+  if (!isUserExist.organizationId) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User organization not found');
+  }
+  const isOrganizationExist = await prisma.organization.findUnique({
+    where: { id: isUserExist?.organizationId },
     include: {
       cart: {
         include: {
@@ -375,10 +417,10 @@ const getSingleUserCart = async (userId: string) => {
     },
   });
 
-  if (!isUserExist) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+  if (!isOrganizationExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization not found');
   }
-  const result = isUserExist.cart;
+  const result = isOrganizationExist.cart;
   return result;
 };
 
