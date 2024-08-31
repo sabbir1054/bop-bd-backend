@@ -131,7 +131,10 @@ const userRegistration = async (
         }
 
         if (!isOrganizationExist.owner.verified) {
-          throw new ApiError(httpStatus.BAD_REQUEST,"Organization owner not verified")
+          throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            'Organization owner not verified',
+          );
         }
 
         if (!othersData.staffRole) {
@@ -210,7 +213,7 @@ const userRegistration = async (
         if (!isBusinessTypeExist) {
           throw new ApiError(httpStatus.NOT_FOUND, 'Business type not found');
         }
-        const result = await prisma.user.create({
+        const createdUser = await prisma.user.create({
           data: {
             phone: phone,
             password: encryptedPassword,
@@ -234,11 +237,16 @@ const userRegistration = async (
             updatedAt: true,
           },
         });
-        await prisma.organization.create({
+        const createdOrganization = await prisma.organization.create({
           data: {
-            ownerId: result.id,
+            ownerId: createdUser.id,
             businessTypeId: othersData?.businessTypeId,
           },
+        });
+
+        const result = await prisma.user.update({
+          where: { id: createdUser.id },
+          data: { organizationId: createdOrganization.id },
         });
         return result;
       }
@@ -297,7 +305,6 @@ const verifyOTP = async (payload: IVerifyOtp) => {
       };
 
       return newResult;
-      
     } else {
       if (isPhoneOtpExist.resendCounter <= 2) {
         if (isPhoneOtpExist.checkCounter < 2) {
