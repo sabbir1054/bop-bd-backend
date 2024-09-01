@@ -23,16 +23,16 @@ router.post(
   OrderController.orderCreate,
 );
 
-router.get(
-  '/incomingOrders/user/:id',
-  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
-  OrderController.getUserIncomingOrders,
-);
-router.get(
-  '/outgoingOrders/user/:id',
-  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
-  OrderController.getUserOutgoingOrders,
-);
+// router.get(
+//   '/incomingOrders/user/:id',
+//   auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+//   OrderController.getUserIncomingOrders,
+// );
+// router.get(
+//   '/outgoingOrders/user/:id',
+//   auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+//   OrderController.getUserOutgoingOrders,
+// );
 router.get(
   '/incomingOrders/organization/:id',
   auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
