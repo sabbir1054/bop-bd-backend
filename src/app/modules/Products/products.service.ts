@@ -111,6 +111,7 @@ const getAllProduct = async (
     maxPrice,
     address,
     category,
+    orgId,
     ownerType,
     ...filtersData
   } = filters;
@@ -152,6 +153,11 @@ const getAllProduct = async (
     });
   }
 
+  if (orgId) {
+    andConditions.push({
+      organization: orgId,
+    });
+  }
   if (address) {
     andConditions.push({
       organization: {
