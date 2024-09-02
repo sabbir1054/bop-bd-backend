@@ -218,6 +218,7 @@ const getSingle = async (id: string): Promise<Product | null> => {
       organization: {
         include: {
           owner: true,
+          BusinessType: true,
         },
       },
       category: true,
@@ -469,7 +470,7 @@ const updateProductInfo = async (
   const isProductExist = await prisma.product.findUnique({
     where: { id: productId },
     include: {
-      organization:true,
+      organization: true,
       category: true,
       images: true,
       feedbacks: true,
@@ -549,9 +550,9 @@ const deleteProduct = async (
   if (!isProductExist) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Product not found');
   }
-if (!orgId) {
-  throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
-}
+  if (!orgId) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
+  }
   // Check if the owner is the same as the one making the request
   if (isProductExist.organizationId !== orgId) {
     throw new ApiError(httpStatus.FORBIDDEN, 'Invalid owner info');
