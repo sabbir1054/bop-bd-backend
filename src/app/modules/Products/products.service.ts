@@ -154,10 +154,12 @@ const getAllProduct = async (
 
   if (address) {
     andConditions.push({
-      owner: {
-        address: {
-          contains: address,
-          mode: 'insensitive',
+      organization: {
+        owner: {
+          address: {
+            contains: address,
+            mode: 'insensitive',
+          },
         },
       },
     });
@@ -171,8 +173,10 @@ const getAllProduct = async (
 
   if (ownerType) {
     andConditions.push({
-      owner: {
-        role: ownerType,
+      organization: {
+        owner: {
+          role: ownerType,
+        },
       },
     });
   }
@@ -190,7 +194,7 @@ const getAllProduct = async (
             createdAt: 'desc',
           },
     include: {
-      organization: true,
+      organization: { include: { BusinessType: true } },
       category: true,
       images: true,
       feedbacks: true,
