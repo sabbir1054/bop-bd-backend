@@ -20,7 +20,7 @@ const getSingle = async (id: string): Promise<BusinessType | null> => {
     where: { id },
     include: {
       category: true,
-      user: true,
+      organization: true,
     },
   });
 
@@ -64,26 +64,25 @@ const getAllProductBusinessType = async (id: string): Promise<Category[]> => {
           products: {
             include: {
               images: true,
-              owner: {
-                select: {
-                  id: true,
-                  role: true,
-                  memberCategory: true,
-                  verified: true,
-                  organization: true,
-                  isEmailVerified: true,
-                  name: true,
-                  email: true,
-                  phone: true,
-                  address: true,
-                  photo: true,
-                  license: true,
-                  nid: true,
-                  shop_name: true,
-                  createdAt: true,
-                  updatedAt: true,
-                  businessType: true,
-                  businessTypeId: true,
+              organization: {
+                include: {
+                  owner: {
+                    select: {
+                      id: true,
+                      role: true,
+                      memberCategory: true,
+                      verified: true,
+                      organization: true,
+                      isEmailVerified: true,
+                      name: true,
+                      email: true,
+                      phone: true,
+                      address: true,
+                      photo: true,
+                      license: true,
+                      nid: true,
+                    },
+                  },
                 },
               },
             },
