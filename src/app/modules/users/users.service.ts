@@ -6,10 +6,7 @@ import path from 'path';
 import ApiError from '../../../errors/ApiError';
 import prisma from '../../../shared/prisma';
 import { IStaffRole } from './user.interface';
-const updateUserProfile = async (
-  req: Request,
-  next: NextFunction,
-): Promise<Partial<User> | null> => {
+const updateUserProfile = async (req: Request, next: NextFunction) => {
   const { id: userId } = req.user as any;
 
   const deletePhoto = (photoLink: string) => {
@@ -41,72 +38,75 @@ const updateUserProfile = async (
   //* make updated data
   const data: any = req.body as any;
 
-  if (data.shop_name) {
-    await prisma.organization.update({
-      where: { ownerId: isUserExist.id },
-      data: { name: data.shop_name },
-    });
-  }
-
-  const updatedData = data;
-
-  if (isUserExist.photo && req.body.photo !== isUserExist.photo) {
-    //* delete photo
-    if (req.body.photo) {
-      deletePhoto(isUserExist?.photo);
+  const result = await prisma.$transaction(async prisma => {
+    if (data.shop_name) {
+      await prisma.organization.update({
+        where: { ownerId: isUserExist.id },
+        data: { name: data.shop_name },
+      });
     }
-    const result = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        ...updatedData,
-      },
-      select: {
-        id: true,
-        role: true,
-        memberCategory: true,
-        verified: true,
-        organization: true,
-        isMobileVerified: true,
-        name: true,
-        email: true,
-        phone: true,
-        address: true,
-        photo: true,
-        license: true,
-        nid: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
 
-    return result;
-  } else {
-    const result = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        ...updatedData,
-      },
-      select: {
-        id: true,
-        role: true,
-        memberCategory: true,
-        verified: true,
-        organization: true,
-        isMobileVerified: true,
-        name: true,
-        email: true,
-        phone: true,
-        address: true,
-        photo: true,
-        license: true,
-        nid: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+    const { shop_name, ...updatedData } = data;
+    console.log(req.body);
 
-    return result;
-  }
+    if (isUserExist.photo && req.body.photo !== isUserExist.photo) {
+      //* delete photo
+      if (req.body.photo) {
+        deletePhoto(isUserExist?.photo);
+      }
+      const result = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          ...updatedData,
+        },
+        select: {
+          id: true,
+          role: true,
+          memberCategory: true,
+          verified: true,
+          organization: true,
+          isMobileVerified: true,
+          name: true,
+          email: true,
+          phone: true,
+          address: true,
+          photo: true,
+          license: true,
+          nid: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      return result;
+    } else {
+      const result = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          ...updatedData,
+        },
+        select: {
+          id: true,
+          role: true,
+          memberCategory: true,
+          verified: true,
+          organization: true,
+          isMobileVerified: true,
+          name: true,
+          email: true,
+          phone: true,
+          address: true,
+          photo: true,
+          license: true,
+          nid: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      return result;
+    }
+  });
 };
 
 const removeProfilePicture = async (userId: string): Promise<Partial<User>> => {
