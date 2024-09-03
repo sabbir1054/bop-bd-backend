@@ -155,7 +155,7 @@ const getAllProduct = async (
 
   if (orgId) {
     andConditions.push({
-      organization: orgId,
+      organizationId: orgId,
     });
   }
   if (address) {
