@@ -1,4 +1,4 @@
-import { Product } from '@prisma/client';
+import { Product, Role } from '@prisma/client';
 import { Request } from 'express';
 import fs from 'fs';
 import httpStatus from 'http-status';
@@ -177,14 +177,16 @@ const getAllProduct = async (
     });
   }
 
-  if (ownerType) {
+  if (ownerType && Object.values(Role).includes(ownerType)) {
     andConditions.push({
       organization: {
         owner: {
-          role: ownerType,
+          role: ownerType as Role,
         },
       },
     });
+  } else if (ownerType) {
+    throw new Error(`Invalid role type: ${ownerType}`);
   }
   const whereConditions =
     andConditions.length > 0 ? { AND: andConditions } : {};
