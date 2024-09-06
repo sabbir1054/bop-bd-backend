@@ -5,7 +5,7 @@ export const productFilterableFields: string[] = [
   'minPrice',
   'maxPrice',
   'category',
-  'ownerId',
+  'orgId',
   'address',
   'sku',
   'ownerType',

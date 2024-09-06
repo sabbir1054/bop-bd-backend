@@ -10,7 +10,7 @@ const createNew = async (
   payload: IFeedbackCreate,
 ): Promise<Feedback> => {
   const { productId, rating, comment } = payload;
-  let ownerId = null;
+  let orgId = null;
 
   if (userRole === 'STAFF') {
     const isValidStaff = await prisma.staff.findUnique({
@@ -26,12 +26,16 @@ const createNew = async (
     if (!validStaffRole.includes(isValidStaff.role)) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Staff role not valid');
     }
-    ownerId = isValidStaff.organization.ownerId;
+    orgId = isValidStaff.organization.id;
   } else {
-    ownerId = id;
+    const userInfo = await prisma.user.findUnique({ where: { id: id } });
+    if (!userInfo) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'User info not found');
+    }
+    orgId = userInfo.organizationId;
   }
 
-  if (!ownerId) {
+  if (!orgId) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Owner info not found');
   }
 
@@ -47,7 +51,7 @@ const createNew = async (
   }
   const orders = await prisma.order.findMany({
     where: {
-      customerId: ownerId,
+      customerId: orgId,
       orderItems: {
         some: {
           productId: productId,
@@ -76,7 +80,7 @@ const createNew = async (
   //* Count the number of feedbacks the user has already given for the product
   const feedbackCount = await prisma.feedback.count({
     where: {
-      userId: ownerId,
+      organizationId: orgId,
       productId: productId,
     },
   });
@@ -91,7 +95,7 @@ const createNew = async (
     data: {
       rating,
       comment,
-      user: { connect: { id: ownerId } },
+      Organization: { connect: { id: orgId } },
       product: { connect: { id: productId } },
     },
   });
@@ -99,7 +103,7 @@ const createNew = async (
 };
 
 const getAll = async (role: string, userId: string): Promise<Feedback[]> => {
-  let ownerId = null;
+  let orgId = null;
 
   if (role === 'STAFF') {
     const isValidStaff = await prisma.staff.findUnique({
@@ -115,23 +119,29 @@ const getAll = async (role: string, userId: string): Promise<Feedback[]> => {
     if (!validStaffRole.includes(isValidStaff.role)) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Staff role not valid');
     }
-    ownerId = isValidStaff.organization.ownerId;
+    orgId = isValidStaff.organization.id;
   } else {
-    ownerId = userId;
+    const isValidUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!isValidUser) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'User info not found');
+    }
+    orgId = isValidUser.organizationId;
   }
 
   if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
     const result = await prisma.feedback.findMany({
-      include: { user: true, product: true },
+      include: { Organization: true, product: true },
     });
     return result;
   } else {
-    if (!ownerId) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'Owner info not found');
+    if (!orgId) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
     }
     const result = await prisma.feedback.findMany({
-      where: { userId: ownerId },
-      include: { user: true, product: true },
+      where: { organizationId: orgId },
+      include: { Organization: true, product: true },
     });
     return result;
   }
@@ -141,30 +151,7 @@ const getSingle = async (feedbackId: string): Promise<Feedback | null> => {
   const result = await prisma.feedback.findUnique({
     where: { id: feedbackId },
     include: {
-      user: {
-        select: {
-          id: true,
-          role: true,
-          memberCategory: true,
-          verified: true,
-          organization: true,
-          isMobileVerified: true,
-          name: true,
-          email: true,
-          phone: true,
-          address: true,
-          photo: true,
-          license: true,
-          nid: true,
-          shop_name: true,
-          createdAt: true,
-          updatedAt: true,
-          feedbacks: true,
-          businessType: true,
-          businessTypeId: true,
-        },
-      },
-      product: {
+      Organization: {
         include: {
           owner: {
             select: {
@@ -181,12 +168,31 @@ const getSingle = async (feedbackId: string): Promise<Feedback | null> => {
               photo: true,
               license: true,
               nid: true,
-              shop_name: true,
-              createdAt: true,
-              updatedAt: true,
-              feedbacks: true,
-              businessType: true,
-              businessTypeId: true,
+            },
+          },
+        },
+      },
+      product: {
+        include: {
+          organization: {
+            include: {
+              owner: {
+                select: {
+                  id: true,
+                  role: true,
+                  memberCategory: true,
+                  verified: true,
+                  organization: true,
+                  isMobileVerified: true,
+                  name: true,
+                  email: true,
+                  phone: true,
+                  address: true,
+                  photo: true,
+                  license: true,
+                  nid: true,
+                },
+              },
             },
           },
           images: true,
@@ -218,7 +224,7 @@ const updateSingle = async (
     throw new ApiError(httpStatus.NOT_FOUND, 'Feedback not found');
   }
 
-  let ownerId = null;
+  let orgId = null;
 
   if (role === 'STAFF') {
     const isValidStaff = await prisma.staff.findUnique({
@@ -234,12 +240,21 @@ const updateSingle = async (
     if (!validStaffRole.includes(isValidStaff.role)) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Staff role not valid');
     }
-    ownerId = isValidStaff.organization.ownerId;
+    orgId = isValidStaff.organization.id;
   } else {
-    ownerId = userId;
+    const isValidUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!isValidUser) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'User info not found');
+    }
+    orgId = isValidUser.organizationId;
+  }
+  if (!orgId) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
   }
 
-  if (ownerId !== isFeedbackExist.userId) {
+  if (orgId !== isFeedbackExist.organizationId) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
       'You can not change others feedback',
@@ -264,7 +279,7 @@ const deleteSingle = async (
   if (!isFeedbackExist) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Feedback not found');
   }
-  let ownerId = null;
+  let orgId = null;
 
   if (role === 'STAFF') {
     const isValidStaff = await prisma.staff.findUnique({
@@ -280,15 +295,21 @@ const deleteSingle = async (
     if (!validStaffRole.includes(isValidStaff.role)) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Staff role not valid');
     }
-    ownerId = isValidStaff.organization.ownerId;
+    orgId = isValidStaff.organization.id;
   } else {
-    ownerId = userId;
+    const isValidUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!isValidUser) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'User info not found');
+    }
+    orgId = isValidUser.organizationId;
   }
-  if (!ownerId) {
+  if (!orgId) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Owner info not found');
   }
 
-  if (ownerId !== isFeedbackExist.userId) {
+  if (orgId !== isFeedbackExist.organizationId) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
       'You can not delete others feedback',

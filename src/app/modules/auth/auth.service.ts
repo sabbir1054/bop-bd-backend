@@ -103,16 +103,8 @@ const userRegistration = async (
           photo: true,
           license: true,
           nid: true,
-          shop_name: true,
           createdAt: true,
           updatedAt: true,
-          feedbacks: true,
-          cart: true,
-          products: true,
-          outgoing_order: true,
-          incoming_order: true,
-          businessType: true,
-          businessTypeId: true,
         },
       });
 
@@ -123,6 +115,25 @@ const userRegistration = async (
           throw new ApiError(
             httpStatus.BAD_REQUEST,
             'For Staff registration , organization id is requied',
+          );
+        }
+
+        //! verified that is organized exist or is owner verified => if not than throw error
+        const isOrganizationExist = await prisma.organization.findUnique({
+          where: { id: othersData.organizationId },
+          include: {
+            owner: true,
+          },
+        });
+
+        if (!isOrganizationExist) {
+          throw new ApiError(httpStatus.NOT_FOUND, 'Organization id not found');
+        }
+
+        if (!isOrganizationExist.owner.verified) {
+          throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            'Organization owner not verified',
           );
         }
 
@@ -162,7 +173,6 @@ const userRegistration = async (
             photo: true,
             license: true,
             nid: true,
-            shop_name: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -203,13 +213,12 @@ const userRegistration = async (
         if (!isBusinessTypeExist) {
           throw new ApiError(httpStatus.NOT_FOUND, 'Business type not found');
         }
-        const result = await prisma.user.create({
+        const createdUser = await prisma.user.create({
           data: {
             phone: phone,
             password: encryptedPassword,
             role: othersData.role,
             name: othersData.name,
-            businessType: { connect: { id: othersData.businessTypeId } },
           },
           select: {
             id: true,
@@ -224,21 +233,20 @@ const userRegistration = async (
             photo: true,
             license: true,
             nid: true,
-            shop_name: true,
             createdAt: true,
             updatedAt: true,
-            feedbacks: true,
-            cart: true,
-            products: true,
-            outgoing_order: true,
-            incoming_order: true,
-            businessType: true,
-            businessTypeId: true,
-            organizationId: true,
           },
         });
-        await prisma.organization.create({
-          data: { owner: { connect: { id: result.id } } },
+        const createdOrganization = await prisma.organization.create({
+          data: {
+            ownerId: createdUser.id,
+            businessTypeId: othersData?.businessTypeId,
+          },
+        });
+
+        const result = await prisma.user.update({
+          where: { id: createdUser.id },
+          data: { organizationId: createdOrganization.id },
         });
         return result;
       }
@@ -285,16 +293,8 @@ const verifyOTP = async (payload: IVerifyOtp) => {
           photo: true,
           license: true,
           nid: true,
-          shop_name: true,
           createdAt: true,
           updatedAt: true,
-          feedbacks: true,
-          cart: true,
-          products: true,
-          outgoing_order: true,
-          incoming_order: true,
-          businessType: true,
-          businessTypeId: true,
           isMobileVerified: true,
         },
       });
@@ -305,7 +305,6 @@ const verifyOTP = async (payload: IVerifyOtp) => {
       };
 
       return newResult;
-      return result;
     } else {
       if (isPhoneOtpExist.resendCounter <= 2) {
         if (isPhoneOtpExist.checkCounter < 2) {

@@ -6,10 +6,7 @@ import path from 'path';
 import ApiError from '../../../errors/ApiError';
 import prisma from '../../../shared/prisma';
 import { IStaffRole } from './user.interface';
-const updateUserProfile = async (
-  req: Request,
-  next: NextFunction,
-): Promise<Partial<User> | null> => {
+const updateUserProfile = async (req: Request, next: NextFunction) => {
   const { id: userId } = req.user as any;
 
   const deletePhoto = (photoLink: string) => {
@@ -39,94 +36,77 @@ const updateUserProfile = async (
     throw new ApiError(httpStatus.NOT_FOUND, 'User not exist');
   }
   //* make updated data
-  const { businessTypeId, ...others } = req.body;
+  const data: any = req.body as any;
 
-  if (others.shop_name) {
-    await prisma.organization.update({
-      where: { ownerId: isUserExist.id },
-      data: { name: others.shop_name },
-    });
-  }
-
-  const updatedData = others;
-
-  if (businessTypeId) {
-    updatedData.businessType = { connect: { id: businessTypeId } };
-  }
-
-  if (isUserExist.photo && req.body.photo !== isUserExist.photo) {
-    //* delete photo
-    if (req.body.photo) {
-      deletePhoto(isUserExist?.photo);
+  const result = await prisma.$transaction(async prisma => {
+    if (data.shop_name) {
+      await prisma.organization.update({
+        where: { ownerId: isUserExist.id },
+        data: { name: data.shop_name },
+      });
     }
-    const result = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        ...updatedData,
-      },
-      select: {
-        id: true,
-        role: true,
-        memberCategory: true,
-        verified: true,
-        organization: true,
-        isMobileVerified: true,
-        name: true,
-        email: true,
-        phone: true,
-        address: true,
-        photo: true,
-        license: true,
-        nid: true,
-        shop_name: true,
-        createdAt: true,
-        updatedAt: true,
-        feedbacks: true,
-        cart: true,
-        products: true,
-        outgoing_order: true,
-        incoming_order: true,
-        businessType: true,
-        businessTypeId: true,
-      },
-    });
 
-    return result;
-  } else {
-    const result = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        ...updatedData,
-      },
-      select: {
-        id: true,
-        role: true,
-        memberCategory: true,
-        verified: true,
-        organization: true,
-        isMobileVerified: true,
-        name: true,
-        email: true,
-        phone: true,
-        address: true,
-        photo: true,
-        license: true,
-        nid: true,
-        shop_name: true,
-        createdAt: true,
-        updatedAt: true,
-        feedbacks: true,
-        cart: true,
-        products: true,
-        outgoing_order: true,
-        incoming_order: true,
-        businessType: true,
-        businessTypeId: true,
-      },
-    });
+    const { shop_name, ...updatedData } = data;
+    console.log(req.body);
 
-    return result;
-  }
+    if (isUserExist.photo && req.body.photo !== isUserExist.photo) {
+      //* delete photo
+      if (req.body.photo) {
+        deletePhoto(isUserExist?.photo);
+      }
+      const result = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          ...updatedData,
+        },
+        select: {
+          id: true,
+          role: true,
+          memberCategory: true,
+          verified: true,
+          organization: true,
+          isMobileVerified: true,
+          name: true,
+          email: true,
+          phone: true,
+          address: true,
+          photo: true,
+          license: true,
+          nid: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      return result;
+    } else {
+      const result = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          ...updatedData,
+        },
+        select: {
+          id: true,
+          role: true,
+          memberCategory: true,
+          verified: true,
+          organization: true,
+          isMobileVerified: true,
+          name: true,
+          email: true,
+          phone: true,
+          address: true,
+          photo: true,
+          license: true,
+          nid: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      return result;
+    }
+  });
 };
 
 const removeProfilePicture = async (userId: string): Promise<Partial<User>> => {
@@ -172,16 +152,6 @@ const removeProfilePicture = async (userId: string): Promise<Partial<User>> => {
       photo: true,
       license: true,
       nid: true,
-      shop_name: true,
-      createdAt: true,
-      updatedAt: true,
-      feedbacks: true,
-      cart: true,
-      products: true,
-      outgoing_order: true,
-      incoming_order: true,
-      businessType: true,
-      businessTypeId: true,
     },
   });
 
@@ -204,11 +174,6 @@ const getAll = async (): Promise<Partial<User>[]> => {
       photo: true,
       license: true,
       nid: true,
-      shop_name: true,
-      createdAt: true,
-      updatedAt: true,
-      businessType: true,
-      businessTypeId: true,
     },
   });
   return result;
@@ -240,31 +205,33 @@ const getSingle = async (
     return result;
   }
 
-  let result = await prisma.user.findUnique({
+  const result = await prisma.user.findUnique({
     where: { id: profileId },
     include: {
-      feedbacks: true,
-      cart: {
+      organization: {
         include: {
-          CartItem: true,
+          feedbacks: true,
+          cart: {
+            include: {
+              CartItem: true,
+            },
+          },
+          products: true,
+          outgoing_order: {
+            include: { orderItems: true },
+          },
+          incoming_order: {
+            include: { orderItems: true },
+          },
+          BusinessType: true,
         },
       },
-      products: true,
-      outgoing_order: {
-        include: { orderItems: true },
-      },
-      incoming_order: {
-        include: { orderItems: true },
-      },
-      businessType: true,
-      organization: true,
     },
   });
 
   if (!result) {
     throw new ApiError(httpStatus.NOT_FOUND, 'User not found !');
   }
-  result.password = '';
 
   if (role === ('ADMIN' || 'SUPER_ADMIN')) {
     return result;
