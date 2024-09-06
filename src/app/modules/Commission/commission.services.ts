@@ -1,4 +1,6 @@
 import { Commission } from '@prisma/client';
+import httpStatus from 'http-status';
+import ApiError from '../../../errors/ApiError';
 import prisma from '../../../shared/prisma';
 
 const createNew = async (payload: Commission): Promise<Commission> => {
@@ -8,93 +10,59 @@ const createNew = async (payload: Commission): Promise<Commission> => {
   return result;
 };
 
-// const getAll = async (): Promise<BusinessType[]> => {
-//   const result = await prisma.businessType.findMany();
-//   return result;
-// };
+const getAll = async (): Promise<Commission[]> => {
+  const result = await prisma.commission.findMany();
+  return result;
+};
 
-// const getSingle = async (id: string): Promise<BusinessType | null> => {
-//   const result = await prisma.businessType.findUnique({
-//     where: { id },
-//     include: {
-//       category: true,
-//       organization: true,
-//     },
-//   });
+const getSingle = async (id: string): Promise<Commission | null> => {
+  const result = await prisma.commission.findUnique({
+    where: { id },
+    include: {
+      referCodes: {
+        include: {
+          codeOwnerOrganization: true,
+          codeUsedOrganization: true,
+        },
+      },
+    },
+  });
 
-//   if (!result) {
-//     throw new ApiError(httpStatus.NOT_FOUND, 'Business type not found !');
-//   }
+  if (!result) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Commission info not found !');
+  }
 
-//   return result;
-// };
-// const updateSingle = async (
-//   id: string,
-//   data: Partial<BusinessType>,
-// ): Promise<BusinessType | null> => {
-//   const isExist = await prisma.businessType.findUnique({ where: { id } });
+  return result;
+};
+const updateSingle = async (
+  id: string,
+  data: Partial<Commission>,
+): Promise<Commission | null> => {
+  const isExist = await prisma.commission.findUnique({ where: { id } });
 
-//   if (!isExist) {
-//     throw new ApiError(httpStatus.NOT_FOUND, 'Business type not found !');
-//   }
-//   const result = await prisma.businessType.update({ where: { id }, data });
+  if (!isExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Commission not found !');
+  }
+  const result = await prisma.commission.update({ where: { id }, data });
 
-//   return result;
-// };
+  return result;
+};
 
-// const deleteSingle = async (id: string): Promise<BusinessType | null> => {
-//   const isExist = await prisma.businessType.findUnique({ where: { id } });
+const deleteSingle = async (id: string): Promise<Commission | null> => {
+  const isExist = await prisma.commission.findUnique({ where: { id } });
 
-//   if (!isExist) {
-//     throw new ApiError(httpStatus.NOT_FOUND, 'Business type not found !');
-//   }
-//   const result = await prisma.businessType.delete({ where: { id } });
+  if (!isExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Commission not found !');
+  }
+  const result = await prisma.commission.delete({ where: { id } });
 
-//   return result;
-// };
-
-// const getAllProductBusinessType = async (id: string): Promise<Category[]> => {
-//   const isBusinessTypeExist = await prisma.businessType.findUnique({
-//     where: { id: id },
-//     include: {
-//       category: {
-//         include: {
-//           products: {
-//             include: {
-//               images: true,
-//               organization: {
-//                 include: {
-//                   owner: {
-//                     select: {
-//                       id: true,
-//                       role: true,
-//                       verified: true,
-//                       organization: true,
-//                       isEmailVerified: true,
-//                       name: true,
-//                       email: true,
-//                       phone: true,
-//                       address: true,
-//                       photo: true,
-//                       license: true,
-//                       nid: true,
-//                     },
-//                   },
-//                 },
-//               },
-//             },
-//           },
-//         },
-//       },
-//     },
-//   });
-//   if (!isBusinessTypeExist) {
-//     throw new ApiError(httpStatus.NOT_FOUND, ' Business type not found !');
-//   }
-//   const result = isBusinessTypeExist.category;
-//   return result;
-// };
+  return result;
+};
 
 export const CommissionServices = {
   createNew,
+  getAll,
+  getSingle,
+  updateSingle,
+  deleteSingle,
 };
