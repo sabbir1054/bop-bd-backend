@@ -1,6 +1,7 @@
 import express from 'express';
 import { CategoryRoutes } from '../modules/Category/category.route';
 import { ProductRoutes } from '../modules/Products/products.route';
+import { AdminRoutes } from '../modules/admin/admin.route';
 import { AuthRoutes } from '../modules/auth/auth.route';
 import { BusinessTypeRoutes } from '../modules/businessType/businessType.route';
 import { CartRoutes } from '../modules/cart/cart.routes';
@@ -48,6 +49,10 @@ const moduleRoutes = [
   {
     path: '/organization',
     route: OrganizationRoutes,
+  },
+  {
+    path: '/my_admin',
+    route: AdminRoutes,
   },
 ];
 
