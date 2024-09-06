@@ -41,12 +41,6 @@ enum PaymentStatus {
     PAID
 }
 
-enum OrderPaymentCategory {
-    MOBILE_BANKING
-    BANK_TRANSACTION
-    CASH_ON_DELIVERY
-}
-
 enum StaffRole {
     ORDER_SUPERVISOR
     STAFF_ADMIN
@@ -62,6 +56,7 @@ model RevenueShare {
     percentage Float
     createdAt  DateTime @default(now())
     updatedAt  DateTime @updatedAt
+
     @@map("revenue_share")
 }
 
@@ -102,75 +97,23 @@ model OrderOtp {
     @@map("orderOtp")
 }
 
-model PaymentSystemOptions {
-    id               String               @id @default(uuid())
-    paymentCategory  OrderPaymentCategory
-    methodName       String 
-    accountNumber    String // Account number associated with the payment method
-    description      String? // Additional details about the payment method
-    organization     Organization         @relation(fields: [organizationId], references: [id])
-    organizationId   String // Reference to the organization that owns this payment method
-    createdAt        DateTime             @default(now())
-    updatedAt        DateTime             @updatedAt
-    OrderPaymentInfo OrderPaymentInfo[]
-
-    @@map("payment_systems_options")
-}
-
-model OrderPaymentInfo {
-    id                     String               @id @default(uuid())
-    PaymentSystemOptions   PaymentSystemOptions @relation(fields: [PaymentSystemOptionsId], references: [id])
-    PaymentSystemOptionsId String // Reference to the payment method used
-    transactionId          String? // Transaction ID provided by the payment gateway or method
-    amount                 Float // Final amount paid after discounts
-    paymentStatus          PaymentStatus        @default(PENDING) // Status of the payment (Pending, Paid)
-    paymentDate            DateTime             @default(now()) // Date and time of payment
-    originalPrice          Float // Original price before any discounts
-    discountPrice          Float? // Discounted amount (originalPrice - discount)
-    couponCode             String? // Coupon code used, if any
-    referralCode           String? // Referral code used, if any
-    createdAt              DateTime             @default(now())
-    updatedAt              DateTime             @updatedAt
-    Order                  Order?
-
-    @@map("payments")
-}
-
 model Organization {
-    id                     String                 @id @default(uuid())
-    name                   String?
-    owner                  User                   @relation(fields: [ownerId], references: [id])
-    ownerId                String                 @unique
-    staff                  Staff[]
-    updatedAt              DateTime               @updatedAt
-    createdAt              DateTime               @default(now())
-    products               Product[]
-    feedbacks              Feedback[]
-    cart                   Cart[]
-    outgoing_order         Order[]                @relation("customer_orders")
-    incoming_order         Order[]                @relation("product_seller_orders")
-    BusinessType           BusinessType?          @relation(fields: [businessTypeId], references: [id])
-    businessTypeId         String?
-    referralCodes          ReferralCode[]
-    commissions            Commission[] // Relation with Commission model
-    commissionHistory      CommissionHistory?
-    commissionHistoryId    String?                @unique
-    MembershipCommission   MembershipCommission?  @relation(fields: [membershipCommissionId], references: [id])
-    membershipCommissionId String?
-    paymentSystems         PaymentSystemOptions[]
+    id             String        @id @default(uuid())
+    name           String?
+    owner          User          @relation(fields: [ownerId], references: [id])
+    ownerId        String        @unique
+    staff          Staff[]
+    updatedAt      DateTime      @updatedAt
+    createdAt      DateTime      @default(now())
+    products       Product[]
+    feedbacks      Feedback[]
+    cart           Cart[]
+    outgoing_order Order[]       @relation("customer_orders")
+    incoming_order Order[]       @relation("product_seller_orders")
+    BusinessType   BusinessType? @relation(fields: [businessTypeId], references: [id])
+    businessTypeId String?
 
     @@map("organizations")
-}
-
-model ReferralCode {
-    id             String       @id @default(uuid())
-    code           String       @unique
-    isActive       Boolean      @default(true)
-    percentage     Float
-    createdAt      DateTime     @default(now())
-    updatedAt      DateTime     @updatedAt
-    organization   Organization @relation(fields: [organizationId], references: [id])
-    organizationId String
 }
 
 model User {
@@ -303,9 +246,6 @@ model Order {
     orderItems         OrderItem[]
     assigndForDelivery AssigndForDelivery?
     OrderOtp           OrderOtp[]
-    commission         Commission?
-    orderPaymentInfo   OrderPaymentInfo    @relation(fields: [orderPaymentInfoId], references: [id])
-    orderPaymentInfoId String              @unique
 
     @@map("orders")
 }
@@ -353,42 +293,4 @@ model AssigndForDelivery {
     orderId           String   @unique
 
     @@map("assigned_for_delivery")
-}
-
-model MembershipCommission {
-    id             String         @id @default(uuid())
-    memberCategory MemberCategory // Membership category (e.g., SILVER, GOLD)
-    percentage     Float // Commission percentage for this category
-    createdAt      DateTime       @default(now())
-    updatedAt      DateTime       @updatedAt
-    organizations  Organization[] // Organizations under this commission category
-    Commission     Commission[]
-
-    @@map("membership_commission")
-}
-
-model Commission {
-    id                     String               @id @default(uuid())
-    amount                 Float // Calculated commission amount based on the order total
-    isPaid                 Boolean              @default(false) // Tracks if the commission is paid or not
-    order                  Order                @relation(fields: [orderId], references: [id])
-    orderId                String               @unique
-    organization           Organization         @relation(fields: [organizationId], references: [id])
-    organizationId         String
-    membershipCommission   MembershipCommission @relation(fields: [membershipCommissionId], references: [id])
-    membershipCommissionId String
-    createdAt              DateTime             @default(now())
-    updatedAt              DateTime             @updatedAt
-
-    @@map("commissions")
-}
-
-model CommissionHistory {
-    id             String       @id @default(uuid())
-    organization   Organization @relation(fields: [organizationId], references: [id])
-    organizationId String       @unique
-    totalPaid      Float        @default(0.0) // Total paid commission
-    totalDue       Float        @default(0.0) // Total due commission
-    createdAt      DateTime     @default(now())
-    updatedAt      DateTime     @updatedAt
 }
