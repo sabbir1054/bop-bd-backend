@@ -299,16 +299,16 @@ model AssigndForDelivery {
 
 enum CommissionType {
     NORMAL
-    NEW_MEMBER
+    REFERRED_MEMBER
     SPECIAL_OFFER
 }
 
 model Commission {
     id                 String             @id @default(uuid())
-    commisionType      CommissionType     @unique
+    commissionType     CommissionType     @unique
     percentage         Float
     isValid            Boolean            @default(true)
-    new_mem_validity   Int?
+    ref_mem_validity   Int?
     membershipCategory MembershipCategory
     referCodes         RefferedCode[]
     updatedAt          DateTime           @updatedAt

@@ -22,7 +22,9 @@ const commissionUpdateValidation = z.object({
         required_error: 'Commission type is required',
       })
       .optional(),
-    percentage: z.number({ required_error: 'Percentage number is required' }),
+    percentage: z
+      .number({ required_error: 'Percentage number is required' })
+      .optional(),
     isValid: z
       .boolean({ required_error: 'Is valid filed is required' })
       .optional(),

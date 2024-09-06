@@ -4,6 +4,15 @@ import ApiError from '../../../errors/ApiError';
 import prisma from '../../../shared/prisma';
 
 const createNew = async (payload: Commission): Promise<Commission> => {
+  if (payload.commissionType === 'REFERRED_MEMBER') {
+    if (!payload.ref_mem_validity) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Need referred member  commission validity day ',
+      );
+    }
+  }
+
   const result = await prisma.commission.create({
     data: payload,
   });
@@ -11,7 +20,9 @@ const createNew = async (payload: Commission): Promise<Commission> => {
 };
 
 const getAll = async (): Promise<Commission[]> => {
-  const result = await prisma.commission.findMany();
+  const result = await prisma.commission.findMany({
+    include: { referCodes: true },
+  });
   return result;
 };
 
