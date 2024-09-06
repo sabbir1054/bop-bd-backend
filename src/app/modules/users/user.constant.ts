@@ -1,4 +1,10 @@
-export const memberCategory = ['SILVER', 'GOLD', 'PLATINUM', 'NORMAL'];
+export const memberCategory = [
+  'SILVER',
+  'GOLD',
+  'PLATINUM',
+  'NORMAL',
+  'DIAMOND',
+];
 export const StaffRole = [
   'ORDER_SUPERVISOR',
   'STAFF_ADMIN',

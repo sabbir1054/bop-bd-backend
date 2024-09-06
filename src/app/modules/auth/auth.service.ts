@@ -94,7 +94,6 @@ const userRegistration = async (
         select: {
           id: true,
           role: true,
-          memberCategory: true,
           verified: true,
           name: true,
           email: true,
@@ -164,7 +163,6 @@ const userRegistration = async (
           select: {
             id: true,
             role: true,
-            memberCategory: true,
             verified: true,
             name: true,
             email: true,
@@ -223,7 +221,6 @@ const userRegistration = async (
           select: {
             id: true,
             role: true,
-            memberCategory: true,
             verified: true,
             isMobileVerified: true,
             name: true,
@@ -284,7 +281,6 @@ const verifyOTP = async (payload: IVerifyOtp) => {
         select: {
           id: true,
           role: true,
-          memberCategory: true,
           verified: true,
           name: true,
           email: true,

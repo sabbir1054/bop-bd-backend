@@ -157,7 +157,6 @@ const getSingle = async (feedbackId: string): Promise<Feedback | null> => {
             select: {
               id: true,
               role: true,
-              memberCategory: true,
               verified: true,
               organization: true,
               isMobileVerified: true,
@@ -180,7 +179,6 @@ const getSingle = async (feedbackId: string): Promise<Feedback | null> => {
                 select: {
                   id: true,
                   role: true,
-                  memberCategory: true,
                   verified: true,
                   organization: true,
                   isMobileVerified: true,

@@ -21,13 +21,6 @@ enum Role {
     STAFF
 }
 
-enum MemberCategory {
-    SILVER
-    GOLD
-    PLATINUM
-    NORMAL
-}
-
 enum OrderStatus {
     PENDING
     ACCEPTED
@@ -119,32 +112,32 @@ model Organization {
     PayCommission            PayCommission[]
     totalRewardPoints        Float?
     ClaimReward              ClaimReward[]
+    memberShipCategory       MembershipCategory                @default(NORMAL)
 
     @@map("organizations")
 }
 
 model User {
-    id               String         @id @default(uuid())
+    id               String        @id @default(uuid())
     role             Role
-    memberCategory   MemberCategory @default(NORMAL)
-    verified         Boolean        @default(false)
+    verified         Boolean       @default(false)
     name             String?
-    email            String?        @unique
-    phone            String         @unique
+    email            String?       @unique
+    phone            String        @unique
     address          String?
     photo            String?
     password         String
     license          String?
     nid              String?
-    createdAt        DateTime       @default(now())
-    updatedAt        DateTime       @updatedAt
+    createdAt        DateTime      @default(now())
+    updatedAt        DateTime      @updatedAt
     organizationId   String?
     organization     Organization?
     token            String?
     Staff            Staff?
-    isMobileVerified Boolean        @default(false)
-    isEmailVerified  Boolean        @default(false)
-    isNidVerified    Boolean        @default(false)
+    isMobileVerified Boolean       @default(false)
+    isEmailVerified  Boolean       @default(false)
+    isNidVerified    Boolean       @default(false)
 
     @@map("users")
 }
@@ -311,14 +304,15 @@ enum CommissionType {
 }
 
 model Commission {
-    id               String         @id @default(uuid())
-    commisionType    CommissionType @unique
-    percentage       Float
-    isValid          Boolean        @default(true)
-    new_mem_validity Int?
-    referCodes       RefferedCode[]
-    updatedAt        DateTime       @updatedAt
-    createdAt        DateTime       @default(now())
+    id                 String             @id @default(uuid())
+    commisionType      CommissionType     @unique
+    percentage         Float
+    isValid            Boolean            @default(true)
+    new_mem_validity   Int?
+    membershipCategory MembershipCategory
+    referCodes         RefferedCode[]
+    updatedAt          DateTime           @updatedAt
+    createdAt          DateTime           @default(now())
 
     @@map("commission")
 }
@@ -395,6 +389,7 @@ enum RewardPointsType {
 model RewardPoints {
     id                       String                            @id @default(uuid())
     rewardType               RewardPointsType
+    membershipCategory       MembershipCategory
     points                   Int
     updatedAt                DateTime                          @updatedAt
     createdAt                DateTime                          @default(now())
@@ -443,4 +438,21 @@ model ClaimReward {
     createdAt      DateTime     @default(now())
 
     @@map("claime_reward")
+}
+
+model PointsValue {
+    id          String   @id @default(uuid())
+    perPointsTk Float
+    updatedAt   DateTime @updatedAt
+    createdAt   DateTime @default(now())
+
+    @@map("pointsValue")
+}
+
+enum MembershipCategory {
+    DIAMOND
+    GOLD
+    SILVER
+    PLATINUM
+    NORMAL
 }

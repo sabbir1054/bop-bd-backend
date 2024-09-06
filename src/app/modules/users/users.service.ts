@@ -64,7 +64,6 @@ const updateUserProfile = async (
       select: {
         id: true,
         role: true,
-        memberCategory: true,
         verified: true,
         organization: true,
         isMobileVerified: true,
@@ -90,7 +89,6 @@ const updateUserProfile = async (
       select: {
         id: true,
         role: true,
-        memberCategory: true,
         verified: true,
         organization: true,
         isMobileVerified: true,
@@ -142,7 +140,6 @@ const removeProfilePicture = async (userId: string): Promise<Partial<User>> => {
     select: {
       id: true,
       role: true,
-      memberCategory: true,
       verified: true,
       organization: true,
       isMobileVerified: true,
@@ -164,7 +161,6 @@ const getAll = async (): Promise<Partial<User>[]> => {
     select: {
       id: true,
       role: true,
-      memberCategory: true,
       verified: true,
       organization: true,
       isMobileVerified: true,
@@ -356,7 +352,6 @@ const getOrganizationStaff = async (
         select: {
           id: true,
           role: true,
-          memberCategory: true,
           verified: true,
           name: true,
           email: true,
@@ -406,7 +401,6 @@ const getMyDeliveryBoy = async (userId: string) => {
         select: {
           id: true,
           role: true,
-          memberCategory: true,
           verified: true,
           name: true,
           email: true,

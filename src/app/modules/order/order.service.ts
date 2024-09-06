@@ -242,7 +242,6 @@ const getOrganizationIncomingOrders = async (
               email: true,
               license: true,
               nid: true,
-              memberCategory: true,
               verified: true,
               organization: true,
               isMobileVerified: true,
@@ -316,7 +315,6 @@ const getOrganizationOutgoingOrders = async (
               email: true,
               license: true,
               nid: true,
-              memberCategory: true,
               verified: true,
               organization: true,
               isMobileVerified: true,
@@ -770,7 +768,6 @@ const getSingle = async (id: string): Promise<Order | null> => {
             select: {
               id: true,
               role: true,
-              memberCategory: true,
               verified: true,
               organization: true,
               isMobileVerified: true,
@@ -793,7 +790,6 @@ const getSingle = async (id: string): Promise<Order | null> => {
             select: {
               id: true,
               role: true,
-              memberCategory: true,
               verified: true,
               organization: true,
               isMobileVerified: true,
