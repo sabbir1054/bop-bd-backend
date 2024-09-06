@@ -442,7 +442,7 @@ model ClaimReward {
 
 model PointsValue {
     id          String   @id @default(uuid())
-    perPointsTk Float
+    perPointsTk Float    @default(1.00)
     updatedAt   DateTime @updatedAt
     createdAt   DateTime @default(now())
 

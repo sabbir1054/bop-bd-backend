@@ -9,6 +9,7 @@ import { CartRoutes } from '../modules/cart/cart.routes';
 import { FeedbackRoutes } from '../modules/feedback/feedback.routes';
 import { OrderRoutes } from '../modules/order/order.route';
 import { OrganizationRoutes } from '../modules/organization/organization.route';
+import { RewardRoutes } from '../modules/reward/reward.route';
 import { UsersRoutes } from '../modules/users/users.route';
 
 const router = express.Router();
@@ -58,6 +59,10 @@ const moduleRoutes = [
   {
     path: '/commission',
     route: CommissionRoutes,
+  },
+  {
+    path: '/rewards',
+    route: RewardRoutes,
   },
 ];
 
