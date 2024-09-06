@@ -7,3 +7,13 @@ export const StaffRole = [
   'ACCOUNTS_MANAGER',
   'PURCHASE_OFFICER',
 ];
+export type IUpdateStaffPayload = {
+  staffId: string;
+  updatedRole:
+    | 'STAFF_ADMIN'
+    | 'ORDER_SUPERVISOR'
+    | 'STORE_MANAGER'
+    | 'DELIVERY_BOY'
+    | 'ACCOUNTS_MANAGER'
+    | 'PURCHASE_OFFICER';
+};

@@ -103,6 +103,35 @@ const getMyDeliveryBoy = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const deleteMySingleStaff = catchAsync(async (req: Request, res: Response) => {
+  const { id: userId, role } = req.user as any;
+  const { staffId } = req.params;
+  const result = await UserServices.deleteMySingleStaff(userId, role, staffId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Staff deleted successfully ',
+    data: result,
+  });
+});
+const updateMySingleStaffRole = catchAsync(
+  async (req: Request, res: Response) => {
+    const { id: userId, role } = req.user as any;
+    const result = await UserServices.updateMySingleStaffRole(
+      userId,
+      role,
+      req.body,
+    );
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Staff role updated',
+      data: result,
+    });
+  },
+);
 
 export const UserController = {
   updateUserProfile,
@@ -113,4 +142,6 @@ export const UserController = {
   userVerifiedStatusChange,
   getOrganizationStaff,
   getMyDeliveryBoy,
+  deleteMySingleStaff,
+  updateMySingleStaffRole,
 };

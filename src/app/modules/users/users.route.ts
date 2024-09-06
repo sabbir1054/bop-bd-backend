@@ -115,4 +115,29 @@ router.post(
   UserController.userVerifiedStatusChange,
 );
 
+router.delete(
+  '/deleteStaff/:staffId',
+  auth(
+    ENUM_USER_ROLE.DEALER,
+    ENUM_USER_ROLE.IMPORTER,
+    ENUM_USER_ROLE.MANUFACTURER,
+    ENUM_USER_ROLE.RESELLER,
+    ENUM_USER_ROLE.WHOLESALER,
+  ),
+  UserController.deleteMySingleStaff,
+);
+
+router.patch(
+  '/updateStaffRole',
+  auth(
+    ENUM_USER_ROLE.DEALER,
+    ENUM_USER_ROLE.IMPORTER,
+    ENUM_USER_ROLE.MANUFACTURER,
+    ENUM_USER_ROLE.RESELLER,
+    ENUM_USER_ROLE.WHOLESALER,
+  ),
+
+  validateRequest(UsersValidation.staffUpdateRoleValidation),
+  UserController.updateMySingleStaffRole,
+);
 export const UsersRoutes = router;

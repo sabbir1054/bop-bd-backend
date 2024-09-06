@@ -25,9 +25,16 @@ const getStaffValidation = z.object({
     staffInfo: z.enum([...StaffRole] as [string, ...string[]]).optional(),
   }),
 });
+const staffUpdateRoleValidation = z.object({
+  body: z.object({
+    staffId: z.string({ required_error: 'Stuff id is required' }),
+    updatedRole: z.enum([...StaffRole] as [string, ...string[]]).optional(),
+  }),
+});
 
 export const UsersValidation = {
   updateUserProfileValidation,
   userVerifiedStatusChangeValidation,
   getStaffValidation,
+  staffUpdateRoleValidation,
 };
