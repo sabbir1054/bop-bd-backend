@@ -106,13 +106,13 @@ model Organization {
     BusinessType             BusinessType?                     @relation(fields: [businessTypeId], references: [id])
     businessTypeId           String?
     ownerRefferedCode        RefferedCode[]                    @relation("code_owner_organization")
-    usedRefferedCode         RefferedCode[]                    @relation("code_used_organization")
     PaymentSystemOptions     PaymentSystemOptions[]
     OrganizationRewardPoints OrganizationRewardPointsHistory[]
     PayCommission            PayCommission[]
     totalRewardPoints        Float?
     ClaimReward              ClaimReward[]
     memberShipCategory       MembershipCategory                @default(NORMAL)
+    UsedReffereCode          UsedReffereCode[]
 
     @@map("organizations")
 }
@@ -318,20 +318,30 @@ model Commission {
 }
 
 model RefferedCode {
-    id                      String       @id @default(uuid())
-    code                    String       @unique
-    validUntil              DateTime
-    isValid                 Boolean      @default(true)
-    commission              Commission   @relation(fields: [commissionId], references: [id])
-    commissionId            String
-    codeOwnerOrganization   Organization @relation("code_owner_organization", fields: [codeOwnerorganizationId], references: [id])
-    codeOwnerorganizationId String
-    codeUsedOrganization    Organization @relation("code_used_organization", fields: [codeUsedorganizationId], references: [id])
-    codeUsedorganizationId  String
-    updatedAt               DateTime     @updatedAt
-    createdAt               DateTime     @default(now())
+    id                          String            @id @default(uuid())
+    code                        String            @unique
+    validUntil                  DateTime
+    isValid                     Boolean           @default(true)
+    commission                  Commission        @relation(fields: [commissionId], references: [id])
+    commissionId                String
+    codeOwnerOrganization       Organization      @relation("code_owner_organization", fields: [codeOwnerorganizationId], references: [id])
+    codeOwnerorganizationId     String
+    updatedAt                   DateTime          @updatedAt
+    createdAt                   DateTime          @default(now())
+    organizationUsedReffereCode UsedReffereCode[]
 
     @@map("refer_code")
+}
+
+model UsedReffereCode {
+    id             String       @id @default(uuid())
+    refferCode     RefferedCode @relation(fields: [refferedCodeId], references: [id])
+    organization   Organization @relation(fields: [organizationId], references: [id])
+    updatedAt      DateTime     @updatedAt
+    createdAt      DateTime     @default(now())
+    refferedCodeId String
+    organizationId String
+    @@map("used_refferCode")
 }
 
 enum OrderPaymentCategory {
