@@ -2,6 +2,7 @@ import express from 'express';
 import { CategoryRoutes } from '../modules/Category/category.route';
 import { CommissionRoutes } from '../modules/Commission/commission.route';
 import { ProductRoutes } from '../modules/Products/products.route';
+import { ReferredCodeRoutes } from '../modules/ReferredCode/referredCode.route';
 import { AdminRoutes } from '../modules/admin/admin.route';
 import { AuthRoutes } from '../modules/auth/auth.route';
 import { BusinessTypeRoutes } from '../modules/businessType/businessType.route';
@@ -63,6 +64,10 @@ const moduleRoutes = [
   {
     path: '/rewards',
     route: RewardRoutes,
+  },
+  {
+    path: '/referredCode',
+    route: ReferredCodeRoutes,
   },
 ];
 
