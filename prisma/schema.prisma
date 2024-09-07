@@ -305,7 +305,7 @@ enum CommissionType {
 
 model Commission {
     id                 String             @id @default(uuid())
-    commissionType     CommissionType     @unique
+    commissionType     CommissionType     
     percentage         Float
     isValid            Boolean            @default(true)
     ref_mem_validity   Int?
