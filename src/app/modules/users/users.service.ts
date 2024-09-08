@@ -166,7 +166,11 @@ const getAll = async (): Promise<Partial<User>[]> => {
       role: true,
       memberCategory: true,
       verified: true,
-      organization: true,
+      organization: {
+        include: {
+          BusinessType: true,
+        },
+      },
       isMobileVerified: true,
       name: true,
       email: true,
