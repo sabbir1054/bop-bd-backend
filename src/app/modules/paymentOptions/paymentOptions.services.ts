@@ -41,12 +41,12 @@ const createNew = async (
 };
 
 const getAll = async (userId: string, payload: PaymentSystemOptions) => {
-  const organizationinfo = await prisma.user.findUnique({
+  const organizationInfo = await prisma.user.findUnique({
     where: { id: userId },
     include: { organization: { include: { BusinessType: true } } },
   });
 
-  if (!organizationinfo) {
+  if (!organizationInfo) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
   }
 
