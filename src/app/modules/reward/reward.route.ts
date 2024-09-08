@@ -46,23 +46,3 @@ createValueOfReward,
   deletePointsValue,
 
 */
-
-router.post(
-  '/reward_create',
-  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
-  RewardController.createValueOfReward,
-);
-
-router.patch(
-  '/reward/getSingle',
-  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
-  validateRequest(RewardPointsZodValidation.updateRewardValidation),
-  RewardController.updateSingle,
-);
-router.delete(
-  '/updatePoints',
-  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
-  RewardController.deleteSingle,
-);
-
-router.get('/reward_point', RewardController.getAll);

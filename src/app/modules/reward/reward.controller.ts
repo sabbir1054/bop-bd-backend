@@ -1,4 +1,4 @@
-import { PointsValue, RewardPoints } from '@prisma/client';
+import { RewardPoints } from '@prisma/client';
 import { Request, Response } from 'express';
 import httpStatus from 'http-status';
 import catchAsync from '../../../shared/catchAsync';
@@ -57,53 +57,10 @@ const deleteSingle = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const createValueOfReward = catchAsync(async (req: Request, res: Response) => {
-  const result = await RewardServices.createValueOfReward(req.body.perPointsTk);
-  sendResponse<PointsValue>(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: 'Value points created',
-    data: result,
-  });
-});
-const getValueOfReward = catchAsync(async (req: Request, res: Response) => {
-  const result = await RewardServices.getValueOfReward();
-  sendResponse<PointsValue[]>(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: 'Value points retrieve',
-    data: result,
-  });
-});
-
-const editPointsValue = catchAsync(async (req: Request, res: Response) => {
-  const data = req.body;
-  const result = await RewardServices.editPointsValue(data.perPointsTk);
-  sendResponse<PointsValue>(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: 'value point updated !',
-    data: result,
-  });
-});
-
-const deletePointsValue = catchAsync(async (req: Request, res: Response) => {
-  const result = await RewardServices.deletePointsValue();
-  sendResponse<PointsValue>(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: 'points value deleted !',
-    data: result,
-  });
-});
 export const RewardController = {
   createNew,
   getAll,
   getSingle,
   updateSingle,
   deleteSingle,
-  deletePointsValue,
-  editPointsValue,
-  getValueOfReward,
-  createValueOfReward,
 };
