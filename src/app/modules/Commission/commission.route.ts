@@ -27,6 +27,10 @@ router.delete(
 );
 
 router.get('/:id', CommissionController.getSingle);
-router.get('/', CommissionController.getAll);
+router.get(
+  '/',
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  CommissionController.getAll,
+);
 
 export const CommissionRoutes = router;
