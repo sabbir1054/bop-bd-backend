@@ -13,6 +13,22 @@ const createNew = async (payload: Commission): Promise<Commission> => {
     }
   }
 
+  const isExist = await prisma.commission.findFirst({
+    where: {
+      AND: [
+        {
+          commissionType: payload.commissionType,
+          membershipCategory: payload.membershipCategory,
+        },
+      ],
+    },
+  });
+  if (isExist) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'You have already create it now you can update or delete',
+    );
+  }
   const result = await prisma.commission.create({
     data: payload,
   });
@@ -33,7 +49,6 @@ const getSingle = async (id: string): Promise<Commission | null> => {
       referCodes: {
         include: {
           codeOwnerOrganization: true,
-          codeUsedOrganization: true,
         },
       },
     },

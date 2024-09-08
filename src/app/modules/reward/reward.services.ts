@@ -4,6 +4,23 @@ import ApiError from '../../../errors/ApiError';
 import prisma from '../../../shared/prisma';
 
 const createNew = async (payload: RewardPoints): Promise<RewardPoints> => {
+  const isExist = await prisma.rewardPoints.findFirst({
+    where: {
+      AND: [
+        {
+          rewardType: payload.rewardType,
+          membershipCategory: payload.membershipCategory,
+        },
+      ],
+    },
+  });
+  if (isExist) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'You have already create it now you can update or delete',
+    );
+  }
+
   const result = await prisma.rewardPoints.create({
     data: payload,
   });
