@@ -107,6 +107,7 @@ const updateUserProfile = async (req: Request, next: NextFunction) => {
       return result;
     }
   });
+  return result;
 };
 
 const removeProfilePicture = async (userId: string): Promise<Partial<User>> => {
