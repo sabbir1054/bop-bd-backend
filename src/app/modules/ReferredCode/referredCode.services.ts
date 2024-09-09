@@ -104,6 +104,10 @@ const getAll = async (userId: string, userRole: string) => {
     }
     const result = await prisma.refferedCode.findMany({
       where: { codeOwnerorganizationId: userInfo.organizationId },
+      include: {
+        commission: true,
+        codeOwnerOrganization: true,
+      },
     });
     return result;
   }
@@ -120,6 +124,7 @@ const getSingle = async (referredCodeId: string) => {
   if (!result) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Referred code not found');
   }
+  return result;
 };
 
 const updateSingle = async (
