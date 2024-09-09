@@ -6,9 +6,9 @@ import sendResponse from '../../../shared/sendResponse';
 import { ReferredCodeService } from './referredCode.services';
 
 const createNew = catchAsync(async (req: Request, res: Response) => {
-  const { id: userId } = req.user as any;
+  const { id: userId, role } = req.user as any;
 
-  const result = await ReferredCodeService.createNew(userId, req.body);
+  const result = await ReferredCodeService.createNew(userId, role, req.body);
   sendResponse<RefferedCode>(res, {
     statusCode: httpStatus.OK,
     success: true,

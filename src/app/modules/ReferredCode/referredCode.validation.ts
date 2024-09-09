@@ -2,8 +2,7 @@ import z from 'zod';
 
 const createReferredCodeValidation = z.object({
   body: z.object({
-    code: z.string({ required_error: 'Referred code is required' }),
-    validUntil: z.date({ required_error: 'Validity date is required' }),
+    validUntil: z.string({ required_error: 'Validity date is required' }),
     isValid: z.boolean({ required_error: 'Is valid required' }),
     commissionId: z.string({ required_error: 'Commission id is required' }),
     codeOwnerorganizationId: z.string({
@@ -13,9 +12,8 @@ const createReferredCodeValidation = z.object({
 });
 const updateReferredCodeValidation = z.object({
   body: z.object({
-    code: z.string({ required_error: 'Referred code is required' }).optional(),
     validUntil: z
-      .date({ required_error: 'Validity date is required' })
+      .string({ required_error: 'Validity date is required' })
       .optional(),
     isValid: z.boolean({ required_error: 'Is valid required' }).optional(),
     commissionId: z
