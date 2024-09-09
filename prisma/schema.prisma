@@ -305,7 +305,7 @@ enum CommissionType {
 
 model Commission {
     id                 String             @id @default(uuid())
-    commissionType     CommissionType     
+    commissionType     CommissionType
     percentage         Float
     isValid            Boolean            @default(true)
     ref_mem_validity   Int?
@@ -329,6 +329,10 @@ model RefferedCode {
     updatedAt                   DateTime          @updatedAt
     createdAt                   DateTime          @default(now())
     organizationUsedReffereCode UsedReffereCode[]
+    joiningRewardPoints         RewardPoints      @relation("joining_Reward_code", fields: [joiningRewardPointsId], references: [id])
+    joiningRewardPointsId       String
+    buyingRewardPoints          RewardPoints      @relation("buying_Reward_code", fields: [buyingRewardPointsId], references: [id])
+    buyingRewardPointsId        String
 
     @@map("refer_code")
 }
@@ -341,6 +345,7 @@ model UsedReffereCode {
     createdAt      DateTime     @default(now())
     refferedCodeId String
     organizationId String
+
     @@map("used_refferCode")
 }
 
@@ -404,6 +409,8 @@ model RewardPoints {
     updatedAt                DateTime                          @updatedAt
     createdAt                DateTime                          @default(now())
     organizationRewardPoints OrganizationRewardPointsHistory[]
+    joiningRefferedCode      RefferedCode[]                    @relation("joining_Reward_code")
+    buyingRefferedCode       RefferedCode[]                    @relation("buying_Reward_code")
 
     @@map("reward_points")
 }
