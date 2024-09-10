@@ -317,6 +317,14 @@ model Commission {
     @@map("commission")
 }
 
+model ValidityDays {
+    id        String   @id @default(uuid())
+    validDays Int      @default(30)
+    updatedAt DateTime @updatedAt
+    createdAt DateTime @default(now())
+    @@map("validDays")
+}
+
 model RefferedCode {
     id                          String            @id @default(uuid())
     code                        String            @unique
@@ -405,6 +413,7 @@ model RewardPoints {
     id                       String                            @id @default(uuid())
     rewardType               RewardPointsType
     membershipCategory       MembershipCategory
+    validDays                Int
     points                   Int
     updatedAt                DateTime                          @updatedAt
     createdAt                DateTime                          @default(now())
