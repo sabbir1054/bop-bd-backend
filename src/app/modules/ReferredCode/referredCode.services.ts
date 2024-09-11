@@ -200,6 +200,9 @@ const getSingle = async (referredCodeId: string) => {
     include: {
       commission: true,
       codeOwnerOrganization: true,
+      joiningRewardPoints: true,
+      buyingRewardPoints: true,
+      organizationUsedReffereCode: { include: { organization: true } },
     },
   });
   if (!result) {
@@ -234,6 +237,7 @@ const deleteSingle = async (referredCodeId: string) => {
   const result = await prisma.refferedCode.delete({
     where: { id: referredCodeId },
   });
+  return result;
 };
 
 export const ReferredCodeService = {
