@@ -21,13 +21,6 @@ enum Role {
     STAFF
 }
 
-enum MemberCategory {
-    SILVER
-    GOLD
-    PLATINUM
-    NORMAL
-}
-
 enum OrderStatus {
     PENDING
     ACCEPTED
@@ -98,46 +91,53 @@ model OrderOtp {
 }
 
 model Organization {
-    id             String        @id @default(uuid())
-    name           String?
-    owner          User          @relation(fields: [ownerId], references: [id])
-    ownerId        String        @unique
-    staff          Staff[]
-    updatedAt      DateTime      @updatedAt
-    createdAt      DateTime      @default(now())
-    products       Product[]
-    feedbacks      Feedback[]
-    cart           Cart[]
-    outgoing_order Order[]       @relation("customer_orders")
-    incoming_order Order[]       @relation("product_seller_orders")
-    BusinessType   BusinessType? @relation(fields: [businessTypeId], references: [id])
-    businessTypeId String?
+    id                       String                            @id @default(uuid())
+    name                     String?
+    owner                    User                              @relation(fields: [ownerId], references: [id])
+    ownerId                  String                            @unique
+    staff                    Staff[]
+    updatedAt                DateTime                          @updatedAt
+    createdAt                DateTime                          @default(now())
+    products                 Product[]
+    feedbacks                Feedback[]
+    cart                     Cart[]
+    outgoing_order           Order[]                           @relation("customer_orders")
+    incoming_order           Order[]                           @relation("product_seller_orders")
+    BusinessType             BusinessType?                     @relation(fields: [businessTypeId], references: [id])
+    businessTypeId           String?
+    ownerRefferedCode        RefferedCode[]                    @relation("code_owner_organization")
+    PaymentSystemOptions     PaymentSystemOptions[]
+    OrganizationRewardPoints OrganizationRewardPointsHistory[]
+    PayCommission            PayCommission[]
+    totalRewardPoints        Int                               @default(0)
+    ClaimReward              ClaimReward[]
+    memberShipCategory       MembershipCategory                @default(NORMAL)
+    UsedReffereCode          UsedReffereCode[]
 
     @@map("organizations")
 }
 
 model User {
-    id               String         @id @default(uuid())
+    id               String        @id @default(uuid())
     role             Role
-    memberCategory   MemberCategory @default(NORMAL)
-    verified         Boolean        @default(false)
+    verified         Boolean       @default(false)
     name             String?
-    email            String?        @unique
-    phone            String         @unique
+    email            String?       @unique
+    phone            String        @unique
     address          String?
     photo            String?
     password         String
     license          String?
     nid              String?
-    createdAt        DateTime       @default(now())
-    updatedAt        DateTime       @updatedAt
+    createdAt        DateTime      @default(now())
+    updatedAt        DateTime      @updatedAt
     organizationId   String?
     organization     Organization?
     token            String?
     Staff            Staff?
-    isMobileVerified Boolean        @default(false)
-    isEmailVerified  Boolean        @default(false)
-    isNidVerified    Boolean        @default(false)
+    isMobileVerified Boolean       @default(false)
+    isEmailVerified  Boolean       @default(false)
+    isNidVerified    Boolean       @default(false)
 
     @@map("users")
 }
@@ -231,21 +231,23 @@ model CartItem {
 }
 
 model Order {
-    id                 String              @id @default(uuid())
-    orderCode          String              @unique
-    total              Float
-    orderStatus        OrderStatus         @default(PENDING)
-    paymentStatus      PaymentStatus       @default(PENDING)
-    customer           Organization        @relation("customer_orders", fields: [customerId], references: [id])
-    customerId         String
-    product_seller     Organization        @relation("product_seller_orders", fields: [product_seller_id], references: [id])
-    product_seller_id  String
-    shipping_address   String
-    updatedAt          DateTime            @updatedAt
-    createdAt          DateTime            @default(now())
-    orderItems         OrderItem[]
-    assigndForDelivery AssigndForDelivery?
-    OrderOtp           OrderOtp[]
+    id                       String                     @id @default(uuid())
+    orderCode                String                     @unique
+    total                    Float
+    orderStatus              OrderStatus                @default(PENDING)
+    paymentStatus            PaymentStatus              @default(PENDING)
+    customer                 Organization               @relation("customer_orders", fields: [customerId], references: [id])
+    customerId               String
+    product_seller           Organization               @relation("product_seller_orders", fields: [product_seller_id], references: [id])
+    product_seller_id        String
+    shipping_address         String
+    updatedAt                DateTime                   @updatedAt
+    createdAt                DateTime                   @default(now())
+    orderItems               OrderItem[]
+    assigndForDelivery       AssigndForDelivery?
+    OrderOtp                 OrderOtp[]
+    Order_Commission_History Order_Commission_History[]
+    OrderPaymentInfo         OrderPaymentInfo[]
 
     @@map("orders")
 }
@@ -293,4 +295,198 @@ model AssigndForDelivery {
     orderId           String   @unique
 
     @@map("assigned_for_delivery")
+}
+
+enum CommissionType {
+    NORMAL
+    REFERRED_MEMBER
+    SPECIAL_OFFER
+}
+
+model Commission {
+    id                 String             @id @default(uuid())
+    commissionType     CommissionType
+    percentage         Float
+    isValid            Boolean            @default(true)
+    ref_mem_validity   Int?
+    membershipCategory MembershipCategory
+    referCodes         RefferedCode[]
+    updatedAt          DateTime           @updatedAt
+    createdAt          DateTime           @default(now())
+
+    @@map("commission")
+}
+
+model ValidityDays {
+    id        String   @id @default(uuid())
+    validDays Int      @default(30)
+    updatedAt DateTime @updatedAt
+    createdAt DateTime @default(now())
+
+    @@map("validDays")
+}
+
+model RefferedCode {
+    id                          String            @id @default(uuid())
+    code                        String            @unique
+    validUntil                  DateTime
+    isValid                     Boolean           @default(true)
+    commission                  Commission        @relation(fields: [commissionId], references: [id])
+    commissionId                String
+    codeOwnerOrganization       Organization      @relation("code_owner_organization", fields: [codeOwnerorganizationId], references: [id])
+    codeOwnerorganizationId     String
+    updatedAt                   DateTime          @updatedAt
+    createdAt                   DateTime          @default(now())
+    organizationUsedReffereCode UsedReffereCode[]
+    joiningRewardPoints         RewardPoints      @relation("joining_Reward_code", fields: [joiningRewardPointsId], references: [id])
+    joiningRewardPointsId       String
+    buyingRewardPoints          RewardPoints      @relation("buying_Reward_code", fields: [buyingRewardPointsId], references: [id])
+    buyingRewardPointsId        String
+
+    @@map("refer_code")
+}
+
+model UsedReffereCode {
+    id             String       @id @default(uuid())
+    refferCode     RefferedCode @relation(fields: [refferedCodeId], references: [id])
+    organization   Organization @relation(fields: [organizationId], references: [id])
+    updatedAt      DateTime     @updatedAt
+    createdAt      DateTime     @default(now())
+    refferedCodeId String
+    organizationId String
+
+    @@map("used_refferCode")
+}
+
+enum OrderPaymentCategory {
+    MOBILE_BANKING
+    BANK_TRANSACTION
+    CASH_ON_DELIVERY
+}
+
+model PaymentSystemOptions {
+    id               String               @id @default(uuid())
+    paymentCategory  OrderPaymentCategory
+    methodName       String
+    accountNumber    String // Account number associated with the payment method
+    description      String? // Additional details about the payment method
+    organization     Organization         @relation(fields: [organizationId], references: [id])
+    organizationId   String // Reference to the organization that owns this payment method
+    createdAt        DateTime             @default(now())
+    updatedAt        DateTime             @updatedAt
+    OrderPaymentInfo OrderPaymentInfo[]
+    PayCommission    PayCommission[]
+
+    @@map("payment_systems_options")
+}
+
+model OrderPaymentInfo {
+    id                     String               @id @default(uuid())
+    order                  Order                @relation(fields: [orderId], references: [id])
+    orderId                String
+    updatedAt              DateTime             @updatedAt
+    createdAt              DateTime             @default(now())
+    paymentSystemOptions   PaymentSystemOptions @relation(fields: [paymentSystemOptionsId], references: [id])
+    paymentSystemOptionsId String
+
+    @@map("order_payment_info")
+}
+
+model Order_Commission_History {
+    id               String          @id @default(uuid())
+    order            Order           @relation(fields: [orderId], references: [id])
+    orderId          String
+    commissionAmount Float
+    isPaid           Boolean         @default(false)
+    updatedAt        DateTime        @updatedAt
+    createdAt        DateTime        @default(now())
+    PayCommission    PayCommission[]
+
+    @@map("order_commission_history")
+}
+
+enum RewardPointsType {
+    JOINING
+    BUYING
+    SELLING
+}
+
+model RewardPoints {
+    id                       String                            @id @default(uuid())
+    rewardType               RewardPointsType
+    membershipCategory       MembershipCategory
+    validDays                Int
+    points                   Int
+    updatedAt                DateTime                          @updatedAt
+    createdAt                DateTime                          @default(now())
+    organizationRewardPoints OrganizationRewardPointsHistory[]
+    joiningRefferedCode      RefferedCode[]                    @relation("joining_Reward_code")
+    buyingRefferedCode       RefferedCode[]                    @relation("buying_Reward_code")
+
+    @@map("reward_points")
+}
+
+enum OrgaRewardPointHistoryType {
+    IN
+    OUT
+}
+
+model OrganizationRewardPointsHistory {
+    id               String                     @id @default(uuid())
+    pointHistoryType OrgaRewardPointHistoryType
+    reward           RewardPoints               @relation(fields: [rewardPointsId], references: [id])
+    rewardPointsId   String
+    points           Int
+    organization     Organization               @relation(fields: [organizationId], references: [id])
+    organizationId   String
+    updatedAt        DateTime                   @updatedAt
+    createdAt        DateTime                   @default(now())
+
+    @@map("organization_rewad_points_history")
+}
+
+model PayCommission {
+    id              String                   @id @default(uuid())
+    paymentMethod   PaymentSystemOptions     @relation(fields: [paymentMethodId], references: [id])
+    paymentMethodId String
+    organization    Organization             @relation(fields: [organizationId], references: [id])
+    organizationId  String
+    payForOrder     Order_Commission_History @relation(fields: [payForOrderId], references: [id])
+    payForOrderId   String
+    totalPayable    Float
+    adjustReward    Float
+    amountPay       Float
+    transactionId   String                   @unique
+    updatedAt       DateTime                 @updatedAt
+    createdAt       DateTime                 @default(now())
+
+    @@map("payCommission")
+}
+
+model ClaimReward {
+    id             String       @id @default(uuid())
+    claimedAmount  Float
+    oranization    Organization @relation(fields: [organizationId], references: [id])
+    organizationId String
+    updatedAt      DateTime     @updatedAt
+    createdAt      DateTime     @default(now())
+
+    @@map("claime_reward")
+}
+
+model PointsValue {
+    id          String   @id @default(uuid())
+    perPointsTk Float    @default(1.00)
+    updatedAt   DateTime @updatedAt
+    createdAt   DateTime @default(now())
+
+    @@map("pointsValue")
+}
+
+enum MembershipCategory {
+    DIAMOND
+    GOLD
+    SILVER
+    PLATINUM
+    NORMAL
 }

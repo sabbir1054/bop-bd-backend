@@ -5,6 +5,7 @@ import httpStatus from 'http-status';
 import path from 'path';
 import ApiError from '../../../errors/ApiError';
 import prisma from '../../../shared/prisma';
+import { IUpdateStaffPayload } from './user.constant';
 import { IStaffRole } from './user.interface';
 const updateUserProfile = async (req: Request, next: NextFunction) => {
   const { id: userId } = req.user as any;
@@ -142,7 +143,6 @@ const removeProfilePicture = async (userId: string): Promise<Partial<User>> => {
     select: {
       id: true,
       role: true,
-      memberCategory: true,
       verified: true,
       organization: true,
       isMobileVerified: true,
@@ -164,7 +164,6 @@ const getAll = async (): Promise<Partial<User>[]> => {
     select: {
       id: true,
       role: true,
-      memberCategory: true,
       verified: true,
       organization: {
         include: {
@@ -360,7 +359,6 @@ const getOrganizationStaff = async (
         select: {
           id: true,
           role: true,
-          memberCategory: true,
           verified: true,
           name: true,
           email: true,
@@ -410,7 +408,6 @@ const getMyDeliveryBoy = async (userId: string) => {
         select: {
           id: true,
           role: true,
-          memberCategory: true,
           verified: true,
           name: true,
           email: true,
@@ -425,6 +422,85 @@ const getMyDeliveryBoy = async (userId: string) => {
   return staffMembers;
 };
 
+const deleteMySingleStaff = async (
+  userId: string,
+  userRole: string,
+  staffId: string,
+) => {
+  const isExistStaff = await prisma.staff.findUnique({
+    where: { id: staffId },
+    include: {
+      staffInfo: true,
+    },
+  });
+
+  if (!isExistStaff) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Staff id not found');
+  }
+
+  if (userRole === 'STAFF') {
+    const isValidStaff = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+      include: { staffInfo: true },
+    });
+
+    if (isValidStaff?.role !== 'STAFF_ADMIN') {
+      throw new ApiError(
+        httpStatus.NOT_FOUND,
+        'Only owner and admin staff can delete staff',
+      );
+    }
+  }
+
+  const result = prisma.$transaction(async prisma => {
+    await prisma.staff.delete({ where: { id: staffId } });
+    const result = await prisma.user.delete({
+      where: { id: isExistStaff.staffInfoId },
+    });
+    return result;
+  });
+
+  return result;
+};
+
+const updateMySingleStaffRole = async (
+  userId: string,
+  userRole: string,
+  payload: IUpdateStaffPayload,
+) => {
+  const isExistStaff = await prisma.staff.findUnique({
+    where: { id: payload.staffId },
+    include: {
+      staffInfo: true,
+    },
+  });
+
+  if (!isExistStaff) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Staff id not found');
+  }
+
+  if (userRole === 'STAFF') {
+    const isValidStaff = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+      include: { staffInfo: true },
+    });
+
+    if (isValidStaff?.role !== 'STAFF_ADMIN') {
+      throw new ApiError(
+        httpStatus.NOT_FOUND,
+        'Only owner and admin staff can update staff',
+      );
+    }
+  }
+
+  const result = await prisma.staff.update({
+    where: { id: payload.staffId },
+    data: { role: payload.updatedRole },
+  });
+
+  return result;
+};
+
 export const UserServices = {
   updateUserProfile,
   removeProfilePicture,
@@ -434,4 +510,6 @@ export const UserServices = {
   userVerifiedStatusChange,
   getOrganizationStaff,
   getMyDeliveryBoy,
+  deleteMySingleStaff,
+  updateMySingleStaffRole,
 };

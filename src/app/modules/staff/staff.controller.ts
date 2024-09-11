@@ -18,7 +18,7 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
 const getSingle = catchAsync(async (req: Request, res: Response) => {
   const { id: userId } = req.user as any;
   const { id } = req.params;
-  const result = await staffServices.getSingle(userId,id);
+  const result = await staffServices.getSingle(userId, id);
   sendResponse<User>(res, {
     statusCode: httpStatus.OK,
     success: true,
