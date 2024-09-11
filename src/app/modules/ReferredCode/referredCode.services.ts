@@ -85,7 +85,10 @@ const createNew = async (
         },
       });
       if (!joiningRewardInfo) {
-        throw new ApiError(httpStatus.NOT_FOUND, 'Reward info not found');
+        throw new ApiError(
+          httpStatus.NOT_FOUND,
+          'Joining Reward info not found',
+        );
       }
       const buyingRewardInfo = await prisma.rewardPoints.findFirst({
         where: {
@@ -101,7 +104,10 @@ const createNew = async (
         },
       });
       if (!buyingRewardInfo) {
-        throw new ApiError(httpStatus.NOT_FOUND, 'Reward info not found');
+        throw new ApiError(
+          httpStatus.NOT_FOUND,
+          'Buying Reward info not found',
+        );
       }
 
       //* get the validity day
@@ -127,10 +133,12 @@ const createNew = async (
       if (!commission) {
         throw new ApiError(httpStatus.NOT_FOUND, 'Commission info not found');
       }
-
+      //* make date
+      const validUntilDate = new Date();
+      validUntilDate.setDate(validUntilDate.getDate() + validityDay.validDays);
       const newData = {
         code: referCode,
-        validUntil: new Date(validityDay.validDays),
+        validUntil: validUntilDate,
         isValid: true,
         commissionId: commission.id,
         codeOwnerorganizationId: payload.codeOwnerorganizationId,
