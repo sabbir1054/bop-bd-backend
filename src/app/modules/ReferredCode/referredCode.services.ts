@@ -163,7 +163,13 @@ const createNew = async (
 const getAll = async (userId: string, userRole: string) => {
   if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') {
     const result = await prisma.refferedCode.findMany({
-      include: { commission: true, codeOwnerOrganization: true },
+      include: {
+        commission: true,
+        codeOwnerOrganization: true,
+        joiningRewardPoints: true,
+        buyingRewardPoints: true,
+        organizationUsedReffereCode: true,
+      },
     });
     return result;
   } else {
@@ -179,6 +185,9 @@ const getAll = async (userId: string, userRole: string) => {
       include: {
         commission: true,
         codeOwnerOrganization: true,
+        joiningRewardPoints: true,
+        buyingRewardPoints: true,
+        organizationUsedReffereCode: true,
       },
     });
     return result;
