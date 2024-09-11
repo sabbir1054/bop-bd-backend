@@ -19,7 +19,23 @@ const createPaymentOptions = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const organizationAllPaymentOptions = catchAsync(
+  async (req: Request, res: Response) => {
+    const { organizationId } = req.params;
+    const result =
+      await UserPaymentOptionsService.organizationAllPaymentOptions(
+        organizationId,
+      );
+    sendResponse<PaymentSystemOptions[]>(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Payment system options created',
+      data: result,
+    });
+  },
+);
 
 export const UserPaymentOptionsController = {
   createPaymentOptions,
+  organizationAllPaymentOptions,
 };

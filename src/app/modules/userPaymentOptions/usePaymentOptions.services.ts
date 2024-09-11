@@ -63,7 +63,17 @@ const createPaymentOptions = async (
     return result;
   }
 };
+const organizationAllPaymentOptions = async (organizationId: string) => {
+  const result = await prisma.paymentSystemOptions.findMany({
+    where: { organizationId: organizationId },
+    include: {
+      organization: true,
+    },
+  });
 
+  return result;
+};
 export const UserPaymentOptionsService = {
   createPaymentOptions,
+  organizationAllPaymentOptions,
 };
