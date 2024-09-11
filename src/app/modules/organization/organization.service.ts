@@ -211,6 +211,7 @@ const getIncomingOrdersByDate = async (
     };
   });
 };
+
 export const OrganizaionServices = {
   getDashboardMatrics,
   getOutgoingOrdersByDate,
