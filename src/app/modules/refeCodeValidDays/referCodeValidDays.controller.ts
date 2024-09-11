@@ -25,9 +25,8 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateSingle = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
   const data = req.body;
-  const result = await ReferCodeValidityServices.updateSingle(id, data);
+  const result = await ReferCodeValidityServices.updateSingle(data);
   sendResponse<ValidityDays>(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -37,9 +36,7 @@ const updateSingle = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteSingle = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
-
-  const result = await ReferCodeValidityServices.deleteSingle(id);
+  const result = await ReferCodeValidityServices.deleteSingle();
   sendResponse<ValidityDays>(res, {
     statusCode: httpStatus.OK,
     success: true,

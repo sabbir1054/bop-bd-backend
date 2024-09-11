@@ -23,25 +23,29 @@ const getAll = async (): Promise<ValidityDays[]> => {
 };
 
 const updateSingle = async (
-  id: string,
   data: Partial<ValidityDays>,
 ): Promise<ValidityDays | null> => {
-  const isExist = await prisma.validityDays.findUnique({ where: { id } });
+  const isExist = await prisma.validityDays.findFirst();
 
   if (!isExist) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Validity days not found !');
   }
-  const result = await prisma.validityDays.update({ where: { id }, data });
+  const result = await prisma.validityDays.update({
+    where: { id: isExist.id },
+    data,
+  });
 
   return result;
 };
 
-const deleteSingle = async (id: string): Promise<ValidityDays | null> => {
-  const isExist = await prisma.validityDays.findUnique({ where: { id } });
+const deleteSingle = async (): Promise<ValidityDays | null> => {
+  const isExist = await prisma.validityDays.findFirst();
   if (!isExist) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Business type not found !');
   }
-  const result = await prisma.validityDays.delete({ where: { id } });
+  const result = await prisma.validityDays.delete({
+    where: { id: isExist.id },
+  });
 
   return result;
 };

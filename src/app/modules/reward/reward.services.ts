@@ -2,8 +2,9 @@ import { RewardPoints } from '@prisma/client';
 import httpStatus from 'http-status';
 import ApiError from '../../../errors/ApiError';
 import prisma from '../../../shared/prisma';
+import { IRewardPoints } from './reward.constant';
 
-const createNew = async (payload: RewardPoints): Promise<RewardPoints> => {
+const createNew = async (payload: IRewardPoints): Promise<RewardPoints> => {
   const isExist = await prisma.rewardPoints.findFirst({
     where: {
       AND: [
@@ -21,8 +22,17 @@ const createNew = async (payload: RewardPoints): Promise<RewardPoints> => {
     );
   }
 
+  const validDays = await prisma.validityDays.findFirst();
+
+  if (!validDays) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Valid days not found');
+  }
+  const newData = { validDays: validDays.validDays, ...payload };
+  if (!newData.validDays) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Valid days not found');
+  }
   const result = await prisma.rewardPoints.create({
-    data: payload,
+    data: newData,
   });
   return result;
 };

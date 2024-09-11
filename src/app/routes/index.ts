@@ -13,6 +13,7 @@ import { OrganizationRoutes } from '../modules/organization/organization.route';
 import { RewardRoutes } from '../modules/reward/reward.route';
 import { UsersRoutes } from '../modules/users/users.route';
 import { PointsValueRoutes } from '../modules/rewardPointsValue/pointsValue.route';
+import { ValidDaysRoutes } from '../modules/refeCodeValidDays/referCodeValidDays.route';
 
 const router = express.Router();
 
@@ -73,6 +74,10 @@ const moduleRoutes = [
   {
     path: '/points_value',
     route: PointsValueRoutes,
+  },
+  {
+    path: '/validDays',
+    route: ValidDaysRoutes,
   },
 ];
 

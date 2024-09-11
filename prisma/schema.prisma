@@ -322,6 +322,7 @@ model ValidityDays {
     validDays Int      @default(30)
     updatedAt DateTime @updatedAt
     createdAt DateTime @default(now())
+
     @@map("validDays")
 }
 
