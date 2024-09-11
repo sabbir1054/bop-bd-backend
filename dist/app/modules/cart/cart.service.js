@@ -19,11 +19,12 @@ const prisma_1 = __importDefault(require("../../../shared/prisma"));
 const updateCartSingle = (userId, userRole, productId, action) => __awaiter(void 0, void 0, void 0, function* () {
     const isProductExist = yield prisma_1.default.product.findUnique({
         where: { id: productId },
+        include: { organization: true },
     });
     if (!isProductExist) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Product not found');
     }
-    let ownerId = null;
+    let orgId = null;
     if (userRole === 'STAFF') {
         const isValidStaff = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userId },
@@ -32,24 +33,38 @@ const updateCartSingle = (userId, userRole, productId, action) => __awaiter(void
         if (!isValidStaff) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
         }
-        if (isValidStaff.role !== ('PURCHASE_OFFICER' || 'STAFF_ADMIN')) {
-            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only puchase officer or admin delete the product image');
+        const validPurchaseRole = ['PURCHASE_OFFICER', 'STAFF_ADMIN'];
+        if (!validPurchaseRole.includes(isValidStaff.role)) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only puchase officer or admin change cart');
         }
-        ownerId = isValidStaff.organization.ownerId;
+        orgId = isValidStaff.organization.id;
     }
     else {
-        ownerId = userId;
+        const isUserExist = yield prisma_1.default.user.findUnique({ where: { id: userId } });
+        if (!isUserExist) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User not found');
+        }
+        orgId = isUserExist.organizationId;
     }
-    const isValidOwner = yield prisma_1.default.user.findUnique({ where: { id: ownerId } });
-    if (!isValidOwner || !isValidOwner.verified) {
-        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Owner is not verified');
+    if (!orgId) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization info not found');
     }
-    if (ownerId === isProductExist.ownerId) {
+    const organizationInfo = yield prisma_1.default.organization.findUnique({
+        where: { id: orgId },
+        include: { owner: true },
+    });
+    const isValidOwner = yield prisma_1.default.user.findUnique({
+        where: { id: organizationInfo === null || organizationInfo === void 0 ? void 0 : organizationInfo.owner.id },
+    });
+    if (!(isValidOwner === null || isValidOwner === void 0 ? void 0 : isValidOwner.verified)) {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Organization is not verified');
+    }
+    if (orgId === isProductExist.organizationId) {
         throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'You can not add your product in the cart');
     }
     const result = yield prisma_1.default.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {
         let cart = yield prisma.cart.findFirst({
-            where: { userId: ownerId },
+            where: { organizationId: orgId },
             include: { CartItem: true },
         });
         if (!cart) {
@@ -58,7 +73,7 @@ const updateCartSingle = (userId, userRole, productId, action) => __awaiter(void
             }
             else {
                 cart = yield prisma.cart.create({
-                    data: { userId: ownerId },
+                    data: { organizationId: orgId },
                     include: { CartItem: true },
                 });
             }
@@ -121,7 +136,7 @@ const updateCartMultiple = (userId, userRole, productId, action, quantity) => __
     if (!isProductExist) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Product not found');
     }
-    let ownerId = null;
+    let orgId = null;
     if (userRole === 'STAFF') {
         const isValidStaff = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userId },
@@ -133,23 +148,34 @@ const updateCartMultiple = (userId, userRole, productId, action, quantity) => __
         if (isValidStaff.role !== ('PURCHASE_OFFICER' || 'STAFF_ADMIN')) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only store purchase officer or admin delete the product image');
         }
-        ownerId = isValidStaff.organization.ownerId;
+        orgId = isValidStaff.organization.id;
     }
     else {
-        ownerId = userId;
+        const isUserExist = yield prisma_1.default.user.findUnique({ where: { id: userId } });
+        if (!isUserExist) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User not found');
+        }
+        orgId = isUserExist.organizationId;
     }
-    const isValidOwner = yield prisma_1.default.user.findUnique({
-        where: { id: ownerId },
+    if (!orgId) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization info not found');
+    }
+    const organizationInfo = yield prisma_1.default.organization.findUnique({
+        where: { id: orgId },
+        include: { owner: true },
     });
-    if (!isValidOwner || !isValidOwner.verified) {
-        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Owner is not verified');
+    const isValidOwner = yield prisma_1.default.user.findUnique({
+        where: { id: organizationInfo === null || organizationInfo === void 0 ? void 0 : organizationInfo.owner.id },
+    });
+    if (!(isValidOwner === null || isValidOwner === void 0 ? void 0 : isValidOwner.verified)) {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Organization is not verified');
     }
-    if (ownerId === isProductExist.ownerId) {
+    if (orgId === isProductExist.organizationId) {
         throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'You can not add your product in the cart');
     }
     const result = yield prisma_1.default.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {
         let cart = yield prisma.cart.findFirst({
-            where: { userId: ownerId },
+            where: { organizationId: orgId },
             include: { CartItem: true },
         });
         if (!cart) {
@@ -158,7 +184,7 @@ const updateCartMultiple = (userId, userRole, productId, action, quantity) => __
             }
             else {
                 cart = yield prisma.cart.create({
-                    data: { userId: ownerId },
+                    data: { organizationId: orgId },
                     include: { CartItem: true },
                 });
             }
@@ -222,7 +248,7 @@ const removeItemsFromCart = (userId, userRole, cartItemIds) => __awaiter(void 0,
             cart: true,
         },
     });
-    let ownerId = null;
+    let orgId = null;
     if (userRole === 'STAFF') {
         const isValidStaff = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userId },
@@ -234,12 +260,16 @@ const removeItemsFromCart = (userId, userRole, cartItemIds) => __awaiter(void 0,
         if (isValidStaff.role !== ('PURCHASE_OFFICER' || 'STAFF_ADMIN')) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only store manager or admin delete the product image');
         }
-        ownerId = isValidStaff.organization.ownerId;
+        orgId = isValidStaff.organization;
     }
     else {
-        ownerId = userId;
+        const isUserExist = yield prisma_1.default.user.findUnique({ where: { id: userId } });
+        if (!isUserExist) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User not found');
+        }
+        orgId = isUserExist.organizationId;
     }
-    if ((cartItems[0] && cartItems[0].cart.userId) !== ownerId) {
+    if ((cartItems[0] && cartItems[0].cart.organizationId) !== orgId) {
         throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, "You can't change other cart");
     }
     if (cartItems.length === 0) {
@@ -255,7 +285,7 @@ const removeItemsFromCart = (userId, userRole, cartItemIds) => __awaiter(void 0,
     return deletedItems;
 });
 const getMyCart = (userId, userRole) => __awaiter(void 0, void 0, void 0, function* () {
-    let ownerId = null;
+    let orgId = null;
     if (userRole === 'STAFF') {
         const isValidStaff = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userId },
@@ -267,13 +297,20 @@ const getMyCart = (userId, userRole) => __awaiter(void 0, void 0, void 0, functi
         if (isValidStaff.role !== ('PURCHASE_OFFICER' || 'STAFF_ADMIN')) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only store manager or admin delete the product image');
         }
-        ownerId = isValidStaff.organization.ownerId;
+        orgId = isValidStaff.organization.id;
     }
     else {
-        ownerId = userId;
+        const isUserExist = yield prisma_1.default.user.findUnique({ where: { id: userId } });
+        if (!isUserExist) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User not found');
+        }
+        orgId = isUserExist.organizationId;
     }
-    const isUserExist = yield prisma_1.default.user.findUnique({
-        where: { id: ownerId },
+    if (!orgId) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization info not found');
+    }
+    const organizationCart = yield prisma_1.default.organization.findUnique({
+        where: { id: orgId },
         include: {
             cart: {
                 include: {
@@ -290,15 +327,22 @@ const getMyCart = (userId, userRole) => __awaiter(void 0, void 0, void 0, functi
             },
         },
     });
-    if (!isUserExist) {
+    if (!organizationCart) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User not found');
     }
-    const result = isUserExist.cart;
+    const result = organizationCart.cart;
     return result;
 });
 const getSingleUserCart = (userId) => __awaiter(void 0, void 0, void 0, function* () {
-    const isUserExist = yield prisma_1.default.user.findUnique({
-        where: { id: userId },
+    const isUserExist = yield prisma_1.default.user.findUnique({ where: { id: userId } });
+    if (!isUserExist) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User not found');
+    }
+    if (!isUserExist.organizationId) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User organization not found');
+    }
+    const isOrganizationExist = yield prisma_1.default.organization.findUnique({
+        where: { id: isUserExist === null || isUserExist === void 0 ? void 0 : isUserExist.organizationId },
         include: {
             cart: {
                 include: {
@@ -315,10 +359,10 @@ const getSingleUserCart = (userId) => __awaiter(void 0, void 0, void 0, function
             },
         },
     });
-    if (!isUserExist) {
-        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User not found');
+    if (!isOrganizationExist) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization not found');
     }
-    const result = isUserExist.cart;
+    const result = isOrganizationExist.cart;
     return result;
 });
 exports.CartServices = {

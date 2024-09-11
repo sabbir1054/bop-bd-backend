@@ -24,25 +24,70 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CategoryServices = void 0;
+const fs_1 = __importDefault(require("fs"));
 const http_status_1 = __importDefault(require("http-status"));
+const path_1 = __importDefault(require("path"));
 const ApiError_1 = __importDefault(require("../../../errors/ApiError"));
 const prisma_1 = __importDefault(require("../../../shared/prisma"));
-const createNew = (payload) => __awaiter(void 0, void 0, void 0, function* () {
+const createNew = (req) => __awaiter(void 0, void 0, void 0, function* () {
+    const { businessTypeId, eng_name, bn_name, photo } = req.body;
     const isBusinessTypeExist = yield prisma_1.default.businessType.findUnique({
-        where: { id: payload.businessTypeId },
+        where: { id: businessTypeId },
     });
     if (!isBusinessTypeExist) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Business type not found !');
     }
     const result = yield prisma_1.default.category.create({
         data: {
-            eng_name: payload.eng_name,
-            bn_name: payload.bn_name,
-            businessType: { connect: { id: payload.businessTypeId } },
+            photo: photo ? photo : '',
+            eng_name: eng_name,
+            bn_name: bn_name,
+            businessType: { connect: { id: businessTypeId } },
         },
     });
     return result;
 });
+const removePhoto = (categoryId) => __awaiter(void 0, void 0, void 0, function* () {
+    const isCategoryExist = yield prisma_1.default.category.findUnique({
+        where: { id: categoryId },
+    });
+    if (!isCategoryExist) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Category not exist ');
+    }
+    if (!isCategoryExist.photo) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Category has not any picture');
+    }
+    const filePath = path_1.default.join(process.cwd(), 'uploads/categoryPhoto', path_1.default.basename(isCategoryExist.photo));
+    fs_1.default.unlink(filePath, err => {
+        if (err) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, `Failed to delete image: ${filePath}`);
+        }
+    });
+    const result = yield prisma_1.default.category.update({
+        where: { id: categoryId },
+        data: {
+            photo: '',
+        },
+    });
+    return result;
+});
+/* const createNew = async (payload: Category): Promise<Category> => {
+  const isBusinessTypeExist = await prisma.businessType.findUnique({
+    where: { id: payload.businessTypeId },
+  });
+  if (!isBusinessTypeExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Business type not found !');
+  }
+
+  const result = await prisma.category.create({
+    data: {
+      eng_name: payload.eng_name,
+      bn_name: payload.bn_name,
+      businessType: { connect: { id: payload.businessTypeId } },
+    },
+  });
+  return result;
+}; */
 const getAll = () => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield prisma_1.default.category.findMany({
         include: { businessType: true },
@@ -59,12 +104,25 @@ const getSingle = (id) => __awaiter(void 0, void 0, void 0, function* () {
     }
     return result;
 });
-const updateSingle = (id, data) => __awaiter(void 0, void 0, void 0, function* () {
-    const { businessTypeId } = data, othersData = __rest(data, ["businessTypeId"]);
+const updateSingle = (req, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const deletePhoto = (photoLink) => {
+        // Delete the image file from the server
+        const filePath = path_1.default.join(process.cwd(), 'uploads/categoryPhoto', path_1.default.basename(photoLink));
+        fs_1.default.unlink(filePath, err => {
+            if (err) {
+                deletePhoto(req.body.photo);
+                next(new ApiError_1.default(http_status_1.default.BAD_REQUEST, `Failed to delete previous image, try again for update,photo `));
+            }
+        });
+    };
+    const { id } = req.params;
     const isExist = yield prisma_1.default.category.findUnique({ where: { id } });
     if (!isExist) {
+        //* delete uploaded photo
+        deletePhoto(req.body.photo);
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Category not found !');
     }
+    const _a = req.body, { businessTypeId } = _a, othersData = __rest(_a, ["businessTypeId"]);
     const updateData = {};
     if (businessTypeId) {
         updateData.businessType = { connect: { id: businessTypeId } };
@@ -74,6 +132,9 @@ const updateSingle = (id, data) => __awaiter(void 0, void 0, void 0, function* (
     }
     if (othersData.eng_name) {
         updateData.eng_name = othersData.eng_name;
+    }
+    if (othersData.photo) {
+        updateData.photo = othersData.photo;
     }
     const result = yield prisma_1.default.category.update({
         where: { id: id },
@@ -95,4 +156,5 @@ exports.CategoryServices = {
     getSingle,
     updateSingle,
     deleteSingle,
+    removePhoto,
 };

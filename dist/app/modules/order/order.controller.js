@@ -30,32 +30,10 @@ const orderCreate = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, vo
         data: result,
     });
 }));
-const getUserIncomingOrders = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id: userId } = req.params;
-    const options = (0, pick_1.default)(req.query, paginationFields_1.paginationFields);
-    const result = yield order_service_1.OrderService.getUserIncomingOrders(userId, options);
-    (0, sendResponse_1.default)(res, {
-        success: true,
-        statusCode: http_status_1.default.OK,
-        message: 'Incoming orders retrieve',
-        data: result,
-    });
-}));
-const getUserOutgoingOrders = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id: userId } = req.params;
-    const options = (0, pick_1.default)(req.query, paginationFields_1.paginationFields);
-    const result = yield order_service_1.OrderService.getUserOutgoingOrders(userId, options);
-    (0, sendResponse_1.default)(res, {
-        success: true,
-        statusCode: http_status_1.default.OK,
-        message: 'Outgoing orders retrieve',
-        data: result,
-    });
-}));
 const getOrganizationIncomingOrders = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id: organizationId } = req.params;
+    const { id: userId } = req.params;
     const options = (0, pick_1.default)(req.query, paginationFields_1.paginationFields);
-    const result = yield order_service_1.OrderService.getOrganizationIncomingOrders(organizationId, options);
+    const result = yield order_service_1.OrderService.getOrganizationIncomingOrders(userId, options);
     (0, sendResponse_1.default)(res, {
         success: true,
         statusCode: http_status_1.default.OK,
@@ -64,9 +42,9 @@ const getOrganizationIncomingOrders = (0, catchAsync_1.default)((req, res) => __
     });
 }));
 const getOrganizationOutgoingOrders = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id: organizationId } = req.params;
+    const { id: userId } = req.params;
     const options = (0, pick_1.default)(req.query, paginationFields_1.paginationFields);
-    const result = yield order_service_1.OrderService.getOrganizationOutgoingOrders(organizationId, options);
+    const result = yield order_service_1.OrderService.getOrganizationOutgoingOrders(userId, options);
     (0, sendResponse_1.default)(res, {
         success: true,
         statusCode: http_status_1.default.OK,
@@ -74,6 +52,38 @@ const getOrganizationOutgoingOrders = (0, catchAsync_1.default)((req, res) => __
         data: result,
     });
 }));
+// const getOrganizationIncomingOrders = catchAsync(
+//   async (req: Request, res: Response) => {
+//     const { id: organizationId } = req.params;
+//     const options = pick(req.query, paginationFields);
+//     const result = await OrderService.getOrganizationIncomingOrders(
+//       organizationId,
+//       options,
+//     );
+//     sendResponse(res, {
+//       success: true,
+//       statusCode: httpStatus.OK,
+//       message: 'Incoming orders retrieve',
+//       data: result,
+//     });
+//   },
+// );
+// const getOrganizationOutgoingOrders = catchAsync(
+//   async (req: Request, res: Response) => {
+//     const { id: organizationId } = req.params;
+//     const options = pick(req.query, paginationFields);
+//     const result = await OrderService.getOrganizationOutgoingOrders(
+//       organizationId,
+//       options,
+//     );
+//     sendResponse(res, {
+//       success: true,
+//       statusCode: httpStatus.OK,
+//       message: 'Outgoing orders retrieve',
+//       data: result,
+//     });
+//   },
+// );
 const updateOrderStatus = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id: userId, role } = req.user;
     const { orderId } = req.params;
@@ -87,10 +97,10 @@ const updateOrderStatus = (0, catchAsync_1.default)((req, res) => __awaiter(void
     });
 }));
 const updatePaymentStatus = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id: userId } = req.user;
+    const { id: userId, role } = req.user;
     const { orderId } = req.params;
     const { status } = req.body;
-    const result = yield order_service_1.OrderService.updatePaymentStatus(userId, orderId, status);
+    const result = yield order_service_1.OrderService.updatePaymentStatus(userId, role, orderId, status);
     (0, sendResponse_1.default)(res, {
         success: true,
         statusCode: http_status_1.default.OK,
@@ -143,16 +153,36 @@ const verifyDeliveryOtp = (0, catchAsync_1.default)((req, res) => __awaiter(void
         data: result,
     });
 }));
+const assigndForDelivery = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.user;
+    const result = yield order_service_1.OrderService.assignForDelivery(id, req.body);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: 'Delivery assigned',
+        data: result,
+    });
+}));
+const getMyOrderForDelivery = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.user;
+    const result = yield order_service_1.OrderService.getMyOrderForDelivery(id);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: 'Order retrive',
+        data: result,
+    });
+}));
 exports.OrderController = {
+    getOrganizationOutgoingOrders,
+    getOrganizationIncomingOrders,
     orderCreate,
-    getUserIncomingOrders,
-    getUserOutgoingOrders,
     updateOrderStatus,
     updatePaymentStatus,
     getSingle,
     searchFilterIncomingOrders,
     searchFilterOutgoingOrders,
-    getOrganizationOutgoingOrders,
-    getOrganizationIncomingOrders,
     verifyDeliveryOtp,
+    assigndForDelivery,
+    getMyOrderForDelivery,
 };

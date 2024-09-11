@@ -23,8 +23,15 @@ const updatePaymentStatusValidation = zod_1.default.object({
         status: zod_1.default.enum([...order_constant_1.PaymentStatusConstant]),
     }),
 });
+const assignForDeliveryValidation = zod_1.default.object({
+    body: zod_1.default.object({
+        orderId: zod_1.default.string({ required_error: 'Order id is required' }),
+        deliveryBoyId: zod_1.default.string({ required_error: 'Delivery boy id is required ' }),
+    }),
+});
 exports.OrderValidation = {
     orderCreateValidation,
     updateOrderStatusValidation,
     updatePaymentStatusValidation,
+    assignForDeliveryValidation,
 };

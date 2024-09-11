@@ -63,7 +63,6 @@ const updateUserProfile = async (req: Request, next: NextFunction) => {
         select: {
           id: true,
           role: true,
-          memberCategory: true,
           verified: true,
           organization: true,
           isMobileVerified: true,
@@ -89,7 +88,6 @@ const updateUserProfile = async (req: Request, next: NextFunction) => {
         select: {
           id: true,
           role: true,
-          memberCategory: true,
           verified: true,
           organization: true,
           isMobileVerified: true,

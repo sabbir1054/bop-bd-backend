@@ -16,13 +16,37 @@ exports.FeedbackService = void 0;
 const http_status_1 = __importDefault(require("http-status"));
 const ApiError_1 = __importDefault(require("../../../errors/ApiError"));
 const prisma_1 = __importDefault(require("../../../shared/prisma"));
-const createNew = (id, payload) => __awaiter(void 0, void 0, void 0, function* () {
-    const { userId, productId, rating, comment } = payload;
+const createNew = (id, userRole, payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const { productId, rating, comment } = payload;
+    let orgId = null;
+    if (userRole === 'STAFF') {
+        const isValidStaff = yield prisma_1.default.staff.findUnique({
+            where: { staffInfoId: id },
+            include: {
+                organization: true,
+            },
+        });
+        if (!isValidStaff) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff info not found');
+        }
+        const validStaffRole = ['STAFF_ADMIN'];
+        if (!validStaffRole.includes(isValidStaff.role)) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff role not valid');
+        }
+        orgId = isValidStaff.organization.id;
+    }
+    else {
+        const userInfo = yield prisma_1.default.user.findUnique({ where: { id: id } });
+        if (!userInfo) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User info not found');
+        }
+        orgId = userInfo.organizationId;
+    }
+    if (!orgId) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Owner info not found');
+    }
     if (rating > 5) {
         throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Rating not more than 5');
-    }
-    if (id !== userId) {
-        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'User id not match');
     }
     const isProductExist = yield prisma_1.default.product.findUnique({
         where: { id: productId },
@@ -32,7 +56,7 @@ const createNew = (id, payload) => __awaiter(void 0, void 0, void 0, function* (
     }
     const orders = yield prisma_1.default.order.findMany({
         where: {
-            customerId: userId,
+            customerId: orgId,
             orderItems: {
                 some: {
                     productId: productId,
@@ -56,7 +80,7 @@ const createNew = (id, payload) => __awaiter(void 0, void 0, void 0, function* (
     //* Count the number of feedbacks the user has already given for the product
     const feedbackCount = yield prisma_1.default.feedback.count({
         where: {
-            userId: userId,
+            organizationId: orgId,
             productId: productId,
         },
     });
@@ -68,23 +92,52 @@ const createNew = (id, payload) => __awaiter(void 0, void 0, void 0, function* (
         data: {
             rating,
             comment,
-            user: { connect: { id: userId } },
+            Organization: { connect: { id: orgId } },
             product: { connect: { id: productId } },
         },
     });
     return result;
 });
 const getAll = (role, userId) => __awaiter(void 0, void 0, void 0, function* () {
+    let orgId = null;
+    if (role === 'STAFF') {
+        const isValidStaff = yield prisma_1.default.staff.findUnique({
+            where: { staffInfoId: userId },
+            include: {
+                organization: true,
+            },
+        });
+        if (!isValidStaff) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff info not found');
+        }
+        const validStaffRole = ['STAFF_ADMIN'];
+        if (!validStaffRole.includes(isValidStaff.role)) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff role not valid');
+        }
+        orgId = isValidStaff.organization.id;
+    }
+    else {
+        const isValidUser = yield prisma_1.default.user.findUnique({
+            where: { id: userId },
+        });
+        if (!isValidUser) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User info not found');
+        }
+        orgId = isValidUser.organizationId;
+    }
     if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
         const result = yield prisma_1.default.feedback.findMany({
-            include: { user: true, product: true },
+            include: { Organization: true, product: true },
         });
         return result;
     }
     else {
+        if (!orgId) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization info not found');
+        }
         const result = yield prisma_1.default.feedback.findMany({
-            where: { userId: userId },
-            include: { user: true, product: true },
+            where: { organizationId: orgId },
+            include: { Organization: true, product: true },
         });
         return result;
     }
@@ -93,36 +146,12 @@ const getSingle = (feedbackId) => __awaiter(void 0, void 0, void 0, function* ()
     const result = yield prisma_1.default.feedback.findUnique({
         where: { id: feedbackId },
         include: {
-            user: {
-                select: {
-                    id: true,
-                    role: true,
-                    memberCategory: true,
-                    verified: true,
-                    organization: true,
-                    isMobileVerified: true,
-                    name: true,
-                    email: true,
-                    phone: true,
-                    address: true,
-                    photo: true,
-                    license: true,
-                    nid: true,
-                    shop_name: true,
-                    createdAt: true,
-                    updatedAt: true,
-                    feedbacks: true,
-                    businessType: true,
-                    businessTypeId: true,
-                },
-            },
-            product: {
+            Organization: {
                 include: {
                     owner: {
                         select: {
                             id: true,
                             role: true,
-                            memberCategory: true,
                             verified: true,
                             organization: true,
                             isMobileVerified: true,
@@ -133,12 +162,30 @@ const getSingle = (feedbackId) => __awaiter(void 0, void 0, void 0, function* ()
                             photo: true,
                             license: true,
                             nid: true,
-                            shop_name: true,
-                            createdAt: true,
-                            updatedAt: true,
-                            feedbacks: true,
-                            businessType: true,
-                            businessTypeId: true,
+                        },
+                    },
+                },
+            },
+            product: {
+                include: {
+                    organization: {
+                        include: {
+                            owner: {
+                                select: {
+                                    id: true,
+                                    role: true,
+                                    verified: true,
+                                    organization: true,
+                                    isMobileVerified: true,
+                                    name: true,
+                                    email: true,
+                                    phone: true,
+                                    address: true,
+                                    photo: true,
+                                    license: true,
+                                    nid: true,
+                                },
+                            },
                         },
                     },
                     images: true,
@@ -153,7 +200,7 @@ const getSingle = (feedbackId) => __awaiter(void 0, void 0, void 0, function* ()
     }
     return result;
 });
-const updateSingle = (userId, feedbackId, payload) => __awaiter(void 0, void 0, void 0, function* () {
+const updateSingle = (userId, role, feedbackId, payload) => __awaiter(void 0, void 0, void 0, function* () {
     if (payload.rating && payload.rating > 5) {
         throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Rating is not more than 5');
     }
@@ -163,7 +210,36 @@ const updateSingle = (userId, feedbackId, payload) => __awaiter(void 0, void 0, 
     if (!isFeedbackExist) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Feedback not found');
     }
-    if (userId !== isFeedbackExist.userId) {
+    let orgId = null;
+    if (role === 'STAFF') {
+        const isValidStaff = yield prisma_1.default.staff.findUnique({
+            where: { staffInfoId: userId },
+            include: {
+                organization: true,
+            },
+        });
+        if (!isValidStaff) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff info not found');
+        }
+        const validStaffRole = ['STAFF_ADMIN'];
+        if (!validStaffRole.includes(isValidStaff.role)) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff role not valid');
+        }
+        orgId = isValidStaff.organization.id;
+    }
+    else {
+        const isValidUser = yield prisma_1.default.user.findUnique({
+            where: { id: userId },
+        });
+        if (!isValidUser) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User info not found');
+        }
+        orgId = isValidUser.organizationId;
+    }
+    if (!orgId) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization info not found');
+    }
+    if (orgId !== isFeedbackExist.organizationId) {
         throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'You can not change others feedback');
     }
     const result = yield prisma_1.default.feedback.update({
@@ -172,14 +248,43 @@ const updateSingle = (userId, feedbackId, payload) => __awaiter(void 0, void 0, 
     });
     return result;
 });
-const deleteSingle = (userId, feedbackId) => __awaiter(void 0, void 0, void 0, function* () {
+const deleteSingle = (userId, role, feedbackId) => __awaiter(void 0, void 0, void 0, function* () {
     const isFeedbackExist = yield prisma_1.default.feedback.findUnique({
         where: { id: feedbackId },
     });
     if (!isFeedbackExist) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Feedback not found');
     }
-    if (userId !== isFeedbackExist.userId) {
+    let orgId = null;
+    if (role === 'STAFF') {
+        const isValidStaff = yield prisma_1.default.staff.findUnique({
+            where: { staffInfoId: userId },
+            include: {
+                organization: true,
+            },
+        });
+        if (!isValidStaff) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff info not found');
+        }
+        const validStaffRole = ['STAFF_ADMIN'];
+        if (!validStaffRole.includes(isValidStaff.role)) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff role not valid');
+        }
+        orgId = isValidStaff.organization.id;
+    }
+    else {
+        const isValidUser = yield prisma_1.default.user.findUnique({
+            where: { id: userId },
+        });
+        if (!isValidUser) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User info not found');
+        }
+        orgId = isValidUser.organizationId;
+    }
+    if (!orgId) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Owner info not found');
+    }
+    if (orgId !== isFeedbackExist.organizationId) {
         throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'You can not delete others feedback');
     }
     const result = yield prisma_1.default.feedback.delete({

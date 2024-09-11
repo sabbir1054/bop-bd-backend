@@ -48,85 +48,68 @@ const updateUserProfile = (req, next) => __awaiter(void 0, void 0, void 0, funct
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User not exist');
     }
     //* make updated data
-    const _a = req.body, { businessTypeId } = _a, others = __rest(_a, ["businessTypeId"]);
-    if (others.shop_name) {
-        yield prisma_1.default.organization.update({
-            where: { ownerId: isUserExist.id },
-            data: { name: others.shop_name },
-        });
-    }
-    const updatedData = others;
-    if (businessTypeId) {
-        updatedData.businessType = { connect: { id: businessTypeId } };
-    }
-    if (isUserExist.photo && req.body.photo !== isUserExist.photo) {
-        //* delete photo
-        if (req.body.photo) {
-            deletePhoto(isUserExist === null || isUserExist === void 0 ? void 0 : isUserExist.photo);
+    const data = req.body;
+    const result = yield prisma_1.default.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {
+        if (data.shop_name) {
+            yield prisma.organization.update({
+                where: { ownerId: isUserExist.id },
+                data: { name: data.shop_name },
+            });
         }
-        const result = yield prisma_1.default.user.update({
-            where: { id: userId },
-            data: Object.assign({}, updatedData),
-            select: {
-                id: true,
-                role: true,
-                memberCategory: true,
-                verified: true,
-                organization: true,
-                isMobileVerified: true,
-                name: true,
-                email: true,
-                phone: true,
-                address: true,
-                photo: true,
-                license: true,
-                nid: true,
-                shop_name: true,
-                createdAt: true,
-                updatedAt: true,
-                feedbacks: true,
-                cart: true,
-                products: true,
-                outgoing_order: true,
-                incoming_order: true,
-                businessType: true,
-                businessTypeId: true,
-            },
-        });
-        return result;
-    }
-    else {
-        const result = yield prisma_1.default.user.update({
-            where: { id: userId },
-            data: Object.assign({}, updatedData),
-            select: {
-                id: true,
-                role: true,
-                memberCategory: true,
-                verified: true,
-                organization: true,
-                isMobileVerified: true,
-                name: true,
-                email: true,
-                phone: true,
-                address: true,
-                photo: true,
-                license: true,
-                nid: true,
-                shop_name: true,
-                createdAt: true,
-                updatedAt: true,
-                feedbacks: true,
-                cart: true,
-                products: true,
-                outgoing_order: true,
-                incoming_order: true,
-                businessType: true,
-                businessTypeId: true,
-            },
-        });
-        return result;
-    }
+        const { shop_name } = data, updatedData = __rest(data, ["shop_name"]);
+        console.log(req.body);
+        if (isUserExist.photo && req.body.photo !== isUserExist.photo) {
+            //* delete photo
+            if (req.body.photo) {
+                deletePhoto(isUserExist === null || isUserExist === void 0 ? void 0 : isUserExist.photo);
+            }
+            const result = yield prisma.user.update({
+                where: { id: userId },
+                data: Object.assign({}, updatedData),
+                select: {
+                    id: true,
+                    role: true,
+                    verified: true,
+                    organization: true,
+                    isMobileVerified: true,
+                    name: true,
+                    email: true,
+                    phone: true,
+                    address: true,
+                    photo: true,
+                    license: true,
+                    nid: true,
+                    createdAt: true,
+                    updatedAt: true,
+                },
+            });
+            return result;
+        }
+        else {
+            const result = yield prisma.user.update({
+                where: { id: userId },
+                data: Object.assign({}, updatedData),
+                select: {
+                    id: true,
+                    role: true,
+                    verified: true,
+                    organization: true,
+                    isMobileVerified: true,
+                    name: true,
+                    email: true,
+                    phone: true,
+                    address: true,
+                    photo: true,
+                    license: true,
+                    nid: true,
+                    createdAt: true,
+                    updatedAt: true,
+                },
+            });
+            return result;
+        }
+    }));
+    return result;
 });
 const removeProfilePicture = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     const isUserExist = yield prisma_1.default.user.findUnique({
@@ -152,7 +135,6 @@ const removeProfilePicture = (userId) => __awaiter(void 0, void 0, void 0, funct
         select: {
             id: true,
             role: true,
-            memberCategory: true,
             verified: true,
             organization: true,
             isMobileVerified: true,
@@ -163,16 +145,6 @@ const removeProfilePicture = (userId) => __awaiter(void 0, void 0, void 0, funct
             photo: true,
             license: true,
             nid: true,
-            shop_name: true,
-            createdAt: true,
-            updatedAt: true,
-            feedbacks: true,
-            cart: true,
-            products: true,
-            outgoing_order: true,
-            incoming_order: true,
-            businessType: true,
-            businessTypeId: true,
         },
     });
     return result;
@@ -182,9 +154,12 @@ const getAll = () => __awaiter(void 0, void 0, void 0, function* () {
         select: {
             id: true,
             role: true,
-            memberCategory: true,
             verified: true,
-            organization: true,
+            organization: {
+                include: {
+                    BusinessType: true,
+                },
+            },
             isMobileVerified: true,
             name: true,
             email: true,
@@ -193,11 +168,6 @@ const getAll = () => __awaiter(void 0, void 0, void 0, function* () {
             photo: true,
             license: true,
             nid: true,
-            shop_name: true,
-            createdAt: true,
-            updatedAt: true,
-            businessType: true,
-            businessTypeId: true,
         },
     });
     return result;
@@ -205,9 +175,13 @@ const getAll = () => __awaiter(void 0, void 0, void 0, function* () {
 const getSingle = (userId, profileId, role) => __awaiter(void 0, void 0, void 0, function* () {
     if (role === 'STAFF') {
         let result = yield prisma_1.default.staff.findUnique({
-            where: { id: profileId },
+            where: { staffInfoId: profileId },
             include: {
-                organization: true,
+                organization: {
+                    include: {
+                        owner: true,
+                    },
+                },
                 staffInfo: true,
             },
         });
@@ -217,30 +191,32 @@ const getSingle = (userId, profileId, role) => __awaiter(void 0, void 0, void 0,
         result.staffInfo.password = '';
         return result;
     }
-    let result = yield prisma_1.default.user.findUnique({
+    const result = yield prisma_1.default.user.findUnique({
         where: { id: profileId },
         include: {
-            feedbacks: true,
-            cart: {
+            organization: {
                 include: {
-                    CartItem: true,
+                    feedbacks: true,
+                    cart: {
+                        include: {
+                            CartItem: true,
+                        },
+                    },
+                    products: true,
+                    outgoing_order: {
+                        include: { orderItems: true },
+                    },
+                    incoming_order: {
+                        include: { orderItems: true },
+                    },
+                    BusinessType: true,
                 },
             },
-            products: true,
-            outgoing_order: {
-                include: { orderItems: true },
-            },
-            incoming_order: {
-                include: { orderItems: true },
-            },
-            businessType: true,
-            organization: true,
         },
     });
     if (!result) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User not found !');
     }
-    result.password = '';
     if (role === ('ADMIN' || 'SUPER_ADMIN')) {
         return result;
     }
@@ -292,6 +268,153 @@ const userVerifiedStatusChange = (status, userId, role) => __awaiter(void 0, voi
     });
     return result;
 });
+const getOrganizationStaff = (userId, userRole, role) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b, _c;
+    const andConditions = [];
+    let ownerId = null;
+    if (userRole === 'STAFF') {
+        const findOwnerId = yield prisma_1.default.user.findUnique({
+            where: { id: userId },
+            include: { Staff: { include: { organization: true } } },
+        });
+        if (((_a = findOwnerId === null || findOwnerId === void 0 ? void 0 : findOwnerId.Staff) === null || _a === void 0 ? void 0 : _a.role) !== 'STAFF_ADMIN') {
+            throw new ApiError_1.default(http_status_1.default.FORBIDDEN, 'Only staff admins can see this');
+        }
+        if (!((_b = findOwnerId === null || findOwnerId === void 0 ? void 0 : findOwnerId.Staff) === null || _b === void 0 ? void 0 : _b.organization.ownerId)) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization info not found');
+        }
+        ownerId = (_c = findOwnerId.Staff) === null || _c === void 0 ? void 0 : _c.organization.ownerId;
+    }
+    else {
+        ownerId = userId;
+    }
+    if (!ownerId) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Owner ID is required');
+    }
+    const organization = yield prisma_1.default.organization.findUnique({
+        where: { ownerId },
+    });
+    if (!organization) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization not found');
+    }
+    andConditions.push({ organizationId: organization.id });
+    if (role === null || role === void 0 ? void 0 : role.staffRole) {
+        andConditions.push({ role: role.staffRole });
+    }
+    const staffMembers = yield prisma_1.default.staff.findMany({
+        where: {
+            AND: andConditions,
+        },
+        include: {
+            staffInfo: {
+                select: {
+                    id: true,
+                    role: true,
+                    verified: true,
+                    name: true,
+                    email: true,
+                    phone: true,
+                    address: true,
+                    isMobileVerified: true,
+                },
+            },
+        },
+    });
+    return staffMembers;
+});
+const getMyDeliveryBoy = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    const isExistStaff = yield prisma_1.default.staff.findUnique({
+        where: { staffInfoId: userId },
+    });
+    if (!isExistStaff) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff info not found');
+    }
+    if (isExistStaff.role !== 'ORDER_SUPERVISOR') {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only order supervisor can get this');
+    }
+    const organization = yield prisma_1.default.organization.findUnique({
+        where: { id: isExistStaff.organizationId },
+    });
+    if (!organization) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization not found');
+    }
+    const andConditions = [];
+    andConditions.push({ organizationId: organization.id });
+    andConditions.push({ role: 'DELIVERY_BOY' });
+    const staffMembers = yield prisma_1.default.staff.findMany({
+        where: {
+            AND: andConditions,
+        },
+        include: {
+            staffInfo: {
+                select: {
+                    id: true,
+                    role: true,
+                    verified: true,
+                    name: true,
+                    email: true,
+                    phone: true,
+                    address: true,
+                    isMobileVerified: true,
+                },
+            },
+        },
+    });
+    return staffMembers;
+});
+const deleteMySingleStaff = (userId, userRole, staffId) => __awaiter(void 0, void 0, void 0, function* () {
+    const isExistStaff = yield prisma_1.default.staff.findUnique({
+        where: { id: staffId },
+        include: {
+            staffInfo: true,
+        },
+    });
+    if (!isExistStaff) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff id not found');
+    }
+    if (userRole === 'STAFF') {
+        const isValidStaff = yield prisma_1.default.staff.findUnique({
+            where: { staffInfoId: userId },
+            include: { staffInfo: true },
+        });
+        if ((isValidStaff === null || isValidStaff === void 0 ? void 0 : isValidStaff.role) !== 'STAFF_ADMIN') {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Only owner and admin staff can delete staff');
+        }
+    }
+    const result = prisma_1.default.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {
+        yield prisma.staff.delete({ where: { id: staffId } });
+        const result = yield prisma.user.delete({
+            where: { id: isExistStaff.staffInfoId },
+        });
+        return result;
+    }));
+    return result;
+});
+const updateMySingleStaffRole = (userId, userRole, payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const isExistStaff = yield prisma_1.default.staff.findUnique({
+        where: { id: payload.staffId },
+        include: {
+            staffInfo: true,
+        },
+    });
+    if (!isExistStaff) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff id not found');
+    }
+    if (userRole === 'STAFF') {
+        const isValidStaff = yield prisma_1.default.staff.findUnique({
+            where: { staffInfoId: userId },
+            include: { staffInfo: true },
+        });
+        if ((isValidStaff === null || isValidStaff === void 0 ? void 0 : isValidStaff.role) !== 'STAFF_ADMIN') {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Only owner and admin staff can update staff');
+        }
+    }
+    const result = yield prisma_1.default.staff.update({
+        where: { id: payload.staffId },
+        data: { role: payload.updatedRole },
+    });
+    return result;
+});
 exports.UserServices = {
     updateUserProfile,
     removeProfilePicture,
@@ -299,4 +422,8 @@ exports.UserServices = {
     getSingle,
     deleteUnverifiedOtp,
     userVerifiedStatusChange,
+    getOrganizationStaff,
+    getMyDeliveryBoy,
+    deleteMySingleStaff,
+    updateMySingleStaffRole,
 };

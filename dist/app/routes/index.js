@@ -11,6 +11,8 @@ const businessType_route_1 = require("../modules/businessType/businessType.route
 const cart_routes_1 = require("../modules/cart/cart.routes");
 const feedback_routes_1 = require("../modules/feedback/feedback.routes");
 const order_route_1 = require("../modules/order/order.route");
+const organization_route_1 = require("../modules/organization/organization.route");
+const staff_route_1 = require("../modules/staff/staff.route");
 const users_route_1 = require("../modules/users/users.route");
 const router = express_1.default.Router();
 const moduleRoutes = [
@@ -46,6 +48,14 @@ const moduleRoutes = [
     {
         path: '/feedback',
         route: feedback_routes_1.FeedbackRoutes,
+    },
+    {
+        path: '/organization',
+        route: organization_route_1.OrganizationRoutes,
+    },
+    {
+        path: '/staff',
+        route: staff_route_1.StaffRoutes,
     },
 ];
 moduleRoutes.forEach(route => router.use(route.path, route.route));

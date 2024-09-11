@@ -24,7 +24,20 @@ const userVerifiedStatusChangeValidation = zod_1.default.object({
         userId: zod_1.default.string({ required_error: 'User id is required' }),
     }),
 });
+const getStaffValidation = zod_1.default.object({
+    body: zod_1.default.object({
+        staffInfo: zod_1.default.enum([...user_constant_1.StaffRole]).optional(),
+    }),
+});
+const staffUpdateRoleValidation = zod_1.default.object({
+    body: zod_1.default.object({
+        staffId: zod_1.default.string({ required_error: 'Stuff id is required' }),
+        updatedRole: zod_1.default.enum([...user_constant_1.StaffRole]).optional(),
+    }),
+});
 exports.UsersValidation = {
     updateUserProfileValidation,
     userVerifiedStatusChangeValidation,
+    getStaffValidation,
+    staffUpdateRoleValidation,
 };

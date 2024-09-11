@@ -24,6 +24,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProductServices = void 0;
+const client_1 = require("@prisma/client");
 const fs_1 = __importDefault(require("fs"));
 const http_status_1 = __importDefault(require("http-status"));
 const path_1 = __importDefault(require("path"));
@@ -35,7 +36,7 @@ const createNew = (req) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const _b = req.body, { categoryId, fileUrls } = _b, others = __rest(_b, ["categoryId", "fileUrls"]);
     const { id: userId, role } = req.user;
-    let ownerId = null;
+    let orgId = null;
     if (role === 'STAFF') {
         const isValidStaff = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userId },
@@ -47,68 +48,49 @@ const createNew = (req) => __awaiter(void 0, void 0, void 0, function* () {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff  is invalid');
         }
         else {
-            if (isValidStaff.role !== ('STORE_MANAGER' || 'STAFF_ADMIN')) {
-                throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only store manager and admin can create products');
+            if (isValidStaff.role === 'STORE_MANAGER' ||
+                isValidStaff.role === 'STAFF_ADMIN') {
+                orgId = isValidStaff.organization.id;
             }
-            ownerId = isValidStaff.organization.ownerId;
+            else {
+                throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only store manager or admin update product info');
+            }
         }
     }
     else {
-        ownerId = userId;
+        const isExistUser = yield prisma_1.default.user.findUnique({ where: { id: userId } });
+        if (!isExistUser) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'No user found');
+        }
+        orgId = isExistUser.organizationId;
     }
-    if (!ownerId) {
-        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Owner info not found');
+    if (!orgId) {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Organization info not found');
     }
-    const ownerBusinessTypeCheck = yield prisma_1.default.user.findUnique({
-        where: { id: ownerId },
-        include: {
-            businessType: {
-                include: {
-                    category: true,
-                },
-            },
-        },
+    //* organization info
+    const organizationInfo = yield prisma_1.default.organization.findUnique({
+        where: { id: orgId },
+        include: { owner: true, BusinessType: { include: { category: true } } },
     });
-    if (!(ownerBusinessTypeCheck === null || ownerBusinessTypeCheck === void 0 ? void 0 : ownerBusinessTypeCheck.verified)) {
-        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Owner is not verified');
+    if (!(organizationInfo === null || organizationInfo === void 0 ? void 0 : organizationInfo.owner.verified)) {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Organization not verified');
     }
-    if (!ownerBusinessTypeCheck || !(ownerBusinessTypeCheck === null || ownerBusinessTypeCheck === void 0 ? void 0 : ownerBusinessTypeCheck.businessTypeId)) {
+    if (!(organizationInfo === null || organizationInfo === void 0 ? void 0 : organizationInfo.businessTypeId)) {
         throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Please set user business type and complete profile');
     }
     // Extract the array of category IDs
-    const categoryIds = (_a = ownerBusinessTypeCheck.businessType) === null || _a === void 0 ? void 0 : _a.category.map(cat => cat.id);
+    const categoryIds = (_a = organizationInfo.BusinessType) === null || _a === void 0 ? void 0 : _a.category.map(cat => cat.id);
     // Check if the specific category ID is in the array
     const isCategoryPresent = categoryIds === null || categoryIds === void 0 ? void 0 : categoryIds.includes(categoryId);
     if (!isCategoryPresent) {
         throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, "Category ID is not associated with the user's business type");
     }
     const result = yield prisma_1.default.product.create({
-        data: Object.assign({ owner: { connect: { id: ownerId } }, category: { connect: { id: categoryId } }, images: {
+        data: Object.assign({ organizationId: organizationInfo.id, categoryId: categoryId, images: {
                 create: fileUrls.map((url) => ({ url })),
             } }, others),
         include: {
-            owner: {
-                select: {
-                    id: true,
-                    role: true,
-                    memberCategory: true,
-                    verified: true,
-                    organization: true,
-                    isMobileVerified: true,
-                    name: true,
-                    email: true,
-                    phone: true,
-                    address: true,
-                    photo: true,
-                    license: true,
-                    nid: true,
-                    shop_name: true,
-                    createdAt: true,
-                    updatedAt: true,
-                    businessType: true,
-                    businessTypeId: true,
-                },
-            },
+            organization: true,
             images: true,
             category: true,
         },
@@ -117,7 +99,7 @@ const createNew = (req) => __awaiter(void 0, void 0, void 0, function* () {
 });
 const getAllProduct = (filters, options) => __awaiter(void 0, void 0, void 0, function* () {
     const { limit, page, skip } = paginationHelper_1.paginationHelpers.calculatePagination(options);
-    const { searchTerm, minPrice, maxPrice, address, category, ownerType } = filters, filtersData = __rest(filters, ["searchTerm", "minPrice", "maxPrice", "address", "category", "ownerType"]);
+    const { searchTerm, minPrice, maxPrice, address, category, orgId, ownerType } = filters, filtersData = __rest(filters, ["searchTerm", "minPrice", "maxPrice", "address", "category", "orgId", "ownerType"]);
     const andConditions = [];
     if (searchTerm) {
         andConditions.push({
@@ -151,12 +133,19 @@ const getAllProduct = (filters, options) => __awaiter(void 0, void 0, void 0, fu
             },
         });
     }
+    if (orgId) {
+        andConditions.push({
+            organizationId: orgId,
+        });
+    }
     if (address) {
         andConditions.push({
-            owner: {
-                address: {
-                    contains: address,
-                    mode: 'insensitive',
+            organization: {
+                owner: {
+                    address: {
+                        contains: address,
+                        mode: 'insensitive',
+                    },
                 },
             },
         });
@@ -166,12 +155,17 @@ const getAllProduct = (filters, options) => __awaiter(void 0, void 0, void 0, fu
             categoryId: category,
         });
     }
-    if (ownerType) {
+    if (ownerType && Object.values(client_1.Role).includes(ownerType)) {
         andConditions.push({
-            owner: {
-                role: ownerType,
+            organization: {
+                owner: {
+                    role: ownerType,
+                },
             },
         });
+    }
+    else if (ownerType) {
+        throw new Error(`Invalid role type: ${ownerType}`);
     }
     const whereConditions = andConditions.length > 0 ? { AND: andConditions } : {};
     const result = yield prisma_1.default.product.findMany({
@@ -184,28 +178,7 @@ const getAllProduct = (filters, options) => __awaiter(void 0, void 0, void 0, fu
                 createdAt: 'desc',
             },
         include: {
-            owner: {
-                select: {
-                    id: true,
-                    role: true,
-                    memberCategory: true,
-                    verified: true,
-                    organization: true,
-                    isMobileVerified: true,
-                    name: true,
-                    email: true,
-                    phone: true,
-                    address: true,
-                    photo: true,
-                    license: true,
-                    nid: true,
-                    shop_name: true,
-                    createdAt: true,
-                    updatedAt: true,
-                    businessType: true,
-                    businessTypeId: true,
-                },
-            },
+            organization: { include: { BusinessType: true } },
             category: true,
             images: true,
             feedbacks: true,
@@ -227,44 +200,17 @@ const getSingle = (id) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield prisma_1.default.product.findUnique({
         where: { id },
         include: {
-            owner: {
-                select: {
-                    id: true,
-                    role: true,
-                    memberCategory: true,
-                    verified: true,
-                    organization: true,
-                    isMobileVerified: true,
-                    name: true,
-                    phone: true,
-                    address: true,
-                    photo: true,
-                    createdAt: true,
-                    updatedAt: true,
-                    businessType: true,
+            organization: {
+                include: {
+                    owner: true,
+                    BusinessType: true,
                 },
             },
             category: true,
             images: true,
             feedbacks: {
                 include: {
-                    user: {
-                        select: {
-                            id: true,
-                            memberCategory: true,
-                            verified: true,
-                            organization: true,
-                            isMobileVerified: true,
-                            name: true,
-                            phone: true,
-                            address: true,
-                            photo: true,
-                            createdAt: true,
-                            updatedAt: true,
-                            businessType: true,
-                            role: true,
-                        },
-                    },
+                    Organization: true,
                 },
             },
         },
@@ -275,7 +221,7 @@ const getSingle = (id) => __awaiter(void 0, void 0, void 0, function* () {
     return result;
 });
 const deleteImageFromProduct = (imageId, productId, userId, userRole) => __awaiter(void 0, void 0, void 0, function* () {
-    let ownerId = null;
+    let orgId = null;
     if (userRole === 'STAFF') {
         const isValidStaff = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userId },
@@ -284,39 +230,25 @@ const deleteImageFromProduct = (imageId, productId, userId, userRole) => __await
         if (!isValidStaff) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
         }
-        if (isValidStaff.role !== ('STORE_MANAGER' || 'STAFF_ADMIN')) {
-            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only store manager or admin delete the product image');
+        if (isValidStaff.role === 'STORE_MANAGER' ||
+            isValidStaff.role === 'STAFF_ADMIN') {
+            orgId = isValidStaff.organization.id;
         }
-        ownerId = isValidStaff.organization.ownerId;
+        else {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only store manager or admin update product info');
+        }
     }
     else {
-        ownerId = userId;
+        if (!userId) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'User info not found');
+        }
+        const isUserExist = yield prisma_1.default.user.findUnique({ where: { id: userId } });
+        orgId = isUserExist === null || isUserExist === void 0 ? void 0 : isUserExist.organizationId;
     }
     const isProductExist = yield prisma_1.default.product.findUnique({
         where: { id: productId },
         include: {
-            owner: {
-                select: {
-                    id: true,
-                    role: true,
-                    memberCategory: true,
-                    verified: true,
-                    organization: true,
-                    isMobileVerified: true,
-                    name: true,
-                    email: true,
-                    phone: true,
-                    address: true,
-                    photo: true,
-                    license: true,
-                    nid: true,
-                    shop_name: true,
-                    createdAt: true,
-                    updatedAt: true,
-                    businessType: true,
-                    businessTypeId: true,
-                },
-            },
+            organization: true,
             category: true,
             images: true,
             feedbacks: true,
@@ -325,7 +257,7 @@ const deleteImageFromProduct = (imageId, productId, userId, userRole) => __await
     if (!isProductExist) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Product not found ');
     }
-    if ((isProductExist === null || isProductExist === void 0 ? void 0 : isProductExist.ownerId) !== ownerId) {
+    if ((isProductExist === null || isProductExist === void 0 ? void 0 : isProductExist.organizationId) !== orgId) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Invalid staff/owner  ');
     }
     const isImageExist = yield prisma_1.default.image.findUnique({
@@ -348,29 +280,7 @@ const deleteImageFromProduct = (imageId, productId, userId, userRole) => __await
     const result = yield prisma_1.default.product.findUnique({
         where: { id: productId },
         include: {
-            owner: {
-                select: {
-                    id: true,
-                    role: true,
-                    memberCategory: true,
-                    verified: true,
-                    organization: true,
-                    isMobileVerified: true,
-                    name: true,
-                    email: true,
-                    phone: true,
-                    address: true,
-                    photo: true,
-                    license: true,
-                    nid: true,
-                    shop_name: true,
-                    createdAt: true,
-                    updatedAt: true,
-                    feedbacks: true,
-                    businessType: true,
-                    businessTypeId: true,
-                },
-            },
+            organization: true,
             category: true,
             images: true,
             feedbacks: true,
@@ -382,7 +292,7 @@ const addNewImageForProduct = (req) => __awaiter(void 0, void 0, void 0, functio
     const { productId } = req.params;
     const { id: userId, role: userRole } = req.user;
     const { fileUrls } = req.body;
-    let ownerId = null;
+    let orgId = null;
     if (userRole === 'STAFF') {
         const isValidStaff = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userId },
@@ -391,41 +301,34 @@ const addNewImageForProduct = (req) => __awaiter(void 0, void 0, void 0, functio
         if (!isValidStaff) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
         }
-        if (isValidStaff.role !== ('STORE_MANAGER' || 'STAFF_ADMIN')) {
-            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only store manager or admin add the product image');
+        if (isValidStaff.role === 'STORE_MANAGER' ||
+            isValidStaff.role === 'STAFF_ADMIN') {
+            orgId = isValidStaff.organization.id;
         }
-        ownerId = isValidStaff.organization.ownerId;
+        else {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only store manager or admin update product info');
+        }
     }
     else {
-        ownerId = userId;
+        const isUserExist = yield prisma_1.default.user.findUnique({ where: { id: userId } });
+        orgId = isUserExist === null || isUserExist === void 0 ? void 0 : isUserExist.organizationId;
     }
     const isProductExist = yield prisma_1.default.product.findUnique({
         where: { id: productId },
         include: {
-            owner: {
-                select: {
-                    id: true,
-                    memberCategory: true,
-                    verified: true,
-                    organization: true,
-                    isMobileVerified: true,
-                    name: true,
-                    phone: true,
-                    address: true,
-                    photo: true,
-                    createdAt: true,
-                    updatedAt: true,
-                },
-            },
+            organization: true,
             category: true,
             images: true,
             feedbacks: true,
         },
     });
+    if (!orgId) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization info not found');
+    }
     if (!isProductExist) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Product not found ');
     }
-    if ((isProductExist === null || isProductExist === void 0 ? void 0 : isProductExist.ownerId) !== ownerId) {
+    if ((isProductExist === null || isProductExist === void 0 ? void 0 : isProductExist.organizationId) !== orgId) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Only owner can update products ');
     }
     //* check number of images
@@ -456,21 +359,7 @@ const addNewImageForProduct = (req) => __awaiter(void 0, void 0, void 0, functio
             },
         },
         include: {
-            owner: {
-                select: {
-                    id: true,
-                    memberCategory: true,
-                    verified: true,
-                    organization: true,
-                    isMobileVerified: true,
-                    name: true,
-                    phone: true,
-                    address: true,
-                    photo: true,
-                    createdAt: true,
-                    updatedAt: true,
-                },
-            },
+            organization: true,
             category: true,
             images: true,
             feedbacks: true,
@@ -482,7 +371,7 @@ const updateProductInfo = (productId, userId, userRole, payload) => __awaiter(vo
     if (!payload) {
         throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'No update data provided');
     }
-    let ownerId = null;
+    let orgId = null;
     if (userRole === 'STAFF') {
         const isValidStaff = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userId },
@@ -491,40 +380,23 @@ const updateProductInfo = (productId, userId, userRole, payload) => __awaiter(vo
         if (!isValidStaff) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
         }
-        if (isValidStaff.role !== ('STORE_MANAGER' || 'STAFF_ADMIN')) {
+        if (isValidStaff.role === 'STORE_MANAGER' ||
+            isValidStaff.role === 'STAFF_ADMIN') {
+            orgId = isValidStaff.organization.id;
+        }
+        else {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only store manager or admin update product info');
         }
-        ownerId = isValidStaff.organization.ownerId;
     }
     else {
-        ownerId = userId;
+        const isUserExist = yield prisma_1.default.user.findUnique({ where: { id: userId } });
+        orgId = isUserExist === null || isUserExist === void 0 ? void 0 : isUserExist.organizationId;
     }
     const { categoryId } = payload, othersInfo = __rest(payload, ["categoryId"]);
     const isProductExist = yield prisma_1.default.product.findUnique({
         where: { id: productId },
         include: {
-            owner: {
-                select: {
-                    id: true,
-                    role: true,
-                    memberCategory: true,
-                    verified: true,
-                    organization: true,
-                    isMobileVerified: true,
-                    name: true,
-                    email: true,
-                    phone: true,
-                    address: true,
-                    photo: true,
-                    license: true,
-                    nid: true,
-                    shop_name: true,
-                    createdAt: true,
-                    updatedAt: true,
-                    businessType: true,
-                    businessTypeId: true,
-                },
-            },
+            organization: true,
             category: true,
             images: true,
             feedbacks: true,
@@ -533,7 +405,10 @@ const updateProductInfo = (productId, userId, userRole, payload) => __awaiter(vo
     if (!isProductExist) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Product not found ');
     }
-    if ((isProductExist === null || isProductExist === void 0 ? void 0 : isProductExist.ownerId) !== ownerId) {
+    if (!orgId) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization info not found');
+    }
+    if ((isProductExist === null || isProductExist === void 0 ? void 0 : isProductExist.organizationId) !== orgId) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Invalid owner info ');
     }
     const result = yield prisma_1.default.product.update({
@@ -543,7 +418,7 @@ const updateProductInfo = (productId, userId, userRole, payload) => __awaiter(vo
     return result;
 });
 const deleteProduct = (productId, userId, userRole) => __awaiter(void 0, void 0, void 0, function* () {
-    let ownerId = null;
+    let orgId = null;
     if (userRole === 'STAFF') {
         const isValidStaff = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userId },
@@ -552,20 +427,26 @@ const deleteProduct = (productId, userId, userRole) => __awaiter(void 0, void 0,
         if (!isValidStaff) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
         }
-        if (isValidStaff.role !== ('STORE_MANAGER' || 'STAFF_ADMIN')) {
-            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only store manager or admin delete product info');
+        if (isValidStaff.role === 'STORE_MANAGER' ||
+            isValidStaff.role === 'STAFF_ADMIN') {
+            orgId = isValidStaff.organization.id;
         }
-        ownerId = isValidStaff.organization.ownerId;
+        else {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only store manager or admin update product info');
+        }
     }
     else {
         if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') {
             const productOwner = yield prisma_1.default.product.findUnique({
                 where: { id: productId },
             });
-            ownerId = productOwner === null || productOwner === void 0 ? void 0 : productOwner.ownerId;
+            orgId = productOwner === null || productOwner === void 0 ? void 0 : productOwner.organizationId;
         }
         else {
-            ownerId = userId;
+            const isUserExist = yield prisma_1.default.user.findUnique({
+                where: { id: userId },
+            });
+            orgId = isUserExist === null || isUserExist === void 0 ? void 0 : isUserExist.organizationId;
         }
     }
     // Check if the product exists
@@ -578,8 +459,11 @@ const deleteProduct = (productId, userId, userRole) => __awaiter(void 0, void 0,
     if (!isProductExist) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Product not found');
     }
+    if (!orgId) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization info not found');
+    }
     // Check if the owner is the same as the one making the request
-    if (isProductExist.ownerId !== ownerId) {
+    if (isProductExist.organizationId !== orgId) {
         throw new ApiError_1.default(http_status_1.default.FORBIDDEN, 'Invalid owner info');
     }
     const result = yield prisma_1.default.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {

@@ -32,37 +32,45 @@ const paginationHelper_1 = require("../../../helpers/paginationHelper");
 const prisma_1 = __importDefault(require("../../../shared/prisma"));
 const order_constant_1 = require("./order.constant");
 const orderCreate = (userId, userRole, orderData) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
     const { shipping_address } = orderData;
     let cartId = null;
     if (userRole === 'STAFF') {
         const isValidStaff = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userId },
             include: {
-                organization: { include: { owner: { include: { cart: true } } } },
+                organization: { include: { cart: true } },
             },
         });
         if (!isValidStaff) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
         }
-        if (isValidStaff.role !== ('PURCHASE_OFFICER' || 'STAFF_ADMIN')) {
+        if (isValidStaff.role === 'PURCHASE_OFFICER' ||
+            isValidStaff.role === 'STAFF_ADMIN') {
+            cartId = isValidStaff.organization.cart[0].id;
+        }
+        else {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only store purchase officer or admin make order');
         }
-        cartId = isValidStaff.organization.owner.cart[0].id;
     }
     else {
         const isValidUser = yield prisma_1.default.user.findUnique({
             where: { id: userId },
-            include: { cart: true },
+            include: { organization: { include: { cart: true } } },
         });
         if (!isValidUser) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Not valid user');
         }
-        cartId = isValidUser === null || isValidUser === void 0 ? void 0 : isValidUser.cart[0].id;
+        if (!((_a = isValidUser === null || isValidUser === void 0 ? void 0 : isValidUser.organization) === null || _a === void 0 ? void 0 : _a.cart[0].id)) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Cart info not found');
+        }
+        cartId = (_b = isValidUser === null || isValidUser === void 0 ? void 0 : isValidUser.organization) === null || _b === void 0 ? void 0 : _b.cart[0].id;
     }
     if (!cartId) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Cart information not found');
     }
     const result = yield prisma_1.default.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {
+        var _c, _d;
         // Fetch cart details including items
         const cart = yield prisma.cart.findUnique({
             where: { id: cartId },
@@ -71,19 +79,19 @@ const orderCreate = (userId, userRole, orderData) => __awaiter(void 0, void 0, v
                     include: {
                         product: {
                             include: {
-                                owner: true,
+                                organization: { include: { owner: true } },
                             },
                         },
                     },
                 },
-                user: true, // Include user information to get the user's phone number
+                Organization: { include: { owner: true } }, // Include user information to get the user's phone number
             },
         });
         if (!cart) {
             throw new ApiError_1.default(http_status_1.default.NOT_FOUND, `Cart with id ${cartId} not found.`);
         }
         // Filter out items where the product owner is the same as the cart user
-        const validCartItems = cart.CartItem.filter(item => item.product.ownerId !== cart.userId);
+        const validCartItems = cart.CartItem.filter(item => item.product.organizationId !== cart.organizationId);
         if (validCartItems.length === 0) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, `You cannot buy your own products.`);
         }
@@ -106,11 +114,11 @@ const orderCreate = (userId, userRole, orderData) => __awaiter(void 0, void 0, v
         }, {});
         // Group valid cart items by product owner
         const groupedByOwner = validCartItems.reduce((acc, item) => {
-            const ownerId = item.product.ownerId;
-            if (!acc[ownerId]) {
-                acc[ownerId] = [];
+            const orgId = item.product.organizationId;
+            if (!acc[orgId]) {
+                acc[orgId] = [];
             }
-            acc[ownerId].push(item);
+            acc[orgId].push(item);
             return acc;
         }, {});
         const createdOrders = [];
@@ -128,8 +136,11 @@ const orderCreate = (userId, userRole, orderData) => __awaiter(void 0, void 0, v
             // Generate a unique order code
             let orderCode;
             let isUnique = false;
+            if (!(cart === null || cart === void 0 ? void 0 : cart.Organization) || !(cart === null || cart === void 0 ? void 0 : cart.organizationId)) {
+                throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization info not found');
+            }
             do {
-                orderCode = (0, orderIdcodeGenerator_1.orderCodeGenerator)(cart.user.phone, items[0].product.owner.phone);
+                orderCode = (0, orderIdcodeGenerator_1.orderCodeGenerator)((_d = (_c = cart === null || cart === void 0 ? void 0 : cart.Organization) === null || _c === void 0 ? void 0 : _c.owner) === null || _d === void 0 ? void 0 : _d.phone, items[0].product.organization.owner.phone);
                 const existingOrder = yield prisma.order.findUnique({
                     where: { orderCode },
                 });
@@ -144,7 +155,7 @@ const orderCreate = (userId, userRole, orderData) => __awaiter(void 0, void 0, v
                     shipping_address: shipping_address,
                     total,
                     customer: {
-                        connect: { id: cart.userId },
+                        connect: { id: cart === null || cart === void 0 ? void 0 : cart.organizationId },
                     },
                     product_seller: {
                         connect: { id: ownerId },
@@ -175,127 +186,17 @@ const orderCreate = (userId, userRole, orderData) => __awaiter(void 0, void 0, v
     }));
     return result;
 });
-const getUserIncomingOrders = (ownerId, options) => __awaiter(void 0, void 0, void 0, function* () {
-    const { limit, page, skip } = paginationHelper_1.paginationHelpers.calculatePagination(options);
-    const result = yield prisma_1.default.order.findMany({
-        where: { product_seller_id: ownerId },
-        skip,
-        take: limit,
-        orderBy: options.sortBy && options.sortOrder
-            ? { [options.sortBy]: options.sortOrder }
-            : {
-                createdAt: 'desc',
-            },
-        include: {
-            customer: {
-                select: {
-                    id: true,
-                    role: true,
-                    email: true,
-                    license: true,
-                    nid: true,
-                    memberCategory: true,
-                    verified: true,
-                    organization: true,
-                    isMobileVerified: true,
-                    name: true,
-                    phone: true,
-                    address: true,
-                    photo: true,
-                    createdAt: true,
-                    updatedAt: true,
-                },
-            },
-            orderItems: {
-                include: {
-                    product: {
-                        include: {
-                            images: true,
-                        },
-                    },
-                },
-            },
-        },
-    });
-    if (!result) {
-        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User incoming order not found');
-    }
-    const total = yield prisma_1.default.order.count({
-        where: { product_seller_id: ownerId },
-    });
-    return {
-        meta: {
-            total,
-            page,
-            limit,
-        },
-        data: result,
-    };
-});
-const getUserOutgoingOrders = (userId, options) => __awaiter(void 0, void 0, void 0, function* () {
-    const { limit, page, skip } = paginationHelper_1.paginationHelpers.calculatePagination(options);
-    const result = yield prisma_1.default.order.findMany({
-        where: { customerId: userId },
-        skip,
-        take: limit,
-        orderBy: options.sortBy && options.sortOrder
-            ? { [options.sortBy]: options.sortOrder }
-            : {
-                createdAt: 'desc',
-            },
-        include: {
-            product_seller: {
-                select: {
-                    id: true,
-                    role: true,
-                    email: true,
-                    license: true,
-                    nid: true,
-                    memberCategory: true,
-                    verified: true,
-                    organization: true,
-                    isMobileVerified: true,
-                    name: true,
-                    phone: true,
-                    address: true,
-                    photo: true,
-                    createdAt: true,
-                    updatedAt: true,
-                },
-            },
-            orderItems: {
-                include: {
-                    product: true,
-                },
-            },
-        },
-    });
-    if (!result) {
-        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User incoming order not found');
-    }
-    const total = yield prisma_1.default.order.count({
-        where: { customerId: userId },
-    });
-    return {
-        meta: {
-            total,
-            page,
-            limit,
-        },
-        data: result,
-    };
-});
+//! here change it was owner id now it is organization id
 const getOrganizationIncomingOrders = (organizationId, options) => __awaiter(void 0, void 0, void 0, function* () {
-    const isValidOrganization = yield prisma_1.default.organization.findUnique({
+    const isExistrganization = yield prisma_1.default.organization.findUnique({
         where: { id: organizationId },
     });
-    if (!isValidOrganization) {
-        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organizaion info not found');
+    if (!organizationId) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization info not found');
     }
-    const ownerId = isValidOrganization.ownerId;
     const { limit, page, skip } = paginationHelper_1.paginationHelpers.calculatePagination(options);
     const result = yield prisma_1.default.order.findMany({
-        where: { product_seller_id: ownerId },
+        where: { product_seller_id: organizationId },
         skip,
         take: limit,
         orderBy: options.sortBy && options.sortOrder
@@ -304,23 +205,27 @@ const getOrganizationIncomingOrders = (organizationId, options) => __awaiter(voi
                 createdAt: 'desc',
             },
         include: {
+            assigndForDelivery: true,
             customer: {
-                select: {
-                    id: true,
-                    role: true,
-                    email: true,
-                    license: true,
-                    nid: true,
-                    memberCategory: true,
-                    verified: true,
-                    organization: true,
-                    isMobileVerified: true,
-                    name: true,
-                    phone: true,
-                    address: true,
-                    photo: true,
-                    createdAt: true,
-                    updatedAt: true,
+                include: {
+                    owner: {
+                        select: {
+                            id: true,
+                            role: true,
+                            email: true,
+                            license: true,
+                            nid: true,
+                            verified: true,
+                            organization: true,
+                            isMobileVerified: true,
+                            name: true,
+                            phone: true,
+                            address: true,
+                            photo: true,
+                            createdAt: true,
+                            updatedAt: true,
+                        },
+                    },
                 },
             },
             orderItems: {
@@ -338,7 +243,7 @@ const getOrganizationIncomingOrders = (organizationId, options) => __awaiter(voi
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User incoming order not found');
     }
     const total = yield prisma_1.default.order.count({
-        where: { product_seller_id: ownerId },
+        where: { product_seller_id: organizationId },
     });
     return {
         meta: {
@@ -349,17 +254,17 @@ const getOrganizationIncomingOrders = (organizationId, options) => __awaiter(voi
         data: result,
     };
 });
+//! here change it was owner id now it is organization id
 const getOrganizationOutgoingOrders = (organizationId, options) => __awaiter(void 0, void 0, void 0, function* () {
-    const isValidOrganization = yield prisma_1.default.organization.findUnique({
+    const isExistrganization = yield prisma_1.default.organization.findUnique({
         where: { id: organizationId },
     });
-    if (!isValidOrganization) {
-        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organizaion info not found');
+    if (!organizationId) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization info not found');
     }
-    const userId = isValidOrganization.ownerId;
     const { limit, page, skip } = paginationHelper_1.paginationHelpers.calculatePagination(options);
     const result = yield prisma_1.default.order.findMany({
-        where: { customerId: userId },
+        where: { customerId: organizationId },
         skip,
         take: limit,
         orderBy: options.sortBy && options.sortOrder
@@ -368,23 +273,27 @@ const getOrganizationOutgoingOrders = (organizationId, options) => __awaiter(voi
                 createdAt: 'desc',
             },
         include: {
+            assigndForDelivery: true,
             product_seller: {
-                select: {
-                    id: true,
-                    role: true,
-                    email: true,
-                    license: true,
-                    nid: true,
-                    memberCategory: true,
-                    verified: true,
-                    organization: true,
-                    isMobileVerified: true,
-                    name: true,
-                    phone: true,
-                    address: true,
-                    photo: true,
-                    createdAt: true,
-                    updatedAt: true,
+                include: {
+                    owner: {
+                        select: {
+                            id: true,
+                            role: true,
+                            email: true,
+                            license: true,
+                            nid: true,
+                            verified: true,
+                            organization: true,
+                            isMobileVerified: true,
+                            name: true,
+                            phone: true,
+                            address: true,
+                            photo: true,
+                            createdAt: true,
+                            updatedAt: true,
+                        },
+                    },
                 },
             },
             orderItems: {
@@ -398,7 +307,7 @@ const getOrganizationOutgoingOrders = (organizationId, options) => __awaiter(voi
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User incoming order not found');
     }
     const total = yield prisma_1.default.order.count({
-        where: { customerId: userId },
+        where: { customerId: organizationId },
     });
     return {
         meta: {
@@ -409,18 +318,152 @@ const getOrganizationOutgoingOrders = (organizationId, options) => __awaiter(voi
         data: result,
     };
 });
+// const getOrganizationIncomingOrders = async (
+//   organizationId: string,
+//   options: IPaginationOptions,
+// ): Promise<IGenericResponse<Order[]>> => {
+//   const isValidOrganization = await prisma.organization.findUnique({
+//     where: { id: organizationId },
+//   });
+//   if (!isValidOrganization) {
+//     throw new ApiError(httpStatus.NOT_FOUND, 'Organizaion info not found');
+//   }
+//   const ownerId = isValidOrganization.ownerId;
+//   const { limit, page, skip } = paginationHelpers.calculatePagination(options);
+//   const result = await prisma.order.findMany({
+//     where: { product_seller_id: ownerId },
+//     skip,
+//     take: limit,
+//     orderBy:
+//       options.sortBy && options.sortOrder
+//         ? { [options.sortBy]: options.sortOrder }
+//         : {
+//             createdAt: 'desc',
+//           },
+//     include: {
+//       assigndForDelivery: true,
+//       customer: {
+//         select: {
+//           id: true,
+//           role: true,
+//           email: true,
+//           license: true,
+//           nid: true,
+//           memberCategory: true,
+//           verified: true,
+//           organization: true,
+//           isMobileVerified: true,
+//           name: true,
+//           phone: true,
+//           address: true,
+//           photo: true,
+//           createdAt: true,
+//           updatedAt: true,
+//         },
+//       },
+//       orderItems: {
+//         include: {
+//           product: {
+//             include: {
+//               images: true,
+//             },
+//           },
+//         },
+//       },
+//     },
+//   });
+//   if (!result) {
+//     throw new ApiError(httpStatus.NOT_FOUND, 'User incoming order not found');
+//   }
+//   const total = await prisma.order.count({
+//     where: { product_seller_id: ownerId },
+//   });
+//   return {
+//     meta: {
+//       total,
+//       page,
+//       limit,
+//     },
+//     data: result,
+//   };
+// };
+// const getOrganizationOutgoingOrders = async (
+//   organizationId: string,
+//   options: IPaginationOptions,
+// ): Promise<IGenericResponse<Order[]>> => {
+//   const isValidOrganization = await prisma.organization.findUnique({
+//     where: { id: organizationId },
+//   });
+//   if (!isValidOrganization) {
+//     throw new ApiError(httpStatus.NOT_FOUND, 'Organizaion info not found');
+//   }
+//   const userId = isValidOrganization.ownerId;
+//   const { limit, page, skip } = paginationHelpers.calculatePagination(options);
+//   const result = await prisma.order.findMany({
+//     where: { customerId: userId },
+//     skip,
+//     take: limit,
+//     orderBy:
+//       options.sortBy && options.sortOrder
+//         ? { [options.sortBy]: options.sortOrder }
+//         : {
+//             createdAt: 'desc',
+//           },
+//     include: {
+//       assigndForDelivery: true,
+//       product_seller: {
+//         select: {
+//           id: true,
+//           role: true,
+//           email: true,
+//           license: true,
+//           nid: true,
+//           memberCategory: true,
+//           verified: true,
+//           organization: true,
+//           isMobileVerified: true,
+//           name: true,
+//           phone: true,
+//           address: true,
+//           photo: true,
+//           createdAt: true,
+//           updatedAt: true,
+//         },
+//       },
+//       orderItems: {
+//         include: {
+//           product: true,
+//         },
+//       },
+//     },
+//   });
+//   if (!result) {
+//     throw new ApiError(httpStatus.NOT_FOUND, 'User incoming order not found');
+//   }
+//   const total = await prisma.order.count({
+//     where: { customerId: userId },
+//   });
+//   return {
+//     meta: {
+//       total,
+//       page,
+//       limit,
+//     },
+//     data: result,
+//   };
+// };
 const updateOrderStatus = (userId, userRole, orderId, status) => __awaiter(void 0, void 0, void 0, function* () {
     const isExistOrder = yield prisma_1.default.order.findUnique({
         where: { id: orderId },
         include: {
-            customer: true,
+            customer: { include: { owner: true } },
         },
     });
     if (!isExistOrder) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Order not exist ');
     }
-    const customerPhone = isExistOrder.customer.phone;
-    let ownerId = null;
+    const customerPhone = isExistOrder.customer.owner.phone;
+    let orgId = null;
     //* here ensure only owner,staff admin,order supervisor, delivery boy update status
     if (userRole === 'STAFF') {
         const isValidStaff = yield prisma_1.default.staff.findUnique({
@@ -433,12 +476,16 @@ const updateOrderStatus = (userId, userRole, orderId, status) => __awaiter(void 
         if (!order_constant_1.validStaffRoleForOrderStatusUpdate.includes(isValidStaff.role)) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'You are not able to change order status');
         }
-        ownerId = isValidStaff.organization.ownerId;
+        orgId = isValidStaff.organization.id;
     }
     else {
-        ownerId = userId;
+        const userInfo = yield prisma_1.default.user.findUnique({ where: { id: userId } });
+        if (!userInfo) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'user Info not found');
+        }
+        orgId = userInfo.organizationId;
     }
-    if (ownerId !== isExistOrder.product_seller_id) {
+    if (orgId !== isExistOrder.product_seller_id) {
         throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only order supervisor and staff admin can change the status');
     }
     //* here ensure that Ddelivered status update by only staff admin and delivery boy
@@ -450,8 +497,12 @@ const updateOrderStatus = (userId, userRole, orderId, status) => __awaiter(void 
                 where: { staffInfoId: userId },
                 include: { organization: true },
             });
+            if (!isValidStaff) {
+                throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only delivery boy change status to delivered');
+            }
             staffRole = isValidStaff === null || isValidStaff === void 0 ? void 0 : isValidStaff.role;
-            if ((isValidStaff === null || isValidStaff === void 0 ? void 0 : isValidStaff.role) !== ('DELIVERY_BOY' || 'STAFF_ADMIN')) {
+            const validRole = ['DELIVERY_BOY', 'STAFF_ADMIN'];
+            if (!validRole.includes(staffRole)) {
                 throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only delivery boy change status to delivered');
             }
         }
@@ -463,12 +514,12 @@ const updateOrderStatus = (userId, userRole, orderId, status) => __awaiter(void 
                 if (sendOtp == null || sendOtp.Status != 0) {
                     throw new ApiError_1.default(http_status_1.default.INTERNAL_SERVER_ERROR, 'Otp not send please try again');
                 }
-                const makeOtpForUser = yield prisma.oneTimePassword.create({
+                const makeOtpForUser = yield prisma.orderOtp.create({
                     data: {
                         phone: customerPhone,
+                        orderId: orderId,
                         otpCode: otp,
-                        checkCounter: 0,
-                        resendCounter: 0,
+                        countSend: 1,
                     },
                 });
                 if (!makeOtpForUser) {
@@ -502,6 +553,9 @@ const updateOrderStatus = (userId, userRole, orderId, status) => __awaiter(void 
         const result = yield prisma_1.default.order.update({
             where: { id: orderId },
             data: { orderStatus: status },
+            include: {
+                assigndForDelivery: true,
+            },
         });
         return result;
     }
@@ -520,44 +574,79 @@ const verifyDeliveryOtp = (userId, userRole, payload) => __awaiter(void 0, void 
     const isExistOrder = yield prisma_1.default.order.findUnique({
         where: { id: payload.orderId },
         include: {
-            customer: true,
+            customer: { include: { owner: true } },
         },
     });
     if (!isExistOrder) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Order not exist ');
     }
-    const customerPhone = isExistOrder.customer.phone;
+    const customerPhone = isExistOrder.customer.owner.phone;
     const result = yield prisma_1.default.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {
-        const findOtp = yield prisma.oneTimePassword.findUnique({
-            where: { phone: customerPhone },
+        const findOtp = yield prisma.orderOtp.findUnique({
+            where: { orderId: isExistOrder.id, phone: customerPhone },
         });
         if (!findOtp) {
             throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Otp info not found');
+        }
+        if (findOtp.isVerified === true) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Delivery otp already verified');
         }
         if (payload.givenOtp !== findOtp.otpCode) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Delivery otp not match');
         }
         else {
-            //delete otp
-            yield prisma.oneTimePassword.delete({ where: { phone: customerPhone } });
-            const result = yield prisma.order.update({
-                where: { id: payload.orderId },
-                data: { orderStatus: 'DELIVERED' },
+            yield prisma.orderOtp.update({
+                where: { orderId: isExistOrder.id, phone: customerPhone },
+                data: {
+                    isVerified: true,
+                },
             });
-            return result;
+            if (isExistOrder.paymentStatus === 'PAID') {
+                const result = yield prisma.order.update({
+                    where: { id: payload.orderId },
+                    data: { orderStatus: 'DELIVERED' },
+                });
+                return result;
+            }
+            else {
+                const result = yield prisma.order.update({
+                    where: { id: payload.orderId },
+                    data: { orderStatus: 'DELIVERED', paymentStatus: 'PAID' },
+                });
+                return result;
+            }
         }
     }));
     return result;
 });
-const updatePaymentStatus = (userId, orderId, status) => __awaiter(void 0, void 0, void 0, function* () {
+const updatePaymentStatus = (userId, userRole, orderId, status) => __awaiter(void 0, void 0, void 0, function* () {
     const isExistOrder = yield prisma_1.default.order.findUnique({
         where: { id: orderId },
     });
     if (!isExistOrder) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Order not exist ');
     }
-    if (userId !== isExistOrder.product_seller_id) {
-        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only product seller can change the status');
+    let orgId = null;
+    //* here ensure only owner,staff admin,order supervisor, delivery boy update status
+    if (userRole === 'STAFF') {
+        const isValidStaff = yield prisma_1.default.staff.findUnique({
+            where: { staffInfoId: userId },
+            include: { organization: true },
+        });
+        if (!isValidStaff) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
+        }
+        if (!order_constant_1.validStaffRoleForOrderStatusUpdate.includes(isValidStaff.role)) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'You are not able to change order status');
+        }
+        orgId = isValidStaff.organization.id;
+    }
+    else {
+        const userInfo = yield prisma_1.default.user.findUnique({ where: { id: userId } });
+        if (!userInfo) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'user Info not found');
+        }
+        orgId = userInfo.organizationId;
     }
     const result = yield prisma_1.default.order.update({
         where: { id: orderId },
@@ -570,48 +659,47 @@ const getSingle = (id) => __awaiter(void 0, void 0, void 0, function* () {
         where: { id },
         include: {
             customer: {
-                select: {
-                    id: true,
-                    role: true,
-                    memberCategory: true,
-                    verified: true,
-                    organization: true,
-                    isMobileVerified: true,
-                    name: true,
-                    email: true,
-                    phone: true,
-                    address: true,
-                    photo: true,
-                    license: true,
-                    nid: true,
-                    shop_name: true,
-                    createdAt: true,
-                    updatedAt: true,
-                    feedbacks: true,
-                    businessType: true,
-                    businessTypeId: true,
+                include: {
+                    owner: {
+                        select: {
+                            id: true,
+                            role: true,
+                            verified: true,
+                            organization: true,
+                            isMobileVerified: true,
+                            name: true,
+                            email: true,
+                            phone: true,
+                            address: true,
+                            photo: true,
+                            license: true,
+                            nid: true,
+                            createdAt: true,
+                            updatedAt: true,
+                        },
+                    },
                 },
             },
             product_seller: {
-                select: {
-                    id: true,
-                    role: true,
-                    memberCategory: true,
-                    verified: true,
-                    organization: true,
-                    isMobileVerified: true,
-                    name: true,
-                    email: true,
-                    phone: true,
-                    address: true,
-                    photo: true,
-                    license: true,
-                    nid: true,
-                    shop_name: true,
-                    createdAt: true,
-                    updatedAt: true,
-                    businessType: true,
-                    businessTypeId: true,
+                include: {
+                    owner: {
+                        select: {
+                            id: true,
+                            role: true,
+                            verified: true,
+                            organization: true,
+                            isMobileVerified: true,
+                            name: true,
+                            email: true,
+                            phone: true,
+                            address: true,
+                            photo: true,
+                            license: true,
+                            nid: true,
+                            createdAt: true,
+                            updatedAt: true,
+                        },
+                    },
                 },
             },
             orderItems: {
@@ -636,7 +724,7 @@ const searchFilterIncomingOrders = (userId, userRole, filters, options) => __awa
     const { limit, page, skip } = paginationHelper_1.paginationHelpers.calculatePagination(options);
     const { searchTerm, phone } = filters, filtersData = __rest(filters, ["searchTerm", "phone"]);
     const andConditions = [];
-    let ownerId = null;
+    let orgId = null;
     if (userRole === 'STAFF') {
         const isValidStaff = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userId },
@@ -645,13 +733,20 @@ const searchFilterIncomingOrders = (userId, userRole, filters, options) => __awa
         if (!isValidStaff) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
         }
-        if (isValidStaff.role !== ('ORDER_SUPERVISOR' || 'STAFF_ADMIN')) {
-            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'You are not allowed to see incoming orders');
+        const validUser = ['ORDER_SUPERVISOR', 'STAFF_ADMIN'];
+        if (validUser.includes(isValidStaff.role)) {
+            orgId = isValidStaff.organization.id;
         }
-        ownerId = isValidStaff.organization.ownerId;
+        else {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'You are not allowed to see outgoing orders');
+        }
     }
     else {
-        ownerId = userId;
+        const userInfo = yield prisma_1.default.user.findUnique({ where: { id: userId } });
+        if (!userInfo) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'user Info not found');
+        }
+        orgId = userInfo.organizationId;
     }
     if (searchTerm) {
         andConditions.push({
@@ -681,7 +776,7 @@ const searchFilterIncomingOrders = (userId, userRole, filters, options) => __awa
     }
     //* Add condition for ownerId
     andConditions.push({
-        product_seller_id: ownerId,
+        product_seller_id: orgId,
     });
     const whereConditions = andConditions.length > 0 ? { AND: andConditions } : {};
     const result = yield prisma_1.default.order.findMany({
@@ -694,6 +789,7 @@ const searchFilterIncomingOrders = (userId, userRole, filters, options) => __awa
                 createdAt: 'desc',
             },
         include: {
+            assigndForDelivery: true,
             orderItems: {
                 include: {
                     product: {
@@ -721,7 +817,7 @@ const searchFilterOutgoingOrders = (userId, userRole, filters, options) => __awa
     const { limit, page, skip } = paginationHelper_1.paginationHelpers.calculatePagination(options);
     const { searchTerm, phone } = filters, filtersData = __rest(filters, ["searchTerm", "phone"]);
     const andConditions = [];
-    let ownerId = null;
+    let orgId = null;
     if (userRole === 'STAFF') {
         const isValidStaff = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userId },
@@ -730,14 +826,20 @@ const searchFilterOutgoingOrders = (userId, userRole, filters, options) => __awa
         if (!isValidStaff) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
         }
-        if (isValidStaff.role !==
-            ('PURCHASE_OFFICER' || 'ORDER_SUPERVISOR' || 'STAFF_ADMIN')) {
+        const validUser = ['PURCHASE_OFFICER', 'ORDER_SUPERVISOR', 'STAFF_ADMIN'];
+        if (validUser.includes(isValidStaff.role)) {
+            orgId = isValidStaff.organization.id;
+        }
+        else {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'You are not allowed to see outgoing orders');
         }
-        ownerId = isValidStaff.organization.ownerId;
     }
     else {
-        ownerId = userId;
+        const userInfo = yield prisma_1.default.user.findUnique({ where: { id: userId } });
+        if (!userInfo) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'user Info not found');
+        }
+        orgId = userInfo.organizationId;
     }
     if (searchTerm) {
         andConditions.push({
@@ -767,7 +869,7 @@ const searchFilterOutgoingOrders = (userId, userRole, filters, options) => __awa
     }
     //* Add condition for ownerId
     andConditions.push({
-        customerId: ownerId,
+        customerId: orgId,
     });
     const whereConditions = andConditions.length > 0 ? { AND: andConditions } : {};
     const result = yield prisma_1.default.order.findMany({
@@ -780,6 +882,7 @@ const searchFilterOutgoingOrders = (userId, userRole, filters, options) => __awa
                 createdAt: 'desc',
             },
         include: {
+            assigndForDelivery: true,
             orderItems: {
                 include: {
                     product: {
@@ -803,10 +906,76 @@ const searchFilterOutgoingOrders = (userId, userRole, filters, options) => __awa
         data: result,
     };
 });
+const assignForDelivery = (userId, payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const IsValidUserRole = yield prisma_1.default.user.findUnique({
+        where: { id: userId },
+        include: { Staff: { include: { organization: true } } },
+    });
+    if (!(IsValidUserRole === null || IsValidUserRole === void 0 ? void 0 : IsValidUserRole.Staff)) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User info not found');
+    }
+    const validStaffRole = ['ORDER_SUPERVISOR', 'STAFF_ADMIN'];
+    if (!validStaffRole.includes(IsValidUserRole.Staff.role)) {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only order supervisor and staff admin can assign delivery boy');
+    }
+    const isDeliveryBoyExist = yield prisma_1.default.staff.findUnique({
+        where: { id: payload.deliveryBoyId },
+    });
+    if (!isDeliveryBoyExist) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Delivery boy info not found');
+    }
+    if (isDeliveryBoyExist.role !== 'DELIVERY_BOY') {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Please provide valid delivery boy id');
+    }
+    if (!isDeliveryBoyExist.deliveryArea) {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Delivery have not any specific area for percel delivery');
+    }
+    const isOrderExist = yield prisma_1.default.order.findUnique({
+        where: { id: payload.orderId },
+    });
+    if (!isOrderExist) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Order info not found');
+    }
+    if (isOrderExist.product_seller_id !== IsValidUserRole.Staff.organization.id) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Order id not valid ');
+    }
+    const result = yield prisma_1.default.assigndForDelivery.create({
+        data: {
+            assignedby: { connect: { id: IsValidUserRole.Staff.id } },
+            deliveryBoy: { connect: { id: payload.deliveryBoyId } },
+            order: { connect: { id: payload.orderId } },
+        },
+    });
+    return result;
+});
+const getMyOrderForDelivery = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    const isValidStaff = yield prisma_1.default.staff.findUnique({
+        where: { staffInfoId: userId },
+    });
+    if (!isValidStaff) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff info not found');
+    }
+    if (isValidStaff.role !== 'DELIVERY_BOY') {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Delivery boy only access it');
+    }
+    const result = yield prisma_1.default.assigndForDelivery.findMany({
+        where: { deliveryBoyId: isValidStaff.id },
+        include: {
+            order: {
+                include: {
+                    orderItems: {
+                        include: {
+                            product: true,
+                        },
+                    },
+                },
+            },
+        },
+    });
+    return result;
+});
 exports.OrderService = {
     orderCreate,
-    getUserIncomingOrders,
-    getUserOutgoingOrders,
     updateOrderStatus,
     updatePaymentStatus,
     getSingle,
@@ -815,4 +984,6 @@ exports.OrderService = {
     getOrganizationOutgoingOrders,
     getOrganizationIncomingOrders,
     verifyDeliveryOtp,
+    assignForDelivery,
+    getMyOrderForDelivery,
 };

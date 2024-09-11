@@ -19,6 +19,7 @@ const sendResponse_1 = __importDefault(require("../../../shared/sendResponse"));
 const users_service_1 = require("./users.service");
 const updateUserProfile = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield users_service_1.UserServices.updateUserProfile(req, next);
+    console.log(result);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,
@@ -76,6 +77,47 @@ const deleteUnverifiedOtp = (0, catchAsync_1.default)((req, res) => __awaiter(vo
         data: result,
     });
 }));
+const getOrganizationStaff = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id: userId, role } = req.user;
+    const result = yield users_service_1.UserServices.getOrganizationStaff(userId, role, req.body);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: 'User retrieve',
+        data: result,
+    });
+}));
+const getMyDeliveryBoy = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id: userId } = req.user;
+    const result = yield users_service_1.UserServices.getMyDeliveryBoy(userId);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: 'User retrieve',
+        data: result,
+    });
+}));
+const deleteMySingleStaff = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id: userId, role } = req.user;
+    const { staffId } = req.params;
+    const result = yield users_service_1.UserServices.deleteMySingleStaff(userId, role, staffId);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: 'Staff deleted successfully ',
+        data: result,
+    });
+}));
+const updateMySingleStaffRole = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id: userId, role } = req.user;
+    const result = yield users_service_1.UserServices.updateMySingleStaffRole(userId, role, req.body);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: 'Staff role updated',
+        data: result,
+    });
+}));
 exports.UserController = {
     updateUserProfile,
     removeProfilePicture,
@@ -83,4 +125,8 @@ exports.UserController = {
     getSingle,
     deleteUnverifiedOtp,
     userVerifiedStatusChange,
+    getOrganizationStaff,
+    getMyDeliveryBoy,
+    deleteMySingleStaff,
+    updateMySingleStaffRole,
 };

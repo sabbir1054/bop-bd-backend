@@ -116,6 +116,16 @@ const verifyForgotPasswordOtp = (0, catchAsync_1.default)((req, res) => __awaite
         data: result,
     });
 }));
+const updatePassword = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { phone, newPassword } = req.body;
+    const result = yield auth_service_1.AuthServices.updatePassword(newPassword, phone);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: 'Passwod changed',
+        data: result,
+    });
+}));
 exports.AuthController = {
     userRegistration,
     userLogin,
@@ -125,4 +135,5 @@ exports.AuthController = {
     forgetPasswordOtp,
     resendForgetpasswordOtp,
     verifyForgotPasswordOtp,
+    updatePassword,
 };

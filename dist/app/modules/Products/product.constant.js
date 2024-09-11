@@ -7,7 +7,7 @@ exports.productFilterableFields = [
     'minPrice',
     'maxPrice',
     'category',
-    'ownerId',
+    'orgId',
     'address',
     'sku',
     'ownerType',

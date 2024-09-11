@@ -16,5 +16,6 @@ router.post('/verifyOtp', auth_controller_1.AuthController.verifyOtp);
 router.post('/resendOtp', auth_controller_1.AuthController.resendOtp);
 router.post('/forgetPassword/sendOtp', auth_controller_1.AuthController.forgetPasswordOtp);
 router.post('/forgetPassword/resendOtp', auth_controller_1.AuthController.resendForgetpasswordOtp);
-router.post('/forgetPassword/verifyOtp', auth_controller_1.AuthController.verifyForgotPasswordOtp);
+router.post('/forgetPassword/verifyOtp', (0, validateRequest_1.default)(auth_validation_1.AuthValidation.userPasswordValidation), auth_controller_1.AuthController.verifyForgotPasswordOtp);
+router.patch('/updatePassword', auth_controller_1.AuthController.updatePassword);
 exports.AuthRoutes = router;

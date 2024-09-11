@@ -18,8 +18,8 @@ const catchAsync_1 = __importDefault(require("../../../shared/catchAsync"));
 const sendResponse_1 = __importDefault(require("../../../shared/sendResponse"));
 const feedback_service_1 = require("./feedback.service");
 const createNew = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id } = req.user;
-    const result = yield feedback_service_1.FeedbackService.createNew(id, req.body);
+    const { id, role } = req.user;
+    const result = yield feedback_service_1.FeedbackService.createNew(id, role, req.body);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,
@@ -48,9 +48,9 @@ const getSingle = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void
     });
 }));
 const updateSingle = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id } = req.user;
+    const { id, role } = req.user;
     const { feedbackId } = req.params;
-    const result = yield feedback_service_1.FeedbackService.updateSingle(id, feedbackId, req.body);
+    const result = yield feedback_service_1.FeedbackService.updateSingle(id, role, feedbackId, req.body);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,
@@ -59,9 +59,9 @@ const updateSingle = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, v
     });
 }));
 const deleteSingle = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id } = req.user;
+    const { id, role } = req.user;
     const { feedbackId } = req.params;
-    const result = yield feedback_service_1.FeedbackService.deleteSingle(id, feedbackId);
+    const result = yield feedback_service_1.FeedbackService.deleteSingle(id, role, feedbackId);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,

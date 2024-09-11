@@ -31,7 +31,7 @@ const getSingle = (id) => __awaiter(void 0, void 0, void 0, function* () {
         where: { id },
         include: {
             category: true,
-            user: true,
+            organization: true,
         },
     });
     if (!result) {
@@ -64,26 +64,24 @@ const getAllProductBusinessType = (id) => __awaiter(void 0, void 0, void 0, func
                     products: {
                         include: {
                             images: true,
-                            owner: {
-                                select: {
-                                    id: true,
-                                    role: true,
-                                    memberCategory: true,
-                                    verified: true,
-                                    organization: true,
-                                    isEmailVerified: true,
-                                    name: true,
-                                    email: true,
-                                    phone: true,
-                                    address: true,
-                                    photo: true,
-                                    license: true,
-                                    nid: true,
-                                    shop_name: true,
-                                    createdAt: true,
-                                    updatedAt: true,
-                                    businessType: true,
-                                    businessTypeId: true,
+                            organization: {
+                                include: {
+                                    owner: {
+                                        select: {
+                                            id: true,
+                                            role: true,
+                                            verified: true,
+                                            organization: true,
+                                            isEmailVerified: true,
+                                            name: true,
+                                            email: true,
+                                            phone: true,
+                                            address: true,
+                                            photo: true,
+                                            license: true,
+                                            nid: true,
+                                        },
+                                    },
                                 },
                             },
                         },

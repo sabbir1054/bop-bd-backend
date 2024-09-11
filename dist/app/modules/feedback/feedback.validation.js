@@ -11,7 +11,6 @@ const createFeedbackValidation = zod_1.default.object({
             .number({ required_error: 'Rating is required' })
             .max(5, { message: 'Rating cannot be more than 5' }),
         comment: zod_1.default.string({ required_error: 'Comment is required' }),
-        userId: zod_1.default.string({ required_error: 'User id is required' }),
         productId: zod_1.default.string({ required_error: 'Product id is required' }),
     }),
 });

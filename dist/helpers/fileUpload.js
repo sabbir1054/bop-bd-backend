@@ -34,7 +34,19 @@ const profilePhotoStorage = multer_1.default.diskStorage({
     },
 });
 const uploadProfile = (0, multer_1.default)({ storage: profilePhotoStorage });
+const categoryPhotoStorage = multer_1.default.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/categoryPhoto/');
+    },
+    filename: (req, file, cb) => {
+        // Use a unique name for each file to avoid conflicts
+        const uniqueSuffix = Date.now() + '--' + Math.round(Math.random() * 1e9);
+        cb(null, uniqueSuffix + '-' + file.originalname);
+    },
+});
+const uploadCategoryPhoto = (0, multer_1.default)({ storage: categoryPhotoStorage });
 exports.FileUploadHelper = {
     upload,
     uploadProfile,
+    uploadCategoryPhoto,
 };

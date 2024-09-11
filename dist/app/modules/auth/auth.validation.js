@@ -14,12 +14,20 @@ const userRegistrationValidation = zod_1.z.object({
         businessTypeId: zod_1.z.string().optional(),
         organizationId: zod_1.z.string().optional(),
         staffRole: zod_1.z.enum([...auth_constant_1.staffRole]).optional(),
+        deliveryArea: zod_1.z.string().optional(),
+        refferCode: zod_1.z.string().optional(),
     }),
 });
 const userLoginValidation = zod_1.z.object({
     body: zod_1.z.object({
         phone: zod_1.z.string({ required_error: 'Phone number is required' }),
         password: zod_1.z.string({ required_error: 'Password is required' }),
+    }),
+});
+const userPasswordValidation = zod_1.z.object({
+    body: zod_1.z.object({
+        phone: zod_1.z.string({ required_error: 'Phone number is required' }),
+        newPassword: zod_1.z.string({ required_error: 'Password is required' }),
     }),
 });
 const refreshTokenZodSchema = zod_1.z.object({
@@ -31,4 +39,5 @@ exports.AuthValidation = {
     userRegistrationValidation,
     userLoginValidation,
     refreshTokenZodSchema,
+    userPasswordValidation,
 };

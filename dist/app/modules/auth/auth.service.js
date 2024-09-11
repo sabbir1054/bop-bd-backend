@@ -32,6 +32,7 @@ const checkPhoneNumber_1 = require("../../../helpers/checkPhoneNumber");
 const encription_1 = require("../../../helpers/encription");
 const jwtHelpers_1 = require("../../../helpers/jwtHelpers");
 const otpHelpers_1 = require("../../../helpers/otpHelpers");
+const referCodeValidity_1 = require("../../../helpers/referCodeValidity");
 const prisma_1 = __importDefault(require("../../../shared/prisma"));
 const userRegistration = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     const { password, phone } = payload, othersData = __rest(payload, ["password", "phone"]);
@@ -83,7 +84,6 @@ const userRegistration = (payload) => __awaiter(void 0, void 0, void 0, function
                 select: {
                     id: true,
                     role: true,
-                    memberCategory: true,
                     verified: true,
                     name: true,
                     email: true,
@@ -92,16 +92,8 @@ const userRegistration = (payload) => __awaiter(void 0, void 0, void 0, function
                     photo: true,
                     license: true,
                     nid: true,
-                    shop_name: true,
                     createdAt: true,
                     updatedAt: true,
-                    feedbacks: true,
-                    cart: true,
-                    products: true,
-                    outgoing_order: true,
-                    incoming_order: true,
-                    businessType: true,
-                    businessTypeId: true,
                 },
             });
             return result;
@@ -111,8 +103,25 @@ const userRegistration = (payload) => __awaiter(void 0, void 0, void 0, function
                 if (!othersData.organizationId) {
                     throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'For Staff registration , organization id is requied');
                 }
+                //! verified that is organized exist or is owner verified => if not than throw error
+                const isOrganizationExist = yield prisma.organization.findUnique({
+                    where: { id: othersData.organizationId },
+                    include: {
+                        owner: true,
+                    },
+                });
+                if (!isOrganizationExist) {
+                    throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization id not found');
+                }
+                if (!isOrganizationExist.owner.verified) {
+                    throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Organization owner not verified');
+                }
                 if (!othersData.staffRole) {
                     throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'For Staff registration , staff role is requied');
+                }
+                if (othersData.staffRole === 'DELIVERY_BOY' &&
+                    !othersData.deliveryArea) {
+                    throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Give delivery boy area information');
                 }
                 const result = yield prisma.user.create({
                     data: {
@@ -125,7 +134,6 @@ const userRegistration = (payload) => __awaiter(void 0, void 0, void 0, function
                     select: {
                         id: true,
                         role: true,
-                        memberCategory: true,
                         verified: true,
                         name: true,
                         email: true,
@@ -134,18 +142,29 @@ const userRegistration = (payload) => __awaiter(void 0, void 0, void 0, function
                         photo: true,
                         license: true,
                         nid: true,
-                        shop_name: true,
                         createdAt: true,
                         updatedAt: true,
                     },
                 });
-                yield prisma.staff.create({
-                    data: {
-                        organization: { connect: { id: othersData.organizationId } },
-                        role: othersData.staffRole,
-                        staffInfo: { connect: { id: result.id } },
-                    },
-                });
+                if (othersData.staffRole === 'DELIVERY_BOY') {
+                    yield prisma.staff.create({
+                        data: {
+                            organization: { connect: { id: othersData.organizationId } },
+                            role: othersData.staffRole,
+                            deliveryArea: othersData.deliveryArea,
+                            staffInfo: { connect: { id: result.id } },
+                        },
+                    });
+                }
+                else {
+                    yield prisma.staff.create({
+                        data: {
+                            organization: { connect: { id: othersData.organizationId } },
+                            role: othersData.staffRole,
+                            staffInfo: { connect: { id: result.id } },
+                        },
+                    });
+                }
                 return result;
             }
             else {
@@ -159,18 +178,17 @@ const userRegistration = (payload) => __awaiter(void 0, void 0, void 0, function
                 if (!isBusinessTypeExist) {
                     throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Business type not found');
                 }
-                const result = yield prisma.user.create({
+                //* refercode checking
+                const createdUser = yield prisma.user.create({
                     data: {
                         phone: phone,
                         password: encryptedPassword,
                         role: othersData.role,
                         name: othersData.name,
-                        businessType: { connect: { id: othersData.businessTypeId } },
                     },
                     select: {
                         id: true,
                         role: true,
-                        memberCategory: true,
                         verified: true,
                         isMobileVerified: true,
                         name: true,
@@ -180,21 +198,81 @@ const userRegistration = (payload) => __awaiter(void 0, void 0, void 0, function
                         photo: true,
                         license: true,
                         nid: true,
-                        shop_name: true,
                         createdAt: true,
                         updatedAt: true,
-                        feedbacks: true,
-                        cart: true,
-                        products: true,
-                        outgoing_order: true,
-                        incoming_order: true,
-                        businessType: true,
-                        businessTypeId: true,
-                        organizationId: true,
                     },
                 });
-                yield prisma.organization.create({
-                    data: { owner: { connect: { id: result.id } } },
+                const createdOrganization = yield prisma.organization.create({
+                    data: {
+                        ownerId: createdUser.id,
+                        businessTypeId: othersData === null || othersData === void 0 ? void 0 : othersData.businessTypeId,
+                    },
+                });
+                if (payload.refferCode) {
+                    const codeInfo = yield prisma.refferedCode.findUnique({
+                        where: { code: payload.refferCode },
+                        include: {
+                            codeOwnerOrganization: true,
+                        },
+                    });
+                    if (!codeInfo) {
+                        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Referral code not found');
+                    }
+                    const isValid = (0, referCodeValidity_1.isCodeValid)(new Date(codeInfo.validUntil));
+                    if (!isValid || !(codeInfo === null || codeInfo === void 0 ? void 0 : codeInfo.isValid)) {
+                        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Referral code has expired');
+                    }
+                    //* use reffer code
+                    const usedReferredCode = yield prisma.usedReffereCode.create({
+                        data: {
+                            refferedCodeId: codeInfo.id,
+                            organizationId: createdOrganization.id,
+                        },
+                        include: {
+                            refferCode: {
+                                include: {
+                                    joiningRewardPoints: true,
+                                },
+                            },
+                        },
+                    });
+                    //* add reward to organization and make history
+                    const rewardHistory = yield prisma.organizationRewardPointsHistory.create({
+                        data: {
+                            pointHistoryType: 'IN',
+                            rewardPointsId: usedReferredCode.refferCode.joiningRewardPoints.id,
+                            points: usedReferredCode.refferCode.joiningRewardPoints.points,
+                            organizationId: createdOrganization.id,
+                        },
+                    });
+                    //* add to organizationPoints
+                    const updateOrganizationPoints = yield prisma.organization.update({
+                        where: { id: createdOrganization.id },
+                        data: {
+                            totalRewardPoints: usedReferredCode.refferCode.joiningRewardPoints.points,
+                        },
+                    });
+                    //* now also get reward who owned the reffer code
+                    const addOwneRewardHistory = yield prisma.organizationRewardPointsHistory.create({
+                        data: {
+                            pointHistoryType: 'IN',
+                            rewardPointsId: usedReferredCode.refferCode.joiningRewardPoints.id,
+                            points: usedReferredCode.refferCode.joiningRewardPoints.points,
+                            organizationId: codeInfo.codeOwnerOrganization.id,
+                        },
+                    });
+                    const updateCodeOwnerPoints = yield prisma.organization.update({
+                        where: { id: codeInfo.codeOwnerOrganization.id },
+                        data: {
+                            totalRewardPoints: {
+                                increment: usedReferredCode.refferCode.joiningRewardPoints.points,
+                            },
+                        },
+                    });
+                }
+                const result = yield prisma.user.update({
+                    where: { id: createdUser.id },
+                    data: { organizationId: createdOrganization.id },
                 });
                 return result;
             }
@@ -224,7 +302,6 @@ const verifyOTP = (payload) => __awaiter(void 0, void 0, void 0, function* () {
                 select: {
                     id: true,
                     role: true,
-                    memberCategory: true,
                     verified: true,
                     name: true,
                     email: true,
@@ -233,16 +310,8 @@ const verifyOTP = (payload) => __awaiter(void 0, void 0, void 0, function* () {
                     photo: true,
                     license: true,
                     nid: true,
-                    shop_name: true,
                     createdAt: true,
                     updatedAt: true,
-                    feedbacks: true,
-                    cart: true,
-                    products: true,
-                    outgoing_order: true,
-                    incoming_order: true,
-                    businessType: true,
-                    businessTypeId: true,
                     isMobileVerified: true,
                 },
             });
@@ -252,7 +321,6 @@ const verifyOTP = (payload) => __awaiter(void 0, void 0, void 0, function* () {
                 result: result,
             };
             return newResult;
-            return result;
         }
         else {
             if (isPhoneOtpExist.resendCounter <= 2) {
@@ -489,6 +557,25 @@ const verifyForgotPasswordOtp = (phone, otp) => __awaiter(void 0, void 0, void 0
         return 'Otp matched';
     }
 });
+const updatePassword = (newPassword, phone) => __awaiter(void 0, void 0, void 0, function* () {
+    const isUserExist = yield prisma_1.default.user.findUnique({
+        where: { phone: phone },
+    });
+    if (!isUserExist) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User info not exist');
+    }
+    // password validity check
+    const passwordValidity = (0, checkPasswordStrength_1.checkPasswordStrength)(newPassword, phone);
+    if (!passwordValidity.validity) {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, passwordValidity.msg);
+    }
+    const encryptNewPass = yield (0, encription_1.encryptPassword)(newPassword);
+    const result = yield prisma_1.default.user.update({
+        where: { phone: phone },
+        data: { password: encryptNewPass },
+    });
+    return result;
+});
 exports.AuthServices = {
     userRegistration,
     userLogin,
@@ -498,4 +585,5 @@ exports.AuthServices = {
     forgetPasswordOtp,
     resendForgetpasswordOtp,
     verifyForgotPasswordOtp,
+    updatePassword,
 };
