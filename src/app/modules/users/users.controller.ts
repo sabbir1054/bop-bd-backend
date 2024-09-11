@@ -8,6 +8,8 @@ import { UserServices } from './users.service';
 const updateUserProfile = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const result = await UserServices.updateUserProfile(req, next);
+    console.log(result);
+
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,

@@ -1,4 +1,4 @@
-import { Product } from '@prisma/client';
+import { Product, Role } from '@prisma/client';
 import { Request } from 'express';
 import fs from 'fs';
 import httpStatus from 'http-status';
@@ -111,6 +111,7 @@ const getAllProduct = async (
     maxPrice,
     address,
     category,
+    orgId,
     ownerType,
     ...filtersData
   } = filters;
@@ -152,12 +153,19 @@ const getAllProduct = async (
     });
   }
 
+  if (orgId) {
+    andConditions.push({
+      organizationId: orgId,
+    });
+  }
   if (address) {
     andConditions.push({
-      owner: {
-        address: {
-          contains: address,
-          mode: 'insensitive',
+      organization: {
+        owner: {
+          address: {
+            contains: address,
+            mode: 'insensitive',
+          },
         },
       },
     });
@@ -169,12 +177,16 @@ const getAllProduct = async (
     });
   }
 
-  if (ownerType) {
+  if (ownerType && Object.values(Role).includes(ownerType)) {
     andConditions.push({
-      owner: {
-        role: ownerType,
+      organization: {
+        owner: {
+          role: ownerType as Role,
+        },
       },
     });
+  } else if (ownerType) {
+    throw new Error(`Invalid role type: ${ownerType}`);
   }
   const whereConditions =
     andConditions.length > 0 ? { AND: andConditions } : {};
@@ -190,7 +202,7 @@ const getAllProduct = async (
             createdAt: 'desc',
           },
     include: {
-      organization: true,
+      organization: { include: { BusinessType: true } },
       category: true,
       images: true,
       feedbacks: true,
@@ -218,6 +230,7 @@ const getSingle = async (id: string): Promise<Product | null> => {
       organization: {
         include: {
           owner: true,
+          BusinessType: true,
         },
       },
       category: true,
@@ -469,7 +482,7 @@ const updateProductInfo = async (
   const isProductExist = await prisma.product.findUnique({
     where: { id: productId },
     include: {
-      organization:true,
+      organization: true,
       category: true,
       images: true,
       feedbacks: true,
@@ -549,9 +562,9 @@ const deleteProduct = async (
   if (!isProductExist) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Product not found');
   }
-if (!orgId) {
-  throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
-}
+  if (!orgId) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
+  }
   // Check if the owner is the same as the one making the request
   if (isProductExist.organizationId !== orgId) {
     throw new ApiError(httpStatus.FORBIDDEN, 'Invalid owner info');

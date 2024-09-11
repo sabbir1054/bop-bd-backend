@@ -10,7 +10,7 @@ import { CartRoutes } from '../modules/cart/cart.routes';
 import { FeedbackRoutes } from '../modules/feedback/feedback.routes';
 import { OrderRoutes } from '../modules/order/order.route';
 import { OrganizationRoutes } from '../modules/organization/organization.route';
-import { RewardRoutes } from '../modules/reward/reward.route';
+import { StaffRoutes } from '../modules/staff/staff.route';
 import { UsersRoutes } from '../modules/users/users.route';
 import { PointsValueRoutes } from '../modules/rewardPointsValue/pointsValue.route';
 import { ValidDaysRoutes } from '../modules/refeCodeValidDays/referCodeValidDays.route';
@@ -56,28 +56,8 @@ const moduleRoutes = [
     route: OrganizationRoutes,
   },
   {
-    path: '/my_admin',
-    route: AdminRoutes,
-  },
-  {
-    path: '/commission',
-    route: CommissionRoutes,
-  },
-  {
-    path: '/rewards',
-    route: RewardRoutes,
-  },
-  {
-    path: '/referredCode',
-    route: ReferredCodeRoutes,
-  },
-  {
-    path: '/points_value',
-    route: PointsValueRoutes,
-  },
-  {
-    path: '/validDays',
-    route: ValidDaysRoutes,
+    path: '/staff',
+    route: StaffRoutes,
   },
 ];
 
