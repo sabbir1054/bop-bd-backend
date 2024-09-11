@@ -408,6 +408,7 @@ model Order_Commission_History {
 enum RewardPointsType {
     JOINING
     BUYING
+    SELLING
 }
 
 model RewardPoints {
