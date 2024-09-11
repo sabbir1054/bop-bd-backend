@@ -11,6 +11,7 @@ import {
 } from '../../../helpers/encription';
 import { jwtHelpers } from '../../../helpers/jwtHelpers';
 import { generateOTP, sendOTP } from '../../../helpers/otpHelpers';
+import { isCodeValid } from '../../../helpers/referCodeValidity';
 import prisma from '../../../shared/prisma';
 import {
   ILoginInfo,
@@ -211,6 +212,9 @@ const userRegistration = async (
         if (!isBusinessTypeExist) {
           throw new ApiError(httpStatus.NOT_FOUND, 'Business type not found');
         }
+
+        //* refercode checking
+
         const createdUser = await prisma.user.create({
           data: {
             phone: phone,
@@ -240,6 +244,83 @@ const userRegistration = async (
             businessTypeId: othersData?.businessTypeId,
           },
         });
+
+        if (payload.refferCode) {
+          const codeInfo = await prisma.refferedCode.findUnique({
+            where: { code: payload.refferCode },
+            include: {
+              codeOwnerOrganization: true,
+            },
+          });
+
+          if (!codeInfo) {
+            throw new ApiError(httpStatus.NOT_FOUND, 'Referral code not found');
+          }
+          const isValid = isCodeValid(new Date(codeInfo.validUntil));
+
+          if (!isValid || !codeInfo?.isValid) {
+            throw new ApiError(
+              httpStatus.BAD_REQUEST,
+              'Referral code has expired',
+            );
+          }
+          //* use reffer code
+          const usedReferredCode = await prisma.usedReffereCode.create({
+            data: {
+              refferedCodeId: codeInfo.id,
+              organizationId: createdOrganization.id,
+            },
+            include: {
+              refferCode: {
+                include: {
+                  joiningRewardPoints: true,
+                },
+              },
+            },
+          });
+          //* add reward to organization and make history
+          const rewardHistory =
+            await prisma.organizationRewardPointsHistory.create({
+              data: {
+                pointHistoryType: 'IN',
+                rewardPointsId:
+                  usedReferredCode.refferCode.joiningRewardPoints.id,
+                points: usedReferredCode.refferCode.joiningRewardPoints.points,
+                organizationId: createdOrganization.id,
+              },
+            });
+
+          //* add to organizationPoints
+          const updateOrganizationPoints = await prisma.organization.update({
+            where: { id: createdOrganization.id },
+            data: {
+              totalRewardPoints:
+                usedReferredCode.refferCode.joiningRewardPoints.points,
+            },
+          });
+
+          //* now also get reward who owned the reffer code
+          const addOwneRewardHistory =
+            await prisma.organizationRewardPointsHistory.create({
+              data: {
+                pointHistoryType: 'IN',
+                rewardPointsId:
+                  usedReferredCode.refferCode.joiningRewardPoints.id,
+                points: usedReferredCode.refferCode.joiningRewardPoints.points,
+                organizationId: codeInfo.codeOwnerOrganization.id,
+              },
+            });
+
+          const updateCodeOwnerPoints = await prisma.organization.update({
+            where: { id: codeInfo.codeOwnerOrganization.id },
+            data: {
+              totalRewardPoints: {
+                increment:
+                  usedReferredCode.refferCode.joiningRewardPoints.points,
+              },
+            },
+          });
+        }
 
         const result = await prisma.user.update({
           where: { id: createdUser.id },

@@ -40,4 +40,5 @@ export type IRegisterInfo = {
     | 'ACCOUNTS_MANAGER'
     | 'PURCHASE_OFFICER';
   deliveryArea?: string;
+  refferCode?: string;
 };

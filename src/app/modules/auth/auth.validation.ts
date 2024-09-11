@@ -13,6 +13,7 @@ const userRegistrationValidation = z.object({
     organizationId: z.string().optional(),
     staffRole: z.enum([...staffRole] as [string, ...string[]]).optional(),
     deliveryArea: z.string().optional(),
+    refferCode: z.string().optional(),
   }),
 });
 

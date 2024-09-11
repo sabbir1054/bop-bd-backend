@@ -109,7 +109,7 @@ model Organization {
     PaymentSystemOptions     PaymentSystemOptions[]
     OrganizationRewardPoints OrganizationRewardPointsHistory[]
     PayCommission            PayCommission[]
-    totalRewardPoints        Float?
+    totalRewardPoints        Int                               @default(0)
     ClaimReward              ClaimReward[]
     memberShipCategory       MembershipCategory                @default(NORMAL)
     UsedReffereCode          UsedReffereCode[]
@@ -425,15 +425,21 @@ model RewardPoints {
     @@map("reward_points")
 }
 
+enum OrgaRewardPointHistoryType {
+    IN
+    OUT
+}
+
 model OrganizationRewardPointsHistory {
-    id             String       @id @default(uuid())
-    reward         RewardPoints @relation(fields: [rewardPointsId], references: [id])
-    rewardPointsId String
-    points         Int
-    organization   Organization @relation(fields: [organizationId], references: [id])
-    organizationId String
-    updatedAt      DateTime     @updatedAt
-    createdAt      DateTime     @default(now())
+    id               String                     @id @default(uuid())
+    pointHistoryType OrgaRewardPointHistoryType
+    reward           RewardPoints               @relation(fields: [rewardPointsId], references: [id])
+    rewardPointsId   String
+    points           Int
+    organization     Organization               @relation(fields: [organizationId], references: [id])
+    organizationId   String
+    updatedAt        DateTime                   @updatedAt
+    createdAt        DateTime                   @default(now())
 
     @@map("organization_rewad_points_history")
 }
