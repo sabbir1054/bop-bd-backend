@@ -51,38 +51,7 @@ const getOrganizationOutgoingOrders = catchAsync(
     });
   },
 );
-// const getOrganizationIncomingOrders = catchAsync(
-//   async (req: Request, res: Response) => {
-//     const { id: organizationId } = req.params;
-//     const options = pick(req.query, paginationFields);
-//     const result = await OrderService.getOrganizationIncomingOrders(
-//       organizationId,
-//       options,
-//     );
-//     sendResponse(res, {
-//       success: true,
-//       statusCode: httpStatus.OK,
-//       message: 'Incoming orders retrieve',
-//       data: result,
-//     });
-//   },
-// );
-// const getOrganizationOutgoingOrders = catchAsync(
-//   async (req: Request, res: Response) => {
-//     const { id: organizationId } = req.params;
-//     const options = pick(req.query, paginationFields);
-//     const result = await OrderService.getOrganizationOutgoingOrders(
-//       organizationId,
-//       options,
-//     );
-//     sendResponse(res, {
-//       success: true,
-//       statusCode: httpStatus.OK,
-//       message: 'Outgoing orders retrieve',
-//       data: result,
-//     });
-//   },
-// );
+
 const updateOrderStatus = catchAsync(async (req: Request, res: Response) => {
   const { id: userId, role } = req.user as any;
   const { orderId } = req.params;
