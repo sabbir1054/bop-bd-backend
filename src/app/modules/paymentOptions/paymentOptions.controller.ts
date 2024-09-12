@@ -19,17 +19,7 @@ const createNew = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
-const getAll = catchAsync(async (req: Request, res: Response) => {
-  const { id: userId, role } = req.user as any;
 
-  const result = await PaymentSystemOptionsService.getAll(userId, role);
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: 'Payment options retrieve',
-    data: result,
-  });
-});
 const getSingle = catchAsync(async (req: Request, res: Response) => {
   const result = await PaymentSystemOptionsService.getSingle(req.params.id);
   sendResponse(res, {
@@ -76,7 +66,6 @@ const deleteSingle = catchAsync(async (req: Request, res: Response) => {
 
 export const PaymentOptionsController = {
   createNew,
-  getAll,
   getSingle,
   updateSingle,
   deleteSingle,

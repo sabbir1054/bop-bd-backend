@@ -4,15 +4,6 @@ import ApiError from '../../../errors/ApiError';
 import prisma from '../../../shared/prisma';
 
 const createNew = async (payload: Commission): Promise<Commission> => {
-  if (payload.commissionType === 'REFERRED_MEMBER') {
-    if (!payload.ref_mem_validity) {
-      throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        'Need referred member  commission validity day ',
-      );
-    }
-  }
-
   const isExist = await prisma.commission.findFirst({
     where: {
       AND: [

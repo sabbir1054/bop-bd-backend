@@ -7,8 +7,6 @@ const commissionCreateValidation = z.object({
       required_error: 'Commission type is required',
     }),
     percentage: z.number({ required_error: 'Percentage number is required' }),
-    isValid: z.boolean({ required_error: 'Is valid filed is required' }),
-    new_mem_validity: z.number().optional(),
     membershipCategory: z.enum(
       [...membershipCategory] as [string, ...string[]],
       { required_error: 'Membership category is required' },
@@ -28,7 +26,6 @@ const commissionUpdateValidation = z.object({
     isValid: z
       .boolean({ required_error: 'Is valid filed is required' })
       .optional(),
-    new_mem_validity: z.number().optional(),
     membershipCategory: z
       .enum([...membershipCategory] as [string, ...string[]], {
         required_error: 'Membership category is required',

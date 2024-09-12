@@ -40,25 +40,6 @@ const createNew = async (
   return result;
 };
 
-const getAll = async (userId: string, payload: PaymentSystemOptions) => {
-  const organizationInfo = await prisma.user.findUnique({
-    where: { id: userId },
-    include: { organization: { include: { BusinessType: true } } },
-  });
-
-  if (!organizationInfo) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
-  }
-
-  const result = await prisma.paymentSystemOptions.create({
-    data: payload,
-    include: {
-      organization: { include: { BusinessType: true } },
-    },
-  });
-  return result;
-};
-
 const getSingle = async (paymentOptionId: string) => {
   const result = await prisma.paymentSystemOptions.findUnique({
     where: { id: paymentOptionId },
@@ -129,7 +110,6 @@ const deleteSingle = async (
 
 export const PaymentSystemOptionsService = {
   createNew,
-  getAll,
   getSingle,
   updateSingle,
   deleteSingle,

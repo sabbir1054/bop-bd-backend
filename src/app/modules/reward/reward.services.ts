@@ -27,12 +27,9 @@ const createNew = async (payload: IRewardPoints): Promise<RewardPoints> => {
   if (!validDays) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Valid days not found');
   }
-  const newData = { validDays: validDays.validDays, ...payload };
-  if (!newData.validDays) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Valid days not found');
-  }
+
   const result = await prisma.rewardPoints.create({
-    data: newData,
+    data: payload,
   });
   return result;
 };

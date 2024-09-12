@@ -4,8 +4,8 @@ import auth from '../../middlewares/auth';
 import { PaymentOptionsController } from './paymentOptions.controller';
 
 const router = express.Router();
-router.get(
-  '/all',
+router.post(
+  '/create',
   auth(
     ENUM_USER_ROLE.DEALER,
     ENUM_USER_ROLE.IMPORTER,
@@ -14,8 +14,9 @@ router.get(
     ENUM_USER_ROLE.STAFF,
     ENUM_USER_ROLE.WHOLESALER,
   ),
-  PaymentOptionsController.getAll,
+  PaymentOptionsController.createNew,
 );
+
 router.get(
   '/:id',
   auth(

@@ -112,7 +112,7 @@ model Organization {
     totalRewardPoints        Int                               @default(0)
     ClaimReward              ClaimReward[]
     memberShipCategory       MembershipCategory                @default(NORMAL)
-    UsedReffereCode          UsedReffereCode[]
+    UsedReffereCode          UsedReffereCode?
 
     @@map("organizations")
 }
@@ -357,7 +357,7 @@ model UsedReffereCode {
     updatedAt      DateTime     @updatedAt
     createdAt      DateTime     @default(now())
     refferedCodeId String
-    organizationId String
+    organizationId String       @unique
 
     @@map("used_refferCode")
 }
@@ -421,7 +421,6 @@ model RewardPoints {
     id                       String                            @id @default(uuid())
     rewardType               RewardPointsType
     membershipCategory       MembershipCategory
-    validDays                Int
     points                   Int                               @default(0)
     updatedAt                DateTime                          @updatedAt
     createdAt                DateTime                          @default(now())
