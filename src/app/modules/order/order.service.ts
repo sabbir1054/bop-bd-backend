@@ -22,7 +22,6 @@ const orderCreate = async (
   userId: string,
   userRole: string,
   orderData: IOrderCreate,
-  refferCode: string,
 ): Promise<Order[]> => {
   const { shipping_address } = orderData;
   let cartId = null;
