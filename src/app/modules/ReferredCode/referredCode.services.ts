@@ -109,6 +109,25 @@ const createNew = async (
           'Buying Reward info not found',
         );
       }
+      const sellingRewardInfo = await prisma.rewardPoints.findFirst({
+        where: {
+          AND: [
+            {
+              membershipCategory:
+                organizationInfo.organization.memberShipCategory,
+            },
+            {
+              rewardType: 'SELLING',
+            },
+          ],
+        },
+      });
+      if (!sellingRewardInfo) {
+        throw new ApiError(
+          httpStatus.NOT_FOUND,
+          'Buying Reward info not found',
+        );
+      }
 
       //* get the validity day
 
@@ -144,11 +163,16 @@ const createNew = async (
         codeOwnerorganizationId: payload.codeOwnerorganizationId,
         joiningRewardPointsId: joiningRewardInfo?.id,
         buyingRewardPointsId: buyingRewardInfo?.id,
+        sellingRewardPointsId: sellingRewardInfo?.id,
       };
       if (!newData.code) {
         throw new ApiError(httpStatus.BAD_REQUEST, 'Code not genaret');
       }
-      if (!newData.buyingRewardPointsId || !newData.joiningRewardPointsId) {
+      if (
+        !newData.buyingRewardPointsId ||
+        !newData.joiningRewardPointsId ||
+        !newData.sellingRewardPointsId
+      ) {
         throw new ApiError(httpStatus.NOT_FOUND, 'Reward info not found');
       }
       const result = await prisma.refferedCode.create({

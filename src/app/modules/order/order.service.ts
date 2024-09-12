@@ -4,6 +4,7 @@ import ApiError from '../../../errors/ApiError';
 import { orderCodeGenerator } from '../../../helpers/orderIdcodeGenerator';
 import { generateOTP, sendOTP } from '../../../helpers/otpHelpers';
 import { paginationHelpers } from '../../../helpers/paginationHelper';
+import { isCodeValid } from '../../../helpers/referCodeValidity';
 import { IGenericResponse } from '../../../interfaces/common';
 import { IPaginationOptions } from '../../../interfaces/pagination';
 import prisma from '../../../shared/prisma';
@@ -21,9 +22,12 @@ const orderCreate = async (
   userId: string,
   userRole: string,
   orderData: IOrderCreate,
+  refferCode: string,
 ): Promise<Order[]> => {
   const { shipping_address } = orderData;
   let cartId = null;
+
+  // Determine the user's role and validate accordingly
   if (userRole === 'STAFF') {
     const isValidStaff = await prisma.staff.findUnique({
       where: { staffInfoId: userId },
@@ -58,10 +62,12 @@ const orderCreate = async (
     }
     cartId = isValidUser?.organization?.cart[0].id;
   }
+
   if (!cartId) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Cart information not found');
   }
 
+  // Process the order in a transaction
   const result = await prisma.$transaction(async prisma => {
     // Fetch cart details including items
     const cart = await prisma.cart.findUnique({
@@ -109,6 +115,7 @@ const orderCreate = async (
         id: true,
         price: true,
         discount_price: true,
+        stock: true, // Include stock to check availability
       },
     });
 
@@ -133,7 +140,7 @@ const orderCreate = async (
       {} as { [key: string]: typeof validCartItems },
     );
 
-    const createdOrders = [];
+    const createdOrders: any = [];
 
     // Create separate orders for each product owner
     for (const [ownerId, items] of Object.entries(groupedByOwner)) {
@@ -191,24 +198,125 @@ const orderCreate = async (
         },
         include: {
           orderItems: true,
+          customer: true,
+          product_seller: {
+            include: { UsedReffereCode: { include: { refferCode: true } } },
+          },
         },
       });
 
       createdOrders.push(order);
+
+      // ** Reduce stock after order creation **
+      for (const item of orderItemsData) {
+        const product = products.find(p => p.id === item.productId);
+        if (!product) {
+          throw new ApiError(httpStatus.NOT_FOUND, 'Product info not found');
+        }
+        if (product.stock < item.quantity) {
+          throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            `Not enough stock for product ${item.productId}`,
+          );
+        }
+
+        // Reduce the stock of the product
+        await prisma.product.update({
+          where: {
+            id: item.productId,
+          },
+          data: {
+            stock: {
+              decrement: item.quantity, // Reduce stock by the quantity ordered
+            },
+          },
+        });
+      }
     }
 
-    // Empty the cart
+    // Empty the cart after order is placed
     await prisma.cartItem.deleteMany({
       where: {
         cartId: cart.id,
       },
     });
 
+    //! calculate reward and commission
+
+    const setCommissionAndReward = await createdOrders?.map(
+      async (order: any) => {
+        const owner = order.product_seller;
+        const customer = order.customer;
+        const isValid = isCodeValid(
+          new Date(owner.usedReferredCode.refercode.validUntil),
+        );
+        let ownerCommissionType = 'NORMAL';
+        if (isValid && owner.usedReferredCode.refercode.isValid) {
+          ownerCommissionType = 'REFERRED_MEMBER';
+        }
+
+        const commissionInfo = await prisma.commission.findFirst({
+          where: {
+            AND: [
+              { membershipCategory: order.product_seller.memberShipCategory },
+              {
+                commissionType:
+                  ownerCommissionType === 'NORMAL'
+                    ? 'NORMAL'
+                    : 'REFERRED_MEMBER',
+              },
+            ],
+          },
+        });
+        if (!commissionInfo) {
+          throw new ApiError(httpStatus.NOT_FOUND, 'Commission info not found');
+        }
+        const calculatedCommission =
+          order.total * (commissionInfo.percentage / 100);
+        const createOrderComissionHistory =
+          await prisma.order_Commission_History.create({
+            data: {
+              orderId: order.id,
+              commissionId: commissionInfo.id,
+              commissionAmount: calculatedCommission,
+            },
+          });
+
+        //! set reward
+        //         const ownerRewardInfo = await prisma.rewardPoints.findFirst({
+        //           where: {
+        //             AND: [
+        //               { rewardType: 'SELLING' },
+        //               { membershipCategory: owner.memberShipCategory },
+        //             ],
+        //           },
+        //         });
+        // const ownerRewardHistory = await prisma.organizationRewardPointsHistory.create({
+        //   data: {
+        //     pointHistoryType: 'IN',
+        //     rewardPointsId: ownerRewardInfo?.id,
+        //     points: usedReferredCode.refferCode.joiningRewardPoints.points,
+        //     organizationId: createdOrganization.id,
+        //   },
+        // });
+
+        const customerRewardInfo = await prisma.rewardPoints.findFirst({
+          where: {
+            AND: [
+              { rewardType: 'SELLING' },
+              { membershipCategory: owner.memberShipCategory },
+            ],
+          },
+        });
+      },
+    );
+
     return createdOrders;
   });
 
   return result;
 };
+
 //! here change it was owner id now it is organization id
 const getOrganizationIncomingOrders = async (
   organizationId: string,
@@ -352,144 +460,6 @@ const getOrganizationOutgoingOrders = async (
     data: result,
   };
 };
-
-// const getOrganizationIncomingOrders = async (
-//   organizationId: string,
-//   options: IPaginationOptions,
-// ): Promise<IGenericResponse<Order[]>> => {
-//   const isValidOrganization = await prisma.organization.findUnique({
-//     where: { id: organizationId },
-//   });
-//   if (!isValidOrganization) {
-//     throw new ApiError(httpStatus.NOT_FOUND, 'Organizaion info not found');
-//   }
-//   const ownerId = isValidOrganization.ownerId;
-//   const { limit, page, skip } = paginationHelpers.calculatePagination(options);
-//   const result = await prisma.order.findMany({
-//     where: { product_seller_id: ownerId },
-//     skip,
-//     take: limit,
-//     orderBy:
-//       options.sortBy && options.sortOrder
-//         ? { [options.sortBy]: options.sortOrder }
-//         : {
-//             createdAt: 'desc',
-//           },
-//     include: {
-//       assigndForDelivery: true,
-//       customer: {
-//         select: {
-//           id: true,
-//           role: true,
-//           email: true,
-//           license: true,
-//           nid: true,
-//           memberCategory: true,
-//           verified: true,
-//           organization: true,
-//           isMobileVerified: true,
-//           name: true,
-//           phone: true,
-//           address: true,
-//           photo: true,
-//           createdAt: true,
-//           updatedAt: true,
-//         },
-//       },
-//       orderItems: {
-//         include: {
-//           product: {
-//             include: {
-//               images: true,
-//             },
-//           },
-//         },
-//       },
-//     },
-//   });
-
-//   if (!result) {
-//     throw new ApiError(httpStatus.NOT_FOUND, 'User incoming order not found');
-//   }
-//   const total = await prisma.order.count({
-//     where: { product_seller_id: ownerId },
-//   });
-//   return {
-//     meta: {
-//       total,
-//       page,
-//       limit,
-//     },
-//     data: result,
-//   };
-// };
-// const getOrganizationOutgoingOrders = async (
-//   organizationId: string,
-//   options: IPaginationOptions,
-// ): Promise<IGenericResponse<Order[]>> => {
-//   const isValidOrganization = await prisma.organization.findUnique({
-//     where: { id: organizationId },
-//   });
-//   if (!isValidOrganization) {
-//     throw new ApiError(httpStatus.NOT_FOUND, 'Organizaion info not found');
-//   }
-//   const userId = isValidOrganization.ownerId;
-//   const { limit, page, skip } = paginationHelpers.calculatePagination(options);
-//   const result = await prisma.order.findMany({
-//     where: { customerId: userId },
-//     skip,
-//     take: limit,
-//     orderBy:
-//       options.sortBy && options.sortOrder
-//         ? { [options.sortBy]: options.sortOrder }
-//         : {
-//             createdAt: 'desc',
-//           },
-//     include: {
-//       assigndForDelivery: true,
-//       product_seller: {
-//         select: {
-//           id: true,
-//           role: true,
-//           email: true,
-//           license: true,
-//           nid: true,
-//           memberCategory: true,
-//           verified: true,
-//           organization: true,
-//           isMobileVerified: true,
-//           name: true,
-//           phone: true,
-//           address: true,
-//           photo: true,
-//           createdAt: true,
-//           updatedAt: true,
-//         },
-//       },
-//       orderItems: {
-//         include: {
-//           product: true,
-//         },
-//       },
-//     },
-//   });
-
-//   if (!result) {
-//     throw new ApiError(httpStatus.NOT_FOUND, 'User incoming order not found');
-//   }
-
-//   const total = await prisma.order.count({
-//     where: { customerId: userId },
-//   });
-//   return {
-//     meta: {
-//       total,
-//       page,
-//       limit,
-//     },
-//     data: result,
-//   };
-// };
 
 const updateOrderStatus = async (
   userId: string,
