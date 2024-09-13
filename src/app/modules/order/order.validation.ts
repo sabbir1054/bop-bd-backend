@@ -8,6 +8,13 @@ const orderCreateValidation = z.object({
     }),
   }),
 });
+const updateOrderPaymentOption = z.object({
+  body: z.object({
+    paymentOptionsId: z.string({
+      required_error: 'Payment option id required',
+    }),
+  }),
+});
 const updateOrderStatusValidation = z.object({
   body: z.object({
     status: z.enum([...OrderStatusConstant] as [string, ...string[]]),
@@ -30,4 +37,5 @@ export const OrderValidation = {
   updateOrderStatusValidation,
   updatePaymentStatusValidation,
   assignForDeliveryValidation,
+  updateOrderPaymentOption,
 };

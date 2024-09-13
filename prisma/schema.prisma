@@ -247,7 +247,7 @@ model Order {
     assigndForDelivery       AssigndForDelivery?
     OrderOtp                 OrderOtp[]
     Order_Commission_History Order_Commission_History[]
-    OrderPaymentInfo         OrderPaymentInfo[]
+    orderPaymentInfo         OrderPaymentInfo?
 
     @@map("orders")
 }
@@ -387,7 +387,7 @@ model PaymentSystemOptions {
 model OrderPaymentInfo {
     id                     String               @id @default(uuid())
     order                  Order                @relation(fields: [orderId], references: [id])
-    orderId                String
+    orderId                String               @unique
     updatedAt              DateTime             @updatedAt
     createdAt              DateTime             @default(now())
     paymentSystemOptions   PaymentSystemOptions @relation(fields: [paymentSystemOptionsId], references: [id])
