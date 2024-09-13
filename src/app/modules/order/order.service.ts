@@ -401,6 +401,9 @@ const updateOrderStatus = async (
     where: { id: orderId },
     include: {
       customer: { include: { owner: true } },
+      product_seller: {
+        include: { UsedReffereCode: { include: { refferCode: true } } },
+      },
     },
   });
 
@@ -503,12 +506,127 @@ const updateOrderStatus = async (
       });
       return result;
     } else {
-      //* order delivery update without verification by staff admin
-      const result = await prisma.order.update({
-        where: { id: orderId },
-        data: { orderStatus: status },
-      });
+      const result = await prisma.$transaction(async prisma => {
+        //! calculate reward and commission
+        //* start rearwd given
+        const owner = isExistOrder.product_seller;
+        const customer = isExistOrder.customer;
+        let isValid = false;
+        if (owner.UsedReffereCode) {
+          isValid = isCodeValid(
+            new Date(owner?.UsedReffereCode?.refferCode?.validUntil),
+          );
+        }
 
+        let ownerCommissionType = 'NORMAL';
+        if (isValid && owner?.UsedReffereCode?.refferCode?.isValid) {
+          ownerCommissionType = 'REFERRED_MEMBER';
+        }
+
+        const commissionInfo = await prisma.commission.findFirst({
+          where: {
+            AND: [
+              {
+                membershipCategory:
+                  isExistOrder.product_seller.memberShipCategory,
+              },
+              {
+                commissionType:
+                  ownerCommissionType === 'NORMAL'
+                    ? 'NORMAL'
+                    : 'REFERRED_MEMBER',
+              },
+            ],
+          },
+        });
+
+        if (!commissionInfo) {
+          throw new ApiError(httpStatus.NOT_FOUND, 'Commission info not found');
+        }
+
+        const calculatedCommission =
+          isExistOrder.total * (commissionInfo.percentage / 100);
+
+        await prisma.order_Commission_History.create({
+          data: {
+            orderId: isExistOrder.id,
+            commissionId: commissionInfo.id,
+            commissionAmount: calculatedCommission,
+          },
+        });
+        //* owner reward
+        const ownerRewardInfo = await prisma.rewardPoints.findFirst({
+          where: {
+            AND: [
+              { rewardType: 'SELLING' },
+              { membershipCategory: owner.memberShipCategory },
+            ],
+          },
+        });
+
+        if (!ownerRewardInfo?.points) {
+          throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            'No reward points defined',
+          );
+        }
+
+        await prisma.organizationRewardPointsHistory.create({
+          data: {
+            pointHistoryType: 'IN',
+            rewardPointsId: ownerRewardInfo?.id,
+            points: ownerRewardInfo?.points,
+            organizationId: owner.id,
+          },
+        });
+
+        await prisma.organization.update({
+          where: { id: owner.id },
+          data: {
+            totalRewardPoints: { increment: ownerRewardInfo?.points },
+          },
+        });
+
+        //* customer reward
+        const customerRewardInfo = await prisma.rewardPoints.findFirst({
+          where: {
+            AND: [
+              { rewardType: 'BUYING' },
+              { membershipCategory: customer.memberShipCategory },
+            ],
+          },
+        });
+
+        if (!customerRewardInfo?.points) {
+          throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            'No reward points defined',
+          );
+        }
+
+        await prisma.organizationRewardPointsHistory.create({
+          data: {
+            pointHistoryType: 'IN',
+            rewardPointsId: customerRewardInfo?.id,
+            points: customerRewardInfo?.points,
+            organizationId: customer.id,
+          },
+        });
+
+        await prisma.organization.update({
+          where: { id: customer.id },
+          data: {
+            totalRewardPoints: { increment: customerRewardInfo?.points },
+          },
+        });
+        //* order delivery update without verification by staff admin
+        const result = await prisma.order.update({
+          where: { id: orderId },
+          data: { orderStatus: status },
+        });
+
+        return result;
+      });
       return result;
     }
   } else {
