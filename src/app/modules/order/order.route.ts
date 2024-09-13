@@ -23,16 +23,20 @@ router.post(
   OrderController.orderCreate,
 );
 
-// router.get(
-//   '/incomingOrders/user/:id',
-//   auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
-//   OrderController.getUserIncomingOrders,
-// );
-// router.get(
-//   '/outgoingOrders/user/:id',
-//   auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
-//   OrderController.getUserOutgoingOrders,
-// );
+router.patch(
+  '/updateOrderPaymentOption',
+  auth(
+    ENUM_USER_ROLE.DEALER,
+    ENUM_USER_ROLE.IMPORTER,
+    ENUM_USER_ROLE.MANUFACTURER,
+    ENUM_USER_ROLE.WHOLESALER,
+    ENUM_USER_ROLE.RESELLER,
+    ENUM_USER_ROLE.STAFF,
+  ),
+  validateRequest(OrderValidation.updateOrderPaymentOption),
+  OrderController.updateOrderPaymentOptions,
+);
+
 router.get(
   '/incomingOrders/organization/:id',
   auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),

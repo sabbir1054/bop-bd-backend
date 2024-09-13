@@ -15,6 +15,7 @@ import {
 import {
   IDeliveryAssignData,
   IOrderCreate,
+  IUpdateOrderPaymentOptions,
   IVerificationDeliveryPayload,
 } from './order.interface';
 const orderCreate = async (
@@ -1136,6 +1137,89 @@ const getMyOrderForDelivery = async (userId: string) => {
   return result;
 };
 
+const updateOrderPaymentOptions = async (
+  userId: string,
+  userRole: string,
+  payload: IUpdateOrderPaymentOptions,
+) => {
+  if (userRole === 'STAFF') {
+    const userInfo = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+    });
+    if (!userInfo) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'User info not found');
+    }
+    const validStaff = ['STAFF_ADMIN', 'PURCHASE_OFFICER'];
+    if (!validStaff.includes(userInfo.role)) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Only accounts manager and admin staff and owner can delete Payment options',
+      );
+    }
+  }
+
+  const isOrderExist = await prisma.order.findUnique({
+    where: { id: payload.orderId },
+    include: {
+      customer: true,
+      product_seller: {
+        include: {
+          PaymentSystemOptions: true,
+        },
+      },
+      orderPaymentInfo: true,
+    },
+  });
+
+  if (!isOrderExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Order info not found');
+  }
+
+  const isPaymentOptionsExist = await prisma.paymentSystemOptions.findFirst({
+    where: {
+      AND: [
+        { id: payload.paymentSystemOptionsId },
+        { organizationId: isOrderExist.product_seller_id },
+      ],
+    },
+  });
+
+  if (!isPaymentOptionsExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Payment options not found');
+  }
+
+  if (isOrderExist.orderPaymentInfo) {
+    const findOrderPaymentInfo = await prisma.orderPaymentInfo.findFirst({
+      where: {
+        AND: [
+          { orderId: payload.orderId },
+          { paymentSystemOptionsId: payload.paymentSystemOptionsId },
+        ],
+      },
+    });
+    if (!findOrderPaymentInfo) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Options not found');
+    }
+    const result = await prisma.orderPaymentInfo.update({
+      where: { id: findOrderPaymentInfo.id },
+      data: { paymentSystemOptionsId: payload.paymentSystemOptionsId },
+      include: {
+        order: true,
+        paymentSystemOptions: true,
+      },
+    });
+    return result;
+  }
+  const result = await prisma.orderPaymentInfo.create({
+    data: {
+      orderId: payload.orderId,
+      paymentSystemOptionsId: payload.paymentSystemOptionsId,
+    },
+  });
+
+  return result;
+};
+
 export const OrderService = {
   orderCreate,
   updateOrderStatus,
@@ -1148,4 +1232,5 @@ export const OrderService = {
   verifyDeliveryOtp,
   assignForDelivery,
   getMyOrderForDelivery,
+  updateOrderPaymentOptions,
 };

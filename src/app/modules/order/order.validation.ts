@@ -10,8 +10,11 @@ const orderCreateValidation = z.object({
 });
 const updateOrderPaymentOption = z.object({
   body: z.object({
-    paymentOptionsId: z.string({
+    paymentSystemOptionsId: z.string({
       required_error: 'Payment option id required',
+    }),
+    orderId: z.string({
+      required_error: 'Order id required',
     }),
   }),
 });

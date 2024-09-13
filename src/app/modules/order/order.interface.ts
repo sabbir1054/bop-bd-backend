@@ -10,3 +10,7 @@ export interface IDeliveryAssignData {
   orderId: string;
   deliveryBoyId: string;
 }
+export type IUpdateOrderPaymentOptions = {
+  orderId: string;
+  paymentSystemOptionsId: string;
+};

@@ -174,7 +174,23 @@ const getMyOrderForDelivery = catchAsync(
     });
   },
 );
+const updateOrderPaymentOptions = catchAsync(
+  async (req: Request, res: Response) => {
+    const { id, role } = req.user as any;
+    const result = await OrderService.updateOrderPaymentOptions(
+      id,
+      role,
+      req.body,
+    );
 
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Order updated',
+      data: result,
+    });
+  },
+);
 export const OrderController = {
   getOrganizationOutgoingOrders,
   getOrganizationIncomingOrders,
@@ -187,4 +203,5 @@ export const OrderController = {
   verifyDeliveryOtp,
   assigndForDelivery,
   getMyOrderForDelivery,
+  updateOrderPaymentOptions,
 };
