@@ -242,107 +242,6 @@ const orderCreate = async (
       },
     });
 
-    //! calculate reward and commission
-    for (const order of createdOrders) {
-      const owner = order.product_seller;
-      const customer = order.customer;
-      const isValid = isCodeValid(
-        new Date(owner?.usedReferredCode?.refferCode?.validUntil),
-      );
-      let ownerCommissionType = 'NORMAL';
-      if (isValid && owner?.usedReferredCode?.refferCode?.isValid) {
-        ownerCommissionType = 'REFERRED_MEMBER';
-      }
-
-      const commissionInfo = await prisma.commission.findFirst({
-        where: {
-          AND: [
-            { membershipCategory: order.product_seller.memberShipCategory },
-            {
-              commissionType:
-                ownerCommissionType === 'NORMAL' ? 'NORMAL' : 'REFERRED_MEMBER',
-            },
-          ],
-        },
-      });
-
-      if (!commissionInfo) {
-        throw new ApiError(httpStatus.NOT_FOUND, 'Commission info not found');
-      }
-
-      const calculatedCommission =
-        order.total * (commissionInfo.percentage / 100);
-
-      await prisma.order_Commission_History.create({
-        data: {
-          orderId: order.id,
-          commissionId: commissionInfo.id,
-          commissionAmount: calculatedCommission,
-        },
-      });
-
-      //! set reward
-      //* owner reward
-      const ownerRewardInfo = await prisma.rewardPoints.findFirst({
-        where: {
-          AND: [
-            { rewardType: 'SELLING' },
-            { membershipCategory: owner.memberShipCategory },
-          ],
-        },
-      });
-
-      if (!ownerRewardInfo?.points) {
-        throw new ApiError(httpStatus.BAD_REQUEST, 'No reward points defined');
-      }
-
-      await prisma.organizationRewardPointsHistory.create({
-        data: {
-          pointHistoryType: 'IN',
-          rewardPointsId: ownerRewardInfo?.id,
-          points: ownerRewardInfo?.points,
-          organizationId: owner.id,
-        },
-      });
-
-      await prisma.organization.update({
-        where: { id: owner.id },
-        data: {
-          totalRewardPoints: { increment: ownerRewardInfo?.points },
-        },
-      });
-
-      //* customer reward
-      const customerRewardInfo = await prisma.rewardPoints.findFirst({
-        where: {
-          AND: [
-            { rewardType: 'BUYING' },
-            { membershipCategory: customer.memberShipCategory },
-          ],
-        },
-      });
-
-      if (!customerRewardInfo?.points) {
-        throw new ApiError(httpStatus.BAD_REQUEST, 'No reward points defined');
-      }
-
-      await prisma.organizationRewardPointsHistory.create({
-        data: {
-          pointHistoryType: 'IN',
-          rewardPointsId: customerRewardInfo?.id,
-          points: customerRewardInfo?.points,
-          organizationId: customer.id,
-        },
-      });
-
-      await prisma.organization.update({
-        where: { id: customer.id },
-        data: {
-          totalRewardPoints: { increment: customerRewardInfo?.points },
-        },
-      });
-    }
-
     return createdOrders;
   });
 
@@ -661,6 +560,9 @@ const verifyDeliveryOtp = async (
     where: { id: payload.orderId },
     include: {
       customer: { include: { owner: true } },
+      product_seller: {
+        include: { UsedReffereCode: { include: { refferCode: true } } },
+      },
     },
   });
 
@@ -692,6 +594,110 @@ const verifyDeliveryOtp = async (
         where: { orderId: isExistOrder.id, phone: customerPhone },
         data: {
           isVerified: true,
+        },
+      });
+      //! calculate reward and commission
+      //* start rearwd given
+      const owner = isExistOrder.product_seller;
+      const customer = isExistOrder.customer;
+      let isValid = false;
+      if (owner.UsedReffereCode) {
+        isValid = isCodeValid(
+          new Date(owner?.UsedReffereCode?.refferCode?.validUntil),
+        );
+      }
+
+      let ownerCommissionType = 'NORMAL';
+      if (isValid && owner?.UsedReffereCode?.refferCode?.isValid) {
+        ownerCommissionType = 'REFERRED_MEMBER';
+      }
+
+      const commissionInfo = await prisma.commission.findFirst({
+        where: {
+          AND: [
+            {
+              membershipCategory:
+                isExistOrder.product_seller.memberShipCategory,
+            },
+            {
+              commissionType:
+                ownerCommissionType === 'NORMAL' ? 'NORMAL' : 'REFERRED_MEMBER',
+            },
+          ],
+        },
+      });
+
+      if (!commissionInfo) {
+        throw new ApiError(httpStatus.NOT_FOUND, 'Commission info not found');
+      }
+
+      const calculatedCommission =
+        isExistOrder.total * (commissionInfo.percentage / 100);
+
+      await prisma.order_Commission_History.create({
+        data: {
+          orderId: isExistOrder.id,
+          commissionId: commissionInfo.id,
+          commissionAmount: calculatedCommission,
+        },
+      });
+      //* owner reward
+      const ownerRewardInfo = await prisma.rewardPoints.findFirst({
+        where: {
+          AND: [
+            { rewardType: 'SELLING' },
+            { membershipCategory: owner.memberShipCategory },
+          ],
+        },
+      });
+
+      if (!ownerRewardInfo?.points) {
+        throw new ApiError(httpStatus.BAD_REQUEST, 'No reward points defined');
+      }
+
+      await prisma.organizationRewardPointsHistory.create({
+        data: {
+          pointHistoryType: 'IN',
+          rewardPointsId: ownerRewardInfo?.id,
+          points: ownerRewardInfo?.points,
+          organizationId: owner.id,
+        },
+      });
+
+      await prisma.organization.update({
+        where: { id: owner.id },
+        data: {
+          totalRewardPoints: { increment: ownerRewardInfo?.points },
+        },
+      });
+
+      //* customer reward
+      const customerRewardInfo = await prisma.rewardPoints.findFirst({
+        where: {
+          AND: [
+            { rewardType: 'BUYING' },
+            { membershipCategory: customer.memberShipCategory },
+          ],
+        },
+      });
+
+      if (!customerRewardInfo?.points) {
+        throw new ApiError(httpStatus.BAD_REQUEST, 'No reward points defined');
+      }
+
+      await prisma.organizationRewardPointsHistory.create({
+        data: {
+          pointHistoryType: 'IN',
+          rewardPointsId: customerRewardInfo?.id,
+          points: customerRewardInfo?.points,
+          organizationId: customer.id,
+        },
+      });
+
+      await prisma.organization.update({
+        where: { id: customer.id },
+        data: {
+          totalRewardPoints: { increment: customerRewardInfo?.points },
         },
       });
 
@@ -1214,6 +1220,10 @@ const updateOrderPaymentOptions = async (
     data: {
       orderId: payload.orderId,
       paymentSystemOptionsId: payload.paymentSystemOptionsId,
+    },
+    include: {
+      order: true,
+      paymentSystemOptions: true,
     },
   });
 
