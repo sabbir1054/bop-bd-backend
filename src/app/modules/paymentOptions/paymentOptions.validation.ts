@@ -8,9 +8,10 @@ const createPaymentOptionsValidation = z.object({
       { required_error: 'Payment category is required' },
     ),
     methodName: z.string({ required_error: 'Method Name is required' }),
-    accountNumber: z.string({ required_error: 'Account number is required' }),
+    accountNumber: z
+      .string({ required_error: 'Account number is required' })
+      .optional(),
     description: z.string().optional(),
-    organizationId: z.string({ required_error: 'Organization id is required' }),
   }),
 });
 const updatePaymentOptionsValidation = z.object({
