@@ -6,7 +6,10 @@ import { OrganizationValidation } from './organization.validation';
 import { OrganizationController } from './organizations.controller';
 import { FileUploadHelper } from '../../../helpers/fileUpload';
 import config from '../../../config';
-
+import path from 'path';
+import fs from 'fs';
+import ApiError from '../../../errors/ApiError';
+import httpStatus from 'http-status';
 const router = express.Router();
 
 router.get(
@@ -76,4 +79,21 @@ router.patch(
     return OrganizationController.updateOrganization(req, res, next);
   },
 );
+
+router.get('/photo/:fileName', (req: Request, res: Response) => {
+  const filePath = path.join(
+    process.cwd(),
+    'uploads/organizationPhoto',
+    path.basename(req.params.fileName),
+  );
+  // Check if the file exists
+  fs.access(filePath, fs.constants.F_OK, err => {
+    if (err) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Image not found');
+    }
+    // Send the image file
+    res.sendFile(filePath);
+  });
+});
+
 export const OrganizationRoutes = router;
