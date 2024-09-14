@@ -4,7 +4,7 @@ import httpStatus from 'http-status';
 import path from 'path';
 import ApiError from '../../../errors/ApiError';
 import prisma from '../../../shared/prisma';
-import { IRangeOfDate } from './organization.interface';
+import { IRangeOfDate, IupdateOrgaCategory } from './organization.interface';
 const getDashboardMatrics = async (userId: string, userRole: string) => {
   let ownerId = null;
 
@@ -393,10 +393,31 @@ const removePicture = async (
   return result;
 };
 
+const updateOrganizationMembershipCategory = async (
+  payload: IupdateOrgaCategory,
+) => {
+  const isExist = await prisma.organization.findUnique({
+    where: { id: payload.organizationId },
+  });
+  if (!isExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
+  }
+
+  const result = await prisma.organization.update({
+    where: { id: payload.organizationId },
+    data: {
+      memberShipCategory: payload.memberShipCategory,
+    },
+  });
+
+  return result;
+};
+
 export const OrganizaionServices = {
   getDashboardMatrics,
   getOutgoingOrdersByDate,
   getIncomingOrdersByDate,
   updateOrganization,
   removePicture,
+  updateOrganizationMembershipCategory,
 };

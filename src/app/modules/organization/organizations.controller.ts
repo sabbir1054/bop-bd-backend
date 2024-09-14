@@ -65,6 +65,19 @@ const updateOrganization = catchAsync(
     });
   },
 );
+const updateOrganizationMembershipCategory = catchAsync(
+  async (req: Request, res: Response) => {
+    const result =
+      await OrganizaionServices.updateOrganizationMembershipCategory(req.body);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Organization updated ',
+      data: result,
+    });
+  },
+);
 const removePicture = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id, role } = req.user as any;
@@ -83,4 +96,5 @@ export const OrganizationController = {
   getIncomingOrdersByDate,
   updateOrganization,
   removePicture,
+  updateOrganizationMembershipCategory,
 };

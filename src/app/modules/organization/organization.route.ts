@@ -105,4 +105,10 @@ router.delete(
   ),
   OrganizationController.removePicture,
 );
+router.patch(
+  '/changeMembershipCategory',
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  validateRequest(OrganizationValidation.UpdateOrganizationMembership),
+  OrganizationController.updateOrganizationMembershipCategory,
+);
 export const OrganizationRoutes = router;
