@@ -1,15 +1,15 @@
 import express, { NextFunction, Request, Response } from 'express';
+import fs from 'fs';
+import httpStatus from 'http-status';
+import path from 'path';
+import config from '../../../config';
 import { ENUM_USER_ROLE } from '../../../enums/user';
+import ApiError from '../../../errors/ApiError';
+import { FileUploadHelper } from '../../../helpers/fileUpload';
 import auth from '../../middlewares/auth';
 import validateRequest from '../../middlewares/validateRequest';
 import { OrganizationValidation } from './organization.validation';
 import { OrganizationController } from './organizations.controller';
-import { FileUploadHelper } from '../../../helpers/fileUpload';
-import config from '../../../config';
-import path from 'path';
-import fs from 'fs';
-import ApiError from '../../../errors/ApiError';
-import httpStatus from 'http-status';
 const router = express.Router();
 
 router.get(
@@ -55,12 +55,10 @@ router.post(
 router.patch(
   '/updateOrganizationPhoto',
   auth(
-    ENUM_USER_ROLE.ADMIN,
     ENUM_USER_ROLE.DEALER,
     ENUM_USER_ROLE.IMPORTER,
     ENUM_USER_ROLE.MANUFACTURER,
     ENUM_USER_ROLE.RESELLER,
-    ENUM_USER_ROLE.SUPER_ADMIN,
     ENUM_USER_ROLE.WHOLESALER,
     ENUM_USER_ROLE.STAFF,
   ),
@@ -95,5 +93,16 @@ router.get('/photo/:fileName', (req: Request, res: Response) => {
     res.sendFile(filePath);
   });
 });
-
+router.delete(
+  '/removePicture',
+  auth(
+    ENUM_USER_ROLE.DEALER,
+    ENUM_USER_ROLE.IMPORTER,
+    ENUM_USER_ROLE.MANUFACTURER,
+    ENUM_USER_ROLE.RESELLER,
+    ENUM_USER_ROLE.WHOLESALER,
+    ENUM_USER_ROLE.STAFF,
+  ),
+  OrganizationController.removePicture,
+);
 export const OrganizationRoutes = router;

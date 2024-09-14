@@ -321,10 +321,82 @@ const updateOrganization = async (req: Request, next: NextFunction) => {
     }
   }
 };
+const removePicture = async (
+  userId: string,
+  userRole: string,
+  next: NextFunction,
+) => {
+  const deletePhoto = (photoLink: string) => {
+    // Delete the image file from the server
+    const filePath = path.join(
+      process.cwd(),
+      'uploads/organizationPhoto',
+      path.basename(photoLink),
+    );
+    fs.unlink(filePath, err => {
+      if (err) {
+        next(
+          new ApiError(
+            httpStatus.BAD_REQUEST,
+            `Failed to delete previous image, try again for update,photo `,
+          ),
+        );
+      }
+    });
+  };
+
+  let orgId = null;
+  if (userRole === 'STAFF') {
+    const userInfo = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+    });
+    if (!userInfo) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'User info not found');
+    }
+    const validStaff = ['STAFF_ADMIN'];
+    if (!validStaff.includes(userInfo.role)) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Only admin staff and owner can delete Payment options',
+      );
+    }
+    orgId = userInfo.organizationId;
+  } else {
+    const userInfo = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!userInfo) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'User info not found');
+    }
+
+    orgId = userInfo.organizationId;
+  }
+  if (!orgId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Organization info not found');
+  }
+
+  const isOrganizationExist = await prisma.organization.findUnique({
+    where: { id: orgId },
+  });
+  if (!isOrganizationExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
+  }
+  if (isOrganizationExist.photo) {
+    deletePhoto(isOrganizationExist.photo);
+  }
+  const result = await prisma.organization.update({
+    where: { id: orgId },
+    data: {
+      photo: '',
+    },
+  });
+  return result;
+};
 
 export const OrganizaionServices = {
   getDashboardMatrics,
   getOutgoingOrdersByDate,
   getIncomingOrdersByDate,
   updateOrganization,
+  removePicture,
 };

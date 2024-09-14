@@ -65,10 +65,22 @@ const updateOrganization = catchAsync(
     });
   },
 );
-
+const removePicture = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { id, role } = req.user as any;
+    const result = await OrganizaionServices.removePicture(id, role, next);
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Organization photo remove ',
+      data: result,
+    });
+  },
+);
 export const OrganizationController = {
   getDashboardMatrics,
   getOutgoingOrdersByDate,
   getIncomingOrdersByDate,
   updateOrganization,
+  removePicture,
 };
