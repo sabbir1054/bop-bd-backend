@@ -1,8 +1,10 @@
+import { NextFunction, Request } from 'express';
+import fs from 'fs';
 import httpStatus from 'http-status';
+import path from 'path';
 import ApiError from '../../../errors/ApiError';
 import prisma from '../../../shared/prisma';
 import { IRangeOfDate } from './organization.interface';
-
 const getDashboardMatrics = async (userId: string, userRole: string) => {
   let ownerId = null;
 
@@ -211,9 +213,118 @@ const getIncomingOrdersByDate = async (
     };
   });
 };
+const updateOrganization = async (req: Request, next: NextFunction) => {
+  const deletePhoto = (photoLink: string) => {
+    // Delete the image file from the server
+    const filePath = path.join(
+      process.cwd(),
+      'uploads/organizationPhoto',
+      path.basename(photoLink),
+    );
+    fs.unlink(filePath, err => {
+      if (err) {
+        deletePhoto(req.body.photo);
+        next(
+          new ApiError(
+            httpStatus.BAD_REQUEST,
+            `Failed to delete previous image, try again for update,photo `,
+          ),
+        );
+      }
+    });
+  };
+  const { photo, name } = req.body;
+  const { id: userId, role: userRole } = req.user as any;
+  let orgId = null;
+  if (userRole === 'STAFF') {
+    const userInfo = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+    });
+    if (!userInfo) {
+      if (photo) {
+        deletePhoto(photo);
+      }
+
+      throw new ApiError(httpStatus.NOT_FOUND, 'User info not found');
+    }
+    const validStaff = ['STAFF_ADMIN'];
+    if (!validStaff.includes(userInfo.role)) {
+      if (photo) {
+        deletePhoto(photo);
+      }
+
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Only admin staff and owner can delete Payment options',
+      );
+    }
+    orgId = userInfo.organizationId;
+  } else {
+    const userInfo = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!userInfo) {
+      if (photo) {
+        deletePhoto(photo);
+      }
+
+      throw new ApiError(httpStatus.NOT_FOUND, 'User info not found');
+    }
+
+    orgId = userInfo.organizationId;
+  }
+  if (!orgId) {
+    if (photo) {
+      deletePhoto(photo);
+    }
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Organization info not found');
+  }
+
+  const isOrganizationExist = await prisma.organization.findUnique({
+    where: { id: orgId },
+  });
+  if (!isOrganizationExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
+  }
+  if (isOrganizationExist.photo && photo) {
+    deletePhoto(isOrganizationExist.photo);
+  }
+
+  if (photo && name) {
+    const result = await prisma.organization.update({
+      where: { id: orgId },
+      data: {
+        photo: photo,
+        name: name,
+      },
+    });
+    return result;
+  } else {
+    if (photo) {
+      const result = await prisma.organization.update({
+        where: { id: orgId },
+        data: {
+          photo: photo,
+        },
+      });
+      return result;
+    }
+
+    if (name) {
+      const result = await prisma.organization.update({
+        where: { id: orgId },
+        data: {
+          name: name,
+        },
+      });
+      return result;
+    }
+  }
+};
 
 export const OrganizaionServices = {
   getDashboardMatrics,
   getOutgoingOrdersByDate,
   getIncomingOrdersByDate,
+  updateOrganization,
 };

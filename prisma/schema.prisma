@@ -93,6 +93,7 @@ model OrderOtp {
 model Organization {
     id                       String                            @id @default(uuid())
     name                     String?
+    photo                    String?
     owner                    User                              @relation(fields: [ownerId], references: [id])
     ownerId                  String                            @unique
     staff                    Staff[]

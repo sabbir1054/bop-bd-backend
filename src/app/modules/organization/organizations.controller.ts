@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import httpStatus from 'http-status';
 import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
@@ -53,8 +53,22 @@ const getIncomingOrdersByDate = catchAsync(
   },
 );
 
+const updateOrganization = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const result = await OrganizaionServices.updateOrganization(req, next);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Organization updated ',
+      data: result,
+    });
+  },
+);
+
 export const OrganizationController = {
   getDashboardMatrics,
   getOutgoingOrdersByDate,
   getIncomingOrdersByDate,
+  updateOrganization,
 };

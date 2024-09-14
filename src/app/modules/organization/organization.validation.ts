@@ -6,7 +6,10 @@ const getOrderByDate = z.object({
     endDate: z.string({ required_error: 'End date is required' }),
   }),
 });
-
+const UpdateOrganizationNamePhotoValidation = z.object({
+  name: z.string().optional(),
+});
 export const OrganizationValidation = {
   getOrderByDate,
+  UpdateOrganizationNamePhotoValidation,
 };
