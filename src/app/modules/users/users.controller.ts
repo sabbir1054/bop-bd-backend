@@ -1,8 +1,11 @@
 import { Staff, User } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
 import httpStatus from 'http-status';
+import { paginationFields } from '../../../constants/paginationFields';
 import catchAsync from '../../../shared/catchAsync';
+import pick from '../../../shared/pick';
 import sendResponse from '../../../shared/sendResponse';
+import { userFilterableFields } from './user.constant';
 import { UserServices } from './users.service';
 
 const updateUserProfile = catchAsync(
@@ -47,8 +50,10 @@ const removeProfilePicture = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAll = catchAsync(async (req: Request, res: Response) => {
-  const result = await UserServices.getAll();
-  sendResponse<Partial<User>[]>(res, {
+  const filters = pick(req.query, userFilterableFields);
+  const options = pick(req.query, paginationFields);
+  const result = await UserServices.getAll(filters, options);
+  sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: 'Users retrieve',

@@ -23,3 +23,12 @@ export type IUpdateStaffPayload = {
     | 'ACCOUNTS_MANAGER'
     | 'PURCHASE_OFFICER';
 };
+export const userSearchableFields: string[] = ['phone'];
+
+export const userFilterableFields: string[] = [
+  'searchTerm',
+  'verified',
+  'isMobileVerified',
+  'isEmailVerified',
+  'isNidVerified',
+];

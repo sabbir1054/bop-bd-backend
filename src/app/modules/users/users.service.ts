@@ -4,8 +4,11 @@ import fs from 'fs';
 import httpStatus from 'http-status';
 import path from 'path';
 import ApiError from '../../../errors/ApiError';
+import { paginationHelpers } from '../../../helpers/paginationHelper';
+import { IGenericResponse } from '../../../interfaces/common';
+import { IPaginationOptions } from '../../../interfaces/pagination';
 import prisma from '../../../shared/prisma';
-import { IUpdateStaffPayload } from './user.constant';
+import { IUpdateStaffPayload, userSearchableFields } from './user.constant';
 import { IStaffRole } from './user.interface';
 const updateUserProfile = async (req: Request, next: NextFunction) => {
   const { id: userId } = req.user as any;
@@ -157,8 +160,67 @@ const removeProfilePicture = async (userId: string): Promise<Partial<User>> => {
   return result;
 };
 
-const getAll = async (): Promise<Partial<User>[]> => {
+const getAll = async (filters: any, options: IPaginationOptions) => {
+  const { limit, page, skip } = paginationHelpers.calculatePagination(options);
+  const {
+    searchTerm,
+    phone,
+    verified,
+    isMobileVerified,
+    isNidVerified,
+    ...filtersData
+  } = filters;
+  const andConditions: any[] = [];
+
+  if (searchTerm) {
+    andConditions.push({
+      OR: userSearchableFields.map(field => ({
+        [field]: {
+          contains: searchTerm,
+          mode: 'insensitive',
+        },
+      })),
+    });
+  }
+
+  if (Object.keys(filtersData).length) {
+    const conditions = Object.entries(filtersData).map(([field, value]) => ({
+      [field]: value,
+    }));
+    andConditions.push({ AND: conditions });
+  }
+  if (verified === 'true') {
+    andConditions.push({ AND: { verified: true } });
+  }
+  if (verified === 'false') {
+    andConditions.push({ AND: { verified: false } });
+  }
+  if (isMobileVerified === 'true') {
+    andConditions.push({ AND: { isMobileVerified: true } });
+  }
+  if (isMobileVerified === 'false') {
+    andConditions.push({ AND: { isMobileVerified: false } });
+  }
+  if (isNidVerified === 'true') {
+    andConditions.push({ AND: { isNidVerified: true } });
+  }
+  if (isNidVerified === 'false') {
+    andConditions.push({ AND: { isNidVerified: false } });
+  }
+
+  const whereConditions =
+    andConditions.length > 0 ? { AND: andConditions } : {};
+
   const result = await prisma.user.findMany({
+    where: whereConditions,
+    skip,
+    take: limit,
+    orderBy:
+      options.sortBy && options.sortOrder
+        ? { [options.sortBy]: options.sortOrder }
+        : {
+            createdAt: 'desc',
+          },
     select: {
       id: true,
       role: true,
@@ -173,12 +235,24 @@ const getAll = async (): Promise<Partial<User>[]> => {
       email: true,
       phone: true,
       address: true,
+      isNidVerified: true,
       photo: true,
       license: true,
       nid: true,
     },
   });
-  return result;
+  const total = await prisma.user.count({
+    where: whereConditions,
+  });
+
+  return {
+    meta: {
+      total,
+      page,
+      limit,
+    },
+    data: result,
+  };
 };
 
 const getSingle = async (
