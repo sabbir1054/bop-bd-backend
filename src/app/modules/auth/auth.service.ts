@@ -531,7 +531,7 @@ const userLogin = async (payload: ILoginInfo): Promise<ILoginResponse> => {
   const refreshToken = jwtHelpers.createToken(
     { id, role, phone },
     config.jwt.refresh_secret as Secret,
-    config.jwt.refresh_expires_in as string,
+    payload.isRemember ? '30d' : (config.jwt.refresh_expires_in as string),
   );
 
   return { accessToken, refreshToken };

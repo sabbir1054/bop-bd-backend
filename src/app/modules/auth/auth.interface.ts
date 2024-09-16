@@ -1,6 +1,7 @@
 export type ILoginInfo = {
   phone: string;
   password: string;
+  isRemember?: boolean;
 };
 
 export type ILoginResponse = {

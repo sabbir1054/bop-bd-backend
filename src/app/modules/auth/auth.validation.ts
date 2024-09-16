@@ -21,6 +21,7 @@ const userLoginValidation = z.object({
   body: z.object({
     phone: z.string({ required_error: 'Phone number is required' }),
     password: z.string({ required_error: 'Password is required' }),
+    isRemember: z.boolean().optional(),
   }),
 });
 const userPasswordValidation = z.object({
