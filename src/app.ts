@@ -1,14 +1,29 @@
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { Application, NextFunction, Request, Response } from 'express';
 import httpStatus from 'http-status';
-import routes from './app/routes';
-import path from 'path';
-import cookieParser from 'cookie-parser';
 import globalErrorHandler from './app/middlewares/globalErrorHandler';
+import routes from './app/routes';
 
 const app: Application = express();
 
-app.use(cors({ credentials: true }));
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://admin-portal.bopbd.com.bd',
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+  }),
+);
 app.use(cookieParser());
 
 //parser

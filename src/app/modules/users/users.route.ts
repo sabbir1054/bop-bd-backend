@@ -115,6 +115,7 @@ router.post(
   UserController.userVerifiedStatusChange,
 );
 
+//users/updateStaffRole
 router.delete(
   '/deleteStaff/:staffId',
   auth(
