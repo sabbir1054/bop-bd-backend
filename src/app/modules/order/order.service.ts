@@ -1042,6 +1042,11 @@ const searchFilterIncomingOrders = async (
             createdAt: 'desc',
           },
     include: {
+      orderPaymentInfo: {
+        include: {
+          paymentSystemOptions: true,
+        },
+      },
       assigndForDelivery: true,
       orderItems: {
         include: {
@@ -1275,22 +1280,8 @@ const updateOrderPaymentOptions = async (
   userRole: string,
   payload: IUpdateOrderPaymentOptions,
 ) => {
-  if (userRole === 'STAFF') {
-    const userInfo = await prisma.staff.findUnique({
-      where: { staffInfoId: userId },
-    });
-    if (!userInfo) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'User info not found');
-    }
-    const validStaff = ['STAFF_ADMIN', 'PURCHASE_OFFICER'];
-    if (!validStaff.includes(userInfo.role)) {
-      throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        'Only accounts manager and admin staff and owner can delete Payment options',
-      );
-    }
-  }
-
+  let isSellerOrganization = null;
+  let orgId = null;
   const isOrderExist = await prisma.order.findUnique({
     where: { id: payload.orderId },
     include: {
@@ -1308,6 +1299,33 @@ const updateOrderPaymentOptions = async (
     throw new ApiError(httpStatus.NOT_FOUND, 'Order info not found');
   }
 
+  if (userRole === 'STAFF') {
+    const userInfo = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+    });
+    if (!userInfo) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'User info not found');
+    }
+    if (userInfo.organizationId === isOrderExist.product_seller_id) {
+      isSellerOrganization = true;
+      orgId = userInfo.organizationId;
+    }
+    if (userInfo.organizationId === isOrderExist.customerId) {
+      isSellerOrganization = false;
+    }
+
+    if (isSellerOrganization === null) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Please use authorized account');
+    }
+    const validStaff =
+      isSellerOrganization === true
+        ? ['STAFF_ADMIN', 'ORDER_SUPERVISOR']
+        : ['STAFF_ADMIN', 'PURCHASE_OFFICER'];
+    if (!validStaff.includes(userInfo.role)) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid Role staff');
+    }
+  }
+
   const isPaymentOptionsExist = await prisma.paymentSystemOptions.findFirst({
     where: {
       AND: [
@@ -1322,16 +1340,30 @@ const updateOrderPaymentOptions = async (
   }
 
   if (isOrderExist.orderPaymentInfo) {
+    if (!isOrderExist.orderPaymentInfo.id) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Options not found');
+    }
+
+    if (!isSellerOrganization) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'You have already add payment info for change it contact with bop support',
+      );
+    }
+
     const findOrderPaymentInfo = await prisma.orderPaymentInfo.findFirst({
       where: {
-        AND: [
-          { orderId: payload.orderId },
-          { paymentSystemOptionsId: payload.paymentSystemOptionsId },
-        ],
+        orderId: payload.orderId,
+      },
+      include: {
+        order: true,
       },
     });
     if (!findOrderPaymentInfo) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Options not found');
+    }
+    if (!orgId || orgId !== findOrderPaymentInfo.order.product_seller_id) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid organization info');
     }
     const result = await prisma.orderPaymentInfo.update({
       where: { id: findOrderPaymentInfo.id },
