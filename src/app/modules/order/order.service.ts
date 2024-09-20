@@ -199,6 +199,11 @@ const orderCreate = async (
         },
         include: {
           orderItems: true,
+          orderPaymentInfo: {
+            include: {
+              paymentSystemOptions: true,
+            },
+          },
           customer: true,
           product_seller: {
             include: { UsedReffereCode: { include: { refferCode: true } } },
@@ -270,6 +275,7 @@ const getOrganizationIncomingOrders = async (
             createdAt: 'desc',
           },
     include: {
+      orderPaymentInfo: { include: { paymentSystemOptions: true } },
       assigndForDelivery: true,
       customer: {
         include: {
@@ -343,6 +349,7 @@ const getOrganizationOutgoingOrders = async (
             createdAt: 'desc',
           },
     include: {
+      orderPaymentInfo: { include: { paymentSystemOptions: true } },
       assigndForDelivery: true,
       product_seller: {
         include: {
@@ -887,6 +894,7 @@ const getSingle = async (id: string): Promise<Order | null> => {
   const result = await prisma.order.findUnique({
     where: { id },
     include: {
+      orderPaymentInfo: { include: { paymentSystemOptions: true } },
       customer: {
         include: {
           owner: {
@@ -1142,6 +1150,7 @@ const searchFilterOutgoingOrders = async (
           },
     include: {
       assigndForDelivery: true,
+      orderPaymentInfo: { include: { paymentSystemOptions: true } },
       orderItems: {
         include: {
           product: {
