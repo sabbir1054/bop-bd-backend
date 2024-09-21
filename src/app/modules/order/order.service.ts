@@ -923,6 +923,7 @@ const getSingle = async (id: string): Promise<Order | null> => {
   const result = await prisma.order.findUnique({
     where: { id },
     include: {
+      OrderOtp: true,
       orderPaymentInfo: { include: { paymentSystemOptions: true } },
       customer: {
         include: {
@@ -1071,6 +1072,7 @@ const searchFilterIncomingOrders = async (
             createdAt: 'desc',
           },
     include: {
+      OrderOtp: true,
       orderPaymentInfo: {
         include: {
           paymentSystemOptions: true,
@@ -1183,6 +1185,7 @@ const searchFilterOutgoingOrders = async (
             createdAt: 'desc',
           },
     include: {
+      OrderOtp: true,
       assigndForDelivery: true,
       orderPaymentInfo: { include: { paymentSystemOptions: true } },
       orderItems: {
