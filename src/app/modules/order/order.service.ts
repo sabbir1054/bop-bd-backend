@@ -495,21 +495,42 @@ const updateOrderStatus = async (
           );
         }
 
-        const makeOtpForUser = await prisma.orderOtp.create({
-          data: {
-            phone: customerPhone,
-            orderId: orderId,
-            otpCode: otp,
-            countSend: 1,
-          },
+        const isExistOrderOtp = await prisma.orderOtp.findFirst({
+          where: { orderId: orderId },
         });
 
-        if (!makeOtpForUser) {
-          throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Otp not set');
-        }
-        const result = { message: 'Otp send successfully' };
+        if (isExistOrder) {
+          const makeOtpForUser = await prisma.orderOtp.update({
+            where: { id: isExistOrder.id },
+            data: {
+              otpCode: otp,
+              countSend: { increment: 1 },
+            },
+          });
 
-        return result;
+          if (!makeOtpForUser) {
+            throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Otp not set');
+          }
+          const result = { message: 'Otp send successfully' };
+
+          return result;
+        } else {
+          const makeOtpForUser = await prisma.orderOtp.create({
+            data: {
+              phone: customerPhone,
+              orderId: orderId,
+              otpCode: otp,
+              countSend: 1,
+            },
+          });
+
+          if (!makeOtpForUser) {
+            throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Otp not set');
+          }
+          const result = { message: 'Otp send successfully' };
+
+          return result;
+        }
       });
       return result;
     } else {
@@ -694,6 +715,14 @@ const verifyDeliveryOtp = async (
   if (!isExistOrder) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Order not exist ');
   }
+
+  if (isExistOrder.product_seller_id !== isValidStaff.organizationId) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'Order owner id is not your organzation ',
+    );
+  }
+
   const customerPhone = isExistOrder.customer.owner.phone;
 
   const result = await prisma.$transaction(async prisma => {
