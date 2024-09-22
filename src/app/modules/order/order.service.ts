@@ -181,6 +181,7 @@ const orderCreate = async (
           orderCode, // Add the generated order code here
           shipping_address: shipping_address,
           total,
+          totalWithDeliveryCharge: total,
           customer: {
             connect: { id: cart?.organizationId },
           },

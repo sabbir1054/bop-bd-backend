@@ -52,6 +52,7 @@ model RevenueShare {
 
     @@map("revenue_share")
 }
+
 //* App-> Category
 model BusinessType {
     id           String         @id @default(uuid())
@@ -143,6 +144,7 @@ model User {
 
     @@map("users")
 }
+
 //* App-> SubCategory
 model Category {
     id             String       @id @default(uuid())
@@ -232,6 +234,7 @@ model CartItem {
     @@map("cart_item")
 }
 
+//* totla = withoutdelivery charge
 model Order {
     id                       String                     @id @default(uuid())
     orderCode                String                     @unique
@@ -250,6 +253,8 @@ model Order {
     OrderOtp                 OrderOtp[]
     Order_Commission_History Order_Commission_History[]
     orderPaymentInfo         OrderPaymentInfo?
+    deliveryCharge           Float?
+    totalWithDeliveryCharge  Float
 
     @@map("orders")
 }
