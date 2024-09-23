@@ -590,6 +590,12 @@ const updateOrderStatus = async (
             commissionAmount: calculatedCommission,
           },
         });
+        await prisma.organization.update({
+          where: { id: owner.id },
+          data: {
+            totlaCommission: { increment: calculatedCommission },
+          },
+        });
         //* owner reward
         const ownerRewardInfo = await prisma.rewardPoints.findFirst({
           where: {

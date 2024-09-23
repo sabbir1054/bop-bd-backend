@@ -116,6 +116,7 @@ model Organization {
     ClaimReward              ClaimReward[]
     memberShipCategory       MembershipCategory                @default(NORMAL)
     UsedReffereCode          UsedReffereCode?
+    totlaCommission          Float                             @default(0)
 
     @@map("organizations")
 }
