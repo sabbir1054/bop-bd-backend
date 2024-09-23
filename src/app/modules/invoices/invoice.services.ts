@@ -34,25 +34,43 @@ const generateInvoice = async (req: Request, res: any) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Order does not exist');
   }
   const data = {
-    orderNumber: isExistOrder.orderCode,
-    orderDate: isExistOrder.createdAt.toISOString().split('T')[0],
+    orderNumber: isExistOrder.orderCode ? isExistOrder.orderCode : '',
+    orderDate: isExistOrder?.createdAt.toISOString().split('T')[0]
+      ? isExistOrder?.createdAt.toISOString().split('T')[0]
+      : '',
     companyLogoUrl:
       'https://bopbd.com.bd/_next/image?url=%2Fassets%2Fbopbdlogo.png&w=128&q=75',
     companyWebsite: 'bopbd.com.bd',
-    buyerLogoUrl: isExistOrder.customer.photo,
-    buyerName: isExistOrder.customer.name,
-    sellerLogoUrl: isExistOrder.product_seller.photo,
-    sellerName: isExistOrder.product_seller.name,
-    deliveryAddress: isExistOrder.shipping_address,
-    paymentMethod:
-      isExistOrder.orderPaymentInfo?.paymentSystemOptions.paymentCategory,
-    bankName: isExistOrder.orderPaymentInfo?.paymentSystemOptions.methodName,
-    accountNumber:
-      isExistOrder.orderPaymentInfo?.paymentSystemOptions.accountNumber,
+    buyerLogoUrl: isExistOrder.customer.photo
+      ? isExistOrder.customer.photo
+      : '',
+    buyerName: isExistOrder.customer.name ? isExistOrder.customer.name : '',
+    sellerLogoUrl: isExistOrder.product_seller.photo
+      ? isExistOrder.product_seller.photo
+      : '',
+    sellerName: isExistOrder.product_seller.name
+      ? isExistOrder.product_seller.name
+      : '',
+    deliveryAddress: isExistOrder.shipping_address
+      ? isExistOrder.shipping_address
+      : '',
+    paymentMethod: isExistOrder.orderPaymentInfo?.paymentSystemOptions
+      .paymentCategory
+      ? isExistOrder.orderPaymentInfo?.paymentSystemOptions.paymentCategory
+      : '',
+    bankName: isExistOrder.orderPaymentInfo?.paymentSystemOptions.methodName
+      ? isExistOrder.orderPaymentInfo?.paymentSystemOptions.methodName
+      : '',
+    accountNumber: isExistOrder.orderPaymentInfo?.paymentSystemOptions
+      .accountNumber
+      ? isExistOrder.orderPaymentInfo?.paymentSystemOptions.accountNumber
+      : '',
     items: isExistOrder.orderItems,
-    subtotal: isExistOrder.total,
-    deliveryFee: isExistOrder.deliveryCharge,
-    total: isExistOrder.totalWithDeliveryCharge,
+    subtotal: isExistOrder.total ? isExistOrder.total : '',
+    deliveryFee: isExistOrder.deliveryCharge ? isExistOrder.deliveryCharge : '',
+    total: isExistOrder.totalWithDeliveryCharge
+      ? isExistOrder.totalWithDeliveryCharge
+      : '',
     supportEmail: 'support@bopbd.com.bd',
     supportPhone: '+8801969669908',
   };
