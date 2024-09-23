@@ -924,6 +924,20 @@ const getSingle = async (id: string): Promise<Order | null> => {
   const result = await prisma.order.findUnique({
     where: { id },
     include: {
+      assigndForDelivery: {
+        include: {
+          assignedby: {
+            include: {
+              staffInfo: true,
+            },
+          },
+          deliveryBoy: {
+            include: {
+              staffInfo: true,
+            },
+          },
+        },
+      },
       OrderOtp: true,
       orderPaymentInfo: { include: { paymentSystemOptions: true } },
       customer: {
