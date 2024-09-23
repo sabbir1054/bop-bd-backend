@@ -4,7 +4,7 @@
   "description": "",
   "main": "src/server.ts",
   "scripts": {
-    "db":"npx prisma studio --port 5011",
+    "db": "npx prisma studio --port 5011",
     "start": "node dist/server.js",
     "build": "tsc",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
@@ -37,6 +37,7 @@
     "@prisma/client": "^5.15.0",
     "@types/bcrypt": "^5.0.2",
     "@types/cookie-parser": "^1.4.7",
+    "@types/ejs": "^3.1.5",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/multer": "^1.4.11",
     "@types/uuid": "^9.0.8",
@@ -45,6 +46,7 @@
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
     "eslint": "^9.4.0",
     "eslint-config-prettier": "^9.1.0",
     "express": "^4.19.2",
@@ -55,6 +57,7 @@
     "multer": "^1.4.5-lts.1",
     "prettier": "^3.3.0",
     "prisma": "^5.15.0",
+    "puppeteer": "^23.4.0",
     "typescript": "^5.4.5",
     "uuid": "^9.0.1",
     "zod": "^3.23.8"
