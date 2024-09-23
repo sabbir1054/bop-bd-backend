@@ -405,16 +405,16 @@ model OrderPaymentInfo {
 }
 
 model Order_Commission_History {
-    id               String          @id @default(uuid())
-    order            Order           @relation(fields: [orderId], references: [id])
+    id               String @id @default(uuid())
+    order            Order  @relation(fields: [orderId], references: [id])
     orderId          String
     commissionAmount Float
-    isPaid           Boolean         @default(false)
-    updatedAt        DateTime        @updatedAt
-    createdAt        DateTime        @default(now())
-    PayCommission    PayCommission[]
-    commission       Commission      @relation(fields: [commissionId], references: [id])
-    commissionId     String
+
+    updatedAt DateTime @updatedAt
+    createdAt DateTime @default(now())
+
+    commission   Commission @relation(fields: [commissionId], references: [id])
+    commissionId String
 
     @@map("order_commission_history")
 }
@@ -460,21 +460,43 @@ model OrganizationRewardPointsHistory {
 }
 
 model PayCommission {
-    id              String                   @id @default(uuid())
-    paymentMethod   PaymentSystemOptions     @relation(fields: [paymentMethodId], references: [id])
-    paymentMethodId String
-    organization    Organization             @relation(fields: [organizationId], references: [id])
-    organizationId  String
-    payForOrder     Order_Commission_History @relation(fields: [payForOrderId], references: [id])
-    payForOrderId   String
-    totalPayable    Float
-    adjustReward    Float
-    amountPay       Float
-    transactionId   String                   @unique
-    updatedAt       DateTime                 @updatedAt
-    createdAt       DateTime                 @default(now())
+    id                 String                            @id @default(uuid())
+    paymentMethod      PaymentSystemOptions              @relation(fields: [paymentMethodId], references: [id])
+    paymentMethodId    String
+    organization       Organization                      @relation(fields: [organizationId], references: [id])
+    organizationId     String
+    totalPayable       Float
+    adjustReward       Float
+    amountPay          Float                             @unique
+    updatedAt          DateTime                          @updatedAt
+    createdAt          DateTime                          @default(now())
+    transactionDetails TransactionInfoForPayCommission[]
 
     @@map("payCommission")
+}
+
+model TransactionInfoForPayCommission {
+    id                    String        @id @default(uuid())
+    paymentID             String        @unique
+    trxID                 String        @unique
+    transactionStatus     String
+    amount                Float
+    currency              String
+    intent                String
+    paymentExecuteTime    DateTime
+    merchantInvoiceNumber String
+    payerType             String
+    payerReference        String
+    customerMsisdn        String
+    payerAccount          String
+    statusCode            String
+    statusMessage         String
+    updatedAt             DateTime      @updatedAt
+    createdAt             DateTime      @default(now())
+    payCommission         PayCommission @relation(fields: [payCommissionId], references: [id])
+    payCommissionId       String
+
+    @@map("transactionInfoForCommissionPay")
 }
 
 model ClaimReward {
