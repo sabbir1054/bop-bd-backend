@@ -418,6 +418,13 @@ const updateOrderStatus = async (
   if (!isExistOrder) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Order not exist ');
   }
+
+  if (status === 'SHIPPING' && !isExistOrder.deliveryCharge) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'At first set delivery charge it can be minimum 0',
+    );
+  }
   const customerPhone = isExistOrder.customer.owner.phone;
 
   let orgId = null;
