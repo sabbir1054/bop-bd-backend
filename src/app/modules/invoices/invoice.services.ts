@@ -95,12 +95,20 @@ const generateInvoice = async (req: Request, res: any) => {
       }
     });
   } catch (error) {
-    // Handle any error that occurs during the process
     console.error('Error generating invoice PDF:', error);
 
     if (!res.headersSent) {
-      // Send error response if headers haven't been sent yet
-      res.status(500).send('Error generating invoice PDF');
+      // Use ApiError for consistent error handling
+      if (error instanceof ApiError) {
+        res.status(error.statusCode).json({
+          message: error.message,
+        });
+      } else {
+        // If it's an unknown error, send a generic error response
+        res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+          message: 'Error generating invoice PDF',
+        });
+      }
     }
   }
 };
