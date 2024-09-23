@@ -30,4 +30,10 @@ export default {
     secretKey: process.env.MOBILE_OTP_SECRET_KEY,
     callerId: process.env.MOBILE_OTP_CALLER_ID,
   },
+  bkashConfig: {
+    appKey: process.env.BKASH_APP_KEY,
+    appSecretKey: process.env.BKASH_APP_SECRET_KEY,
+    username: process.env.BKASH_USER_NAME,
+    password: process.env.BKASH_USER_PASS,
+  },
 };

@@ -94,6 +94,10 @@ const moduleRoutes = [
     path: '/invoice',
     route: InvoceRoutes,
   },
+  {
+    path: '/commissionPay',
+    route: InvoceRoutes,
+  },
 ];
 
 moduleRoutes.forEach(route => router.use(route.path, route.route));
