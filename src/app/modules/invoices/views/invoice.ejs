@@ -77,12 +77,12 @@
           <% items.forEach(item => { %>
           <tr>
             <td class="border px-4 py-2">
-              <h4 class="font-semibold"><%= item.name %></h4>
-              <p class="text-gray-600 text-sm"><%= item.description %></p>
+              <h4 class="font-semibold"><%= item.product.name %></h4>
+              <!-- <p class="text-gray-600 text-sm"><%= item.description %></p> -->
             </td>
             <td class="border px-4 py-2"><%= item.price %></td>
             <td class="border px-4 py-2"><%= item.quantity %></td>
-            <td class="border px-4 py-2"><%= item.total %></td>
+            <td class="border px-4 py-2"><%= item.price*item.quantity %></td>
           </tr>
           <% }) %>
         </tbody>
