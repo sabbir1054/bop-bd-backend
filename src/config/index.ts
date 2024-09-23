@@ -35,5 +35,10 @@ export default {
     appSecretKey: process.env.BKASH_APP_SECRET_KEY,
     username: process.env.BKASH_USER_NAME,
     password: process.env.BKASH_USER_PASS,
+    grantTokenLink: process.env.BKASH_GRANT_TOKEN_API_LINK,
+    createPaymentLink: process.env.BKASH_CREATE_PAYMENT_API_LINK,
+    executePaymentLink: process.env.BKASH_EXECUTE_PAYMENT_API_LINK,
+    queryPaymentLink: process.env.BKASH_QUERY_PAYMENT_API_LINK,
+    searchTransactionLink: process.env.BKASH_SEARCH_TRANSACTION_API_LINK,
   },
 };
