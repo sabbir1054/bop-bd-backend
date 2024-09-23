@@ -6,52 +6,120 @@ import puppeteer from 'puppeteer';
 
 const generateInvoice = async (req: Request, res: any) => {
   const data = {
-    invoiceNumber: '0472',
-    invoiceDate: 'August 1, 2021',
-    buyer: {
-      name: 'LOUISVILLE, Selby',
-      address: '3864 Johnson Street',
-      country: 'United States of America',
-      vatCode: 'AA-1234567890',
-    },
-    seller: {
-      name: 'Themesberg Inc.',
-      address: '291 N 4th St, San Jose, CA 95112',
-      country: 'USA',
-    },
+    orderNumber: '0472',
+    orderDate: 'August 1, 2021',
+    companyLogoUrl:
+      'https://bopbd.com.bd/_next/image?url=%2Fassets%2Fbopbdlogo.png&w=128&q=75',
+    companyWebsite: 'bopbd.com.bd',
+    buyerLogoUrl:
+      'https://bopbd.com.bd/_next/image?url=%2Fassets%2Fbopbdlogo.png&w=128&q=75',
+    buyerName: 'Akij Group',
+    sellerLogoUrl:
+      'https://bopbd.com.bd/_next/image?url=%2Fassets%2Fbopbdlogo.png&w=128&q=75',
+    sellerName: 'Pran Ltd',
+    deliveryAddress:
+      'Khagan, Dhaka District, Dhaka Division, Bangladesh, Dhaka Division',
+    paymentMethod: 'BANK_TRANSACTION',
+    bankName: 'Bank Ashia',
+    accountNumber: '01268988798',
     items: [
       {
         name: 'Pixel Design System',
         description: 'Html components',
-        price: 128.0,
+        price: '128.00',
         quantity: 1,
-        total: 64.0,
+        total: '128.00',
       },
       {
         name: 'Volt Dashboard Template',
         description: 'Tailwind template',
-        price: 69.0,
+        price: '69.00',
         quantity: 1,
-        total: 69.0,
+        total: '69.00',
       },
       {
-        name: 'Neumorphism UI',
-        description: 'Html template',
-        price: 69.0,
+        name: 'Volt Dashboard Template',
+        description: 'Tailwind template',
+        price: '69.00',
         quantity: 1,
-        total: 69.0,
+        total: '69.00',
       },
       {
-        name: 'Glassmorphism UI',
-        description: 'Figma template',
-        price: 149.0,
+        name: 'Volt Dashboard Template',
+        description: 'Tailwind template',
+        price: '69.00',
         quantity: 1,
-        total: 149.0,
+        total: '69.00',
+      },
+      {
+        name: 'Volt Dashboard Template',
+        description: 'Tailwind template',
+        price: '69.00',
+        quantity: 1,
+        total: '69.00',
+      },
+      {
+        name: 'Volt Dashboard Template',
+        description: 'Tailwind template',
+        price: '69.00',
+        quantity: 1,
+        total: '69.00',
+      },
+      {
+        name: 'Volt Dashboard Template',
+        description: 'Tailwind template',
+        price: '69.00',
+        quantity: 1,
+        total: '69.00',
+      },
+      {
+        name: 'Volt Dashboard Template',
+        description: 'Tailwind template',
+        price: '69.00',
+        quantity: 1,
+        total: '69.00',
+      },
+      {
+        name: 'Volt Dashboard Template',
+        description: 'Tailwind template',
+        price: '69.00',
+        quantity: 1,
+        total: '69.00',
+      },
+      {
+        name: 'Volt Dashboard Template',
+        description: 'Tailwind template',
+        price: '69.00',
+        quantity: 1,
+        total: '69.00',
+      },
+      {
+        name: 'Volt Dashboard Template',
+        description: 'Tailwind template',
+        price: '69.00',
+        quantity: 1,
+        total: '69.00',
+      },
+      {
+        name: 'Volt Dashboard Template',
+        description: 'Tailwind template',
+        price: '69.00',
+        quantity: 1,
+        total: '69.00',
+      },
+      {
+        name: 'Volt Dashboard Template',
+        description: 'Tailwind template',
+        price: '69.00',
+        quantity: 1,
+        total: '69.00',
       },
     ],
-    subtotal: 415.0,
-    deliveryFee: 50.0,
-    total: 351.0,
+    subtotal: '415.00',
+    deliveryFee: '50',
+    total: '465.00',
+    supportEmail: 'support@gmail.com',
+    supportPhone: '012478963254',
   };
 
   try {
@@ -72,7 +140,7 @@ const generateInvoice = async (req: Request, res: any) => {
       path: pdfPath,
       format: 'A4',
       printBackground: true,
-      margin: { top: '10px', right: '10px', bottom: '10px', left: '10px' },
+      margin: { top: '10mm', right: '5mm', bottom: '10mm', left: '5mm' },
     });
 
     await browser.close();
@@ -89,8 +157,6 @@ const generateInvoice = async (req: Request, res: any) => {
     fs.unlink(pdfPath, err => {
       if (err) {
         console.error('Error deleting PDF file:', err);
-      } else {
-        console.log('PDF file deleted successfully.');
       }
     });
   } catch (error) {
