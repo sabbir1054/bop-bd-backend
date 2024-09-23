@@ -83,7 +83,10 @@ const generateInvoice = async (req: Request, res: any) => {
     );
 
     // Generate PDF using Puppeteer
-    const browser = await puppeteer.launch({ headless: true });
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
     const page = await browser.newPage();
 
     await page.setContent(html, { waitUntil: 'networkidle0' });
