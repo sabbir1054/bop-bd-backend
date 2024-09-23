@@ -94,6 +94,21 @@ const createNew = (userid, role, payload) => __awaiter(void 0, void 0, void 0, f
             if (!buyingRewardInfo) {
                 throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Buying Reward info not found');
             }
+            const sellingRewardInfo = yield prisma.rewardPoints.findFirst({
+                where: {
+                    AND: [
+                        {
+                            membershipCategory: organizationInfo.organization.memberShipCategory,
+                        },
+                        {
+                            rewardType: 'SELLING',
+                        },
+                    ],
+                },
+            });
+            if (!sellingRewardInfo) {
+                throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Buying Reward info not found');
+            }
             //* get the validity day
             const validityDay = yield prisma.validityDays.findFirst();
             if (!validityDay) {
@@ -123,11 +138,14 @@ const createNew = (userid, role, payload) => __awaiter(void 0, void 0, void 0, f
                 codeOwnerorganizationId: payload.codeOwnerorganizationId,
                 joiningRewardPointsId: joiningRewardInfo === null || joiningRewardInfo === void 0 ? void 0 : joiningRewardInfo.id,
                 buyingRewardPointsId: buyingRewardInfo === null || buyingRewardInfo === void 0 ? void 0 : buyingRewardInfo.id,
+                sellingRewardPointsId: sellingRewardInfo === null || sellingRewardInfo === void 0 ? void 0 : sellingRewardInfo.id,
             };
             if (!newData.code) {
                 throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Code not genaret');
             }
-            if (!newData.buyingRewardPointsId || !newData.joiningRewardPointsId) {
+            if (!newData.buyingRewardPointsId ||
+                !newData.joiningRewardPointsId ||
+                !newData.sellingRewardPointsId) {
                 throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Reward info not found');
             }
             const result = yield prisma.refferedCode.create({

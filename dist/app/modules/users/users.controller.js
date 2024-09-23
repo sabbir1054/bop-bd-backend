@@ -14,8 +14,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserController = void 0;
 const http_status_1 = __importDefault(require("http-status"));
+const paginationFields_1 = require("../../../constants/paginationFields");
 const catchAsync_1 = __importDefault(require("../../../shared/catchAsync"));
+const pick_1 = __importDefault(require("../../../shared/pick"));
 const sendResponse_1 = __importDefault(require("../../../shared/sendResponse"));
+const user_constant_1 = require("./user.constant");
 const users_service_1 = require("./users.service");
 const updateUserProfile = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield users_service_1.UserServices.updateUserProfile(req, next);
@@ -49,7 +52,9 @@ const removeProfilePicture = (0, catchAsync_1.default)((req, res) => __awaiter(v
     });
 }));
 const getAll = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield users_service_1.UserServices.getAll();
+    const filters = (0, pick_1.default)(req.query, user_constant_1.userFilterableFields);
+    const options = (0, pick_1.default)(req.query, paginationFields_1.paginationFields);
+    const result = yield users_service_1.UserServices.getAll(filters, options);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,
@@ -88,8 +93,8 @@ const getOrganizationStaff = (0, catchAsync_1.default)((req, res) => __awaiter(v
     });
 }));
 const getMyDeliveryBoy = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id: userId } = req.user;
-    const result = yield users_service_1.UserServices.getMyDeliveryBoy(userId);
+    const { id: userId, role } = req.user;
+    const result = yield users_service_1.UserServices.getMyDeliveryBoy(userId, role);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,

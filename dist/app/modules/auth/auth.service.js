@@ -436,7 +436,7 @@ const userLogin = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     }
     const { id, role } = isUserExist;
     const accessToken = jwtHelpers_1.jwtHelpers.createToken({ id, role, phone }, config_1.default.jwt.secret, config_1.default.jwt.expires_in);
-    const refreshToken = jwtHelpers_1.jwtHelpers.createToken({ id, role, phone }, config_1.default.jwt.refresh_secret, config_1.default.jwt.refresh_expires_in);
+    const refreshToken = jwtHelpers_1.jwtHelpers.createToken({ id, role, phone }, config_1.default.jwt.refresh_secret, payload.isRemember ? '30d' : config_1.default.jwt.refresh_expires_in);
     return { accessToken, refreshToken };
 });
 const refreshToken = (token) => __awaiter(void 0, void 0, void 0, function* () {

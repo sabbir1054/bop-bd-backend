@@ -28,7 +28,9 @@ const fs_1 = __importDefault(require("fs"));
 const http_status_1 = __importDefault(require("http-status"));
 const path_1 = __importDefault(require("path"));
 const ApiError_1 = __importDefault(require("../../../errors/ApiError"));
+const paginationHelper_1 = require("../../../helpers/paginationHelper");
 const prisma_1 = __importDefault(require("../../../shared/prisma"));
+const user_constant_1 = require("./user.constant");
 const updateUserProfile = (req, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { id: userId } = req.user;
     const deletePhoto = (photoLink) => {
@@ -149,8 +151,54 @@ const removeProfilePicture = (userId) => __awaiter(void 0, void 0, void 0, funct
     });
     return result;
 });
-const getAll = () => __awaiter(void 0, void 0, void 0, function* () {
+const getAll = (filters, options) => __awaiter(void 0, void 0, void 0, function* () {
+    const { limit, page, skip } = paginationHelper_1.paginationHelpers.calculatePagination(options);
+    const { searchTerm, phone, verified, isMobileVerified, isNidVerified } = filters, filtersData = __rest(filters, ["searchTerm", "phone", "verified", "isMobileVerified", "isNidVerified"]);
+    const andConditions = [];
+    if (searchTerm) {
+        andConditions.push({
+            OR: user_constant_1.userSearchableFields.map(field => ({
+                [field]: {
+                    contains: searchTerm,
+                    mode: 'insensitive',
+                },
+            })),
+        });
+    }
+    if (Object.keys(filtersData).length) {
+        const conditions = Object.entries(filtersData).map(([field, value]) => ({
+            [field]: value,
+        }));
+        andConditions.push({ AND: conditions });
+    }
+    if (verified === 'true') {
+        andConditions.push({ AND: { verified: true } });
+    }
+    if (verified === 'false') {
+        andConditions.push({ AND: { verified: false } });
+    }
+    if (isMobileVerified === 'true') {
+        andConditions.push({ AND: { isMobileVerified: true } });
+    }
+    if (isMobileVerified === 'false') {
+        andConditions.push({ AND: { isMobileVerified: false } });
+    }
+    if (isNidVerified === 'true') {
+        andConditions.push({ AND: { isNidVerified: true } });
+    }
+    if (isNidVerified === 'false') {
+        andConditions.push({ AND: { isNidVerified: false } });
+    }
+    const whereConditions = andConditions.length > 0 ? { AND: andConditions } : {};
     const result = yield prisma_1.default.user.findMany({
+        where: whereConditions,
+        skip,
+        take: limit,
+        orderBy: options.sortBy && options.sortOrder
+            ? { [options.sortBy]: options.sortOrder }
+            : {
+                createdAt: 'desc',
+            },
         select: {
             id: true,
             role: true,
@@ -158,6 +206,7 @@ const getAll = () => __awaiter(void 0, void 0, void 0, function* () {
             organization: {
                 include: {
                     BusinessType: true,
+                    UsedReffereCode: true,
                 },
             },
             isMobileVerified: true,
@@ -165,12 +214,23 @@ const getAll = () => __awaiter(void 0, void 0, void 0, function* () {
             email: true,
             phone: true,
             address: true,
+            isNidVerified: true,
             photo: true,
             license: true,
             nid: true,
         },
     });
-    return result;
+    const total = yield prisma_1.default.user.count({
+        where: whereConditions,
+    });
+    return {
+        meta: {
+            total,
+            page,
+            limit,
+        },
+        data: result,
+    };
 });
 const getSingle = (userId, profileId, role) => __awaiter(void 0, void 0, void 0, function* () {
     if (role === 'STAFF') {
@@ -322,18 +382,34 @@ const getOrganizationStaff = (userId, userRole, role) => __awaiter(void 0, void 
     });
     return staffMembers;
 });
-const getMyDeliveryBoy = (userId) => __awaiter(void 0, void 0, void 0, function* () {
-    const isExistStaff = yield prisma_1.default.staff.findUnique({
-        where: { staffInfoId: userId },
-    });
-    if (!isExistStaff) {
-        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff info not found');
+const getMyDeliveryBoy = (userId, userRole) => __awaiter(void 0, void 0, void 0, function* () {
+    let orgId = null;
+    if (userRole === 'STAFF') {
+        const isExistStaff = yield prisma_1.default.staff.findUnique({
+            where: { staffInfoId: userId },
+        });
+        if (!isExistStaff) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff info not found');
+        }
+        if (isExistStaff.role !== 'ORDER_SUPERVISOR') {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only order supervisor can get this');
+        }
+        orgId = isExistStaff.organizationId;
     }
-    if (isExistStaff.role !== 'ORDER_SUPERVISOR') {
-        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only order supervisor can get this');
+    else {
+        const isUserExist = yield prisma_1.default.user.findUnique({
+            where: { id: userId },
+        });
+        if (!isUserExist) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User info not found');
+        }
+        orgId = isUserExist.organizationId;
+    }
+    if (!orgId) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization info not found');
     }
     const organization = yield prisma_1.default.organization.findUnique({
-        where: { id: isExistStaff.organizationId },
+        where: { id: orgId },
     });
     if (!organization) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization not found');

@@ -12,8 +12,6 @@ const commissionCreateValidation = zod_1.default.object({
             required_error: 'Commission type is required',
         }),
         percentage: zod_1.default.number({ required_error: 'Percentage number is required' }),
-        isValid: zod_1.default.boolean({ required_error: 'Is valid filed is required' }),
-        new_mem_validity: zod_1.default.number().optional(),
         membershipCategory: zod_1.default.enum([...commission_constant_1.membershipCategory], { required_error: 'Membership category is required' }),
     }),
 });
@@ -30,7 +28,6 @@ const commissionUpdateValidation = zod_1.default.object({
         isValid: zod_1.default
             .boolean({ required_error: 'Is valid filed is required' })
             .optional(),
-        new_mem_validity: zod_1.default.number().optional(),
         membershipCategory: zod_1.default
             .enum([...commission_constant_1.membershipCategory], {
             required_error: 'Membership category is required',

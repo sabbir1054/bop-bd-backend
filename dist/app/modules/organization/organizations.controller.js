@@ -47,8 +47,39 @@ const getIncomingOrdersByDate = (0, catchAsync_1.default)((req, res) => __awaite
         data: result,
     });
 }));
+const updateOrganization = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield organization_service_1.OrganizaionServices.updateOrganization(req, next);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: 'Organization updated ',
+        data: result,
+    });
+}));
+const updateOrganizationMembershipCategory = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield organization_service_1.OrganizaionServices.updateOrganizationMembershipCategory(req.body);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: 'Organization updated ',
+        data: result,
+    });
+}));
+const removePicture = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id, role } = req.user;
+    const result = yield organization_service_1.OrganizaionServices.removePicture(id, role, next);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: 'Organization photo remove ',
+        data: result,
+    });
+}));
 exports.OrganizationController = {
     getDashboardMatrics,
     getOutgoingOrdersByDate,
     getIncomingOrdersByDate,
+    updateOrganization,
+    removePicture,
+    updateOrganizationMembershipCategory,
 };

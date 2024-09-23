@@ -34,12 +34,8 @@ const createNew = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     if (!validDays) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Valid days not found');
     }
-    const newData = Object.assign({ validDays: validDays.validDays }, payload);
-    if (!newData.validDays) {
-        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Valid days not found');
-    }
     const result = yield prisma_1.default.rewardPoints.create({
-        data: newData,
+        data: payload,
     });
     return result;
 });

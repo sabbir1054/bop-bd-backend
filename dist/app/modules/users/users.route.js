@@ -18,7 +18,7 @@ const user_validation_1 = require("./user.validation");
 const users_controller_1 = require("./users.controller");
 const router = express_1.default.Router();
 router.get('/getStaff', (0, validateRequest_1.default)(user_validation_1.UsersValidation.getStaffValidation), (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.RESELLER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.STAFF), users_controller_1.UserController.getOrganizationStaff);
-router.get('/myDeliveryBoy', (0, validateRequest_1.default)(user_validation_1.UsersValidation.getStaffValidation), (0, auth_1.default)(user_1.ENUM_USER_ROLE.STAFF), users_controller_1.UserController.getMyDeliveryBoy);
+router.get('/myDeliveryBoy', (0, validateRequest_1.default)(user_validation_1.UsersValidation.getStaffValidation), (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.RESELLER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.STAFF), users_controller_1.UserController.getMyDeliveryBoy);
 router.patch('/updateProfile', (0, auth_1.default)(user_1.ENUM_USER_ROLE.ADMIN, user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.RESELLER, user_1.ENUM_USER_ROLE.SUPER_ADMIN, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.STAFF), fileUpload_1.FileUploadHelper.uploadProfile.single('file'), (req, res, next) => {
     var _a, _b, _c;
     if ((_a = req.body) === null || _a === void 0 ? void 0 : _a.data) {
@@ -45,6 +45,7 @@ router.get('/profile/image/:fileName', (req, res) => {
 });
 router.delete('/deleteUnverified', users_controller_1.UserController.deleteUnverifiedOtp);
 router.post('/update/status', (0, auth_1.default)(user_1.ENUM_USER_ROLE.ADMIN, user_1.ENUM_USER_ROLE.SUPER_ADMIN), (0, validateRequest_1.default)(user_validation_1.UsersValidation.userVerifiedStatusChangeValidation), users_controller_1.UserController.userVerifiedStatusChange);
+//users/updateStaffRole
 router.delete('/deleteStaff/:staffId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.RESELLER, user_1.ENUM_USER_ROLE.WHOLESALER), users_controller_1.UserController.deleteMySingleStaff);
 router.patch('/updateStaffRole', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.RESELLER, user_1.ENUM_USER_ROLE.WHOLESALER), (0, validateRequest_1.default)(user_validation_1.UsersValidation.staffUpdateRoleValidation), users_controller_1.UserController.updateMySingleStaffRole);
 exports.UsersRoutes = router;

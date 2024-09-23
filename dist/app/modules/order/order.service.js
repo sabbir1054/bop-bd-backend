@@ -29,12 +29,14 @@ const ApiError_1 = __importDefault(require("../../../errors/ApiError"));
 const orderIdcodeGenerator_1 = require("../../../helpers/orderIdcodeGenerator");
 const otpHelpers_1 = require("../../../helpers/otpHelpers");
 const paginationHelper_1 = require("../../../helpers/paginationHelper");
+const referCodeValidity_1 = require("../../../helpers/referCodeValidity");
 const prisma_1 = __importDefault(require("../../../shared/prisma"));
 const order_constant_1 = require("./order.constant");
 const orderCreate = (userId, userRole, orderData) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     const { shipping_address } = orderData;
     let cartId = null;
+    // Determine the user's role and validate accordingly
     if (userRole === 'STAFF') {
         const isValidStaff = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userId },
@@ -69,33 +71,35 @@ const orderCreate = (userId, userRole, orderData) => __awaiter(void 0, void 0, v
     if (!cartId) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Cart information not found');
     }
-    const result = yield prisma_1.default.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {
-        var _c, _d;
-        // Fetch cart details including items
-        const cart = yield prisma.cart.findUnique({
-            where: { id: cartId },
-            include: {
-                CartItem: {
-                    include: {
-                        product: {
-                            include: {
-                                organization: { include: { owner: true } },
-                            },
+    // Fetch cart details before transaction
+    const cart = yield prisma_1.default.cart.findUnique({
+        where: { id: cartId },
+        include: {
+            CartItem: {
+                include: {
+                    product: {
+                        include: {
+                            organization: { include: { owner: true } },
                         },
                     },
                 },
-                Organization: { include: { owner: true } }, // Include user information to get the user's phone number
             },
-        });
-        if (!cart) {
-            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, `Cart with id ${cartId} not found.`);
-        }
-        // Filter out items where the product owner is the same as the cart user
-        const validCartItems = cart.CartItem.filter(item => item.product.organizationId !== cart.organizationId);
-        if (validCartItems.length === 0) {
-            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, `You cannot buy your own products.`);
-        }
-        // Create a map of product prices
+            Organization: { include: { owner: true } }, // Include user information to get the user's phone number
+        },
+    });
+    if (!cart) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, `Cart with id ${cartId} not found.`);
+    }
+    // Filter out items where the product owner is the same as the cart user
+    const validCartItems = cart.CartItem.filter(item => item.product.organizationId !== cart.organizationId);
+    if (validCartItems.length === 0) {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, `You cannot buy your own products.`);
+    }
+    //check paymentoptions id
+    // Begin transaction after ensuring valid cart items
+    const result = yield prisma_1.default.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {
+        var _c, _d;
+        // Proceed with valid cart items to create orders
         const productIds = validCartItems.map(item => item.productId);
         const products = yield prisma.product.findMany({
             where: {
@@ -105,6 +109,7 @@ const orderCreate = (userId, userRole, orderData) => __awaiter(void 0, void 0, v
                 id: true,
                 price: true,
                 discount_price: true,
+                stock: true, // Include stock to check availability
             },
         });
         const productPriceMap = products.reduce((acc, product) => {
@@ -154,6 +159,7 @@ const orderCreate = (userId, userRole, orderData) => __awaiter(void 0, void 0, v
                     orderCode, // Add the generated order code here
                     shipping_address: shipping_address,
                     total,
+                    totalWithDeliveryCharge: total,
                     customer: {
                         connect: { id: cart === null || cart === void 0 ? void 0 : cart.organizationId },
                     },
@@ -172,11 +178,41 @@ const orderCreate = (userId, userRole, orderData) => __awaiter(void 0, void 0, v
                 },
                 include: {
                     orderItems: true,
+                    orderPaymentInfo: {
+                        include: {
+                            paymentSystemOptions: true,
+                        },
+                    },
+                    customer: true,
+                    product_seller: {
+                        include: { UsedReffereCode: { include: { refferCode: true } } },
+                    },
                 },
             });
             createdOrders.push(order);
+            // ** Reduce stock after order creation **
+            for (const item of orderItemsData) {
+                const product = products.find(p => p.id === item.productId);
+                if (!product) {
+                    throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Product info not found');
+                }
+                if (product.stock < item.quantity) {
+                    throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, `Not enough stock for product ${item.productId}`);
+                }
+                // Reduce the stock of the product
+                yield prisma.product.update({
+                    where: {
+                        id: item.productId,
+                    },
+                    data: {
+                        stock: {
+                            decrement: item.quantity, // Reduce stock by the quantity ordered
+                        },
+                    },
+                });
+            }
         }
-        // Empty the cart
+        // Empty the cart after order is placed
         yield prisma.cartItem.deleteMany({
             where: {
                 cartId: cart.id,
@@ -186,7 +222,6 @@ const orderCreate = (userId, userRole, orderData) => __awaiter(void 0, void 0, v
     }));
     return result;
 });
-//! here change it was owner id now it is organization id
 const getOrganizationIncomingOrders = (organizationId, options) => __awaiter(void 0, void 0, void 0, function* () {
     const isExistrganization = yield prisma_1.default.organization.findUnique({
         where: { id: organizationId },
@@ -205,6 +240,7 @@ const getOrganizationIncomingOrders = (organizationId, options) => __awaiter(voi
                 createdAt: 'desc',
             },
         include: {
+            orderPaymentInfo: { include: { paymentSystemOptions: true } },
             assigndForDelivery: true,
             customer: {
                 include: {
@@ -273,6 +309,7 @@ const getOrganizationOutgoingOrders = (organizationId, options) => __awaiter(voi
                 createdAt: 'desc',
             },
         include: {
+            orderPaymentInfo: { include: { paymentSystemOptions: true } },
             assigndForDelivery: true,
             product_seller: {
                 include: {
@@ -318,145 +355,14 @@ const getOrganizationOutgoingOrders = (organizationId, options) => __awaiter(voi
         data: result,
     };
 });
-// const getOrganizationIncomingOrders = async (
-//   organizationId: string,
-//   options: IPaginationOptions,
-// ): Promise<IGenericResponse<Order[]>> => {
-//   const isValidOrganization = await prisma.organization.findUnique({
-//     where: { id: organizationId },
-//   });
-//   if (!isValidOrganization) {
-//     throw new ApiError(httpStatus.NOT_FOUND, 'Organizaion info not found');
-//   }
-//   const ownerId = isValidOrganization.ownerId;
-//   const { limit, page, skip } = paginationHelpers.calculatePagination(options);
-//   const result = await prisma.order.findMany({
-//     where: { product_seller_id: ownerId },
-//     skip,
-//     take: limit,
-//     orderBy:
-//       options.sortBy && options.sortOrder
-//         ? { [options.sortBy]: options.sortOrder }
-//         : {
-//             createdAt: 'desc',
-//           },
-//     include: {
-//       assigndForDelivery: true,
-//       customer: {
-//         select: {
-//           id: true,
-//           role: true,
-//           email: true,
-//           license: true,
-//           nid: true,
-//           memberCategory: true,
-//           verified: true,
-//           organization: true,
-//           isMobileVerified: true,
-//           name: true,
-//           phone: true,
-//           address: true,
-//           photo: true,
-//           createdAt: true,
-//           updatedAt: true,
-//         },
-//       },
-//       orderItems: {
-//         include: {
-//           product: {
-//             include: {
-//               images: true,
-//             },
-//           },
-//         },
-//       },
-//     },
-//   });
-//   if (!result) {
-//     throw new ApiError(httpStatus.NOT_FOUND, 'User incoming order not found');
-//   }
-//   const total = await prisma.order.count({
-//     where: { product_seller_id: ownerId },
-//   });
-//   return {
-//     meta: {
-//       total,
-//       page,
-//       limit,
-//     },
-//     data: result,
-//   };
-// };
-// const getOrganizationOutgoingOrders = async (
-//   organizationId: string,
-//   options: IPaginationOptions,
-// ): Promise<IGenericResponse<Order[]>> => {
-//   const isValidOrganization = await prisma.organization.findUnique({
-//     where: { id: organizationId },
-//   });
-//   if (!isValidOrganization) {
-//     throw new ApiError(httpStatus.NOT_FOUND, 'Organizaion info not found');
-//   }
-//   const userId = isValidOrganization.ownerId;
-//   const { limit, page, skip } = paginationHelpers.calculatePagination(options);
-//   const result = await prisma.order.findMany({
-//     where: { customerId: userId },
-//     skip,
-//     take: limit,
-//     orderBy:
-//       options.sortBy && options.sortOrder
-//         ? { [options.sortBy]: options.sortOrder }
-//         : {
-//             createdAt: 'desc',
-//           },
-//     include: {
-//       assigndForDelivery: true,
-//       product_seller: {
-//         select: {
-//           id: true,
-//           role: true,
-//           email: true,
-//           license: true,
-//           nid: true,
-//           memberCategory: true,
-//           verified: true,
-//           organization: true,
-//           isMobileVerified: true,
-//           name: true,
-//           phone: true,
-//           address: true,
-//           photo: true,
-//           createdAt: true,
-//           updatedAt: true,
-//         },
-//       },
-//       orderItems: {
-//         include: {
-//           product: true,
-//         },
-//       },
-//     },
-//   });
-//   if (!result) {
-//     throw new ApiError(httpStatus.NOT_FOUND, 'User incoming order not found');
-//   }
-//   const total = await prisma.order.count({
-//     where: { customerId: userId },
-//   });
-//   return {
-//     meta: {
-//       total,
-//       page,
-//       limit,
-//     },
-//     data: result,
-//   };
-// };
 const updateOrderStatus = (userId, userRole, orderId, status) => __awaiter(void 0, void 0, void 0, function* () {
     const isExistOrder = yield prisma_1.default.order.findUnique({
         where: { id: orderId },
         include: {
             customer: { include: { owner: true } },
+            product_seller: {
+                include: { UsedReffereCode: { include: { refferCode: true } } },
+            },
         },
     });
     if (!isExistOrder) {
@@ -514,28 +420,140 @@ const updateOrderStatus = (userId, userRole, orderId, status) => __awaiter(void 
                 if (sendOtp == null || sendOtp.Status != 0) {
                     throw new ApiError_1.default(http_status_1.default.INTERNAL_SERVER_ERROR, 'Otp not send please try again');
                 }
-                const makeOtpForUser = yield prisma.orderOtp.create({
-                    data: {
-                        phone: customerPhone,
-                        orderId: orderId,
-                        otpCode: otp,
-                        countSend: 1,
-                    },
+                const isExistOrderOtp = yield prisma.orderOtp.findFirst({
+                    where: { orderId: orderId },
                 });
-                if (!makeOtpForUser) {
-                    throw new ApiError_1.default(http_status_1.default.INTERNAL_SERVER_ERROR, 'Otp not set');
+                if (isExistOrder) {
+                    const makeOtpForUser = yield prisma.orderOtp.update({
+                        where: { id: isExistOrder.id },
+                        data: {
+                            otpCode: otp,
+                            countSend: { increment: 1 },
+                        },
+                    });
+                    if (!makeOtpForUser) {
+                        throw new ApiError_1.default(http_status_1.default.INTERNAL_SERVER_ERROR, 'Otp not set');
+                    }
+                    const result = { message: 'Otp send successfully' };
+                    return result;
                 }
-                const result = { message: 'Otp send successfully' };
-                return result;
+                else {
+                    const makeOtpForUser = yield prisma.orderOtp.create({
+                        data: {
+                            phone: customerPhone,
+                            orderId: orderId,
+                            otpCode: otp,
+                            countSend: 1,
+                        },
+                    });
+                    if (!makeOtpForUser) {
+                        throw new ApiError_1.default(http_status_1.default.INTERNAL_SERVER_ERROR, 'Otp not set');
+                    }
+                    const result = { message: 'Otp send successfully' };
+                    return result;
+                }
             }));
             return result;
         }
         else {
-            //* order delivery update without verification by staff admin
-            const result = yield prisma_1.default.order.update({
-                where: { id: orderId },
-                data: { orderStatus: status },
-            });
+            const result = yield prisma_1.default.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {
+                var _e, _f, _g, _h;
+                //! calculate reward and commission
+                //* start rearwd given
+                const owner = isExistOrder.product_seller;
+                const customer = isExistOrder.customer;
+                let isValid = false;
+                if (owner.UsedReffereCode) {
+                    isValid = (0, referCodeValidity_1.isCodeValid)(new Date((_f = (_e = owner === null || owner === void 0 ? void 0 : owner.UsedReffereCode) === null || _e === void 0 ? void 0 : _e.refferCode) === null || _f === void 0 ? void 0 : _f.validUntil));
+                }
+                let ownerCommissionType = 'NORMAL';
+                if (isValid && ((_h = (_g = owner === null || owner === void 0 ? void 0 : owner.UsedReffereCode) === null || _g === void 0 ? void 0 : _g.refferCode) === null || _h === void 0 ? void 0 : _h.isValid)) {
+                    ownerCommissionType = 'REFERRED_MEMBER';
+                }
+                const commissionInfo = yield prisma.commission.findFirst({
+                    where: {
+                        AND: [
+                            {
+                                membershipCategory: isExistOrder.product_seller.memberShipCategory,
+                            },
+                            {
+                                commissionType: ownerCommissionType === 'NORMAL'
+                                    ? 'NORMAL'
+                                    : 'REFERRED_MEMBER',
+                            },
+                        ],
+                    },
+                });
+                if (!commissionInfo) {
+                    throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Commission info not found');
+                }
+                const calculatedCommission = isExistOrder.total * (commissionInfo.percentage / 100);
+                yield prisma.order_Commission_History.create({
+                    data: {
+                        orderId: isExistOrder.id,
+                        commissionId: commissionInfo.id,
+                        commissionAmount: calculatedCommission,
+                    },
+                });
+                //* owner reward
+                const ownerRewardInfo = yield prisma.rewardPoints.findFirst({
+                    where: {
+                        AND: [
+                            { rewardType: 'SELLING' },
+                            { membershipCategory: owner.memberShipCategory },
+                        ],
+                    },
+                });
+                if (!(ownerRewardInfo === null || ownerRewardInfo === void 0 ? void 0 : ownerRewardInfo.points)) {
+                    throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'No reward points defined');
+                }
+                yield prisma.organizationRewardPointsHistory.create({
+                    data: {
+                        pointHistoryType: 'IN',
+                        rewardPointsId: ownerRewardInfo === null || ownerRewardInfo === void 0 ? void 0 : ownerRewardInfo.id,
+                        points: ownerRewardInfo === null || ownerRewardInfo === void 0 ? void 0 : ownerRewardInfo.points,
+                        organizationId: owner.id,
+                    },
+                });
+                yield prisma.organization.update({
+                    where: { id: owner.id },
+                    data: {
+                        totalRewardPoints: { increment: ownerRewardInfo === null || ownerRewardInfo === void 0 ? void 0 : ownerRewardInfo.points },
+                    },
+                });
+                //* customer reward
+                const customerRewardInfo = yield prisma.rewardPoints.findFirst({
+                    where: {
+                        AND: [
+                            { rewardType: 'BUYING' },
+                            { membershipCategory: customer.memberShipCategory },
+                        ],
+                    },
+                });
+                if (!(customerRewardInfo === null || customerRewardInfo === void 0 ? void 0 : customerRewardInfo.points)) {
+                    throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'No reward points defined');
+                }
+                yield prisma.organizationRewardPointsHistory.create({
+                    data: {
+                        pointHistoryType: 'IN',
+                        rewardPointsId: customerRewardInfo === null || customerRewardInfo === void 0 ? void 0 : customerRewardInfo.id,
+                        points: customerRewardInfo === null || customerRewardInfo === void 0 ? void 0 : customerRewardInfo.points,
+                        organizationId: customer.id,
+                    },
+                });
+                yield prisma.organization.update({
+                    where: { id: customer.id },
+                    data: {
+                        totalRewardPoints: { increment: customerRewardInfo === null || customerRewardInfo === void 0 ? void 0 : customerRewardInfo.points },
+                    },
+                });
+                //* order delivery update without verification by staff admin
+                const result = yield prisma.order.update({
+                    where: { id: orderId },
+                    data: { orderStatus: status },
+                });
+                return result;
+            }));
             return result;
         }
     }
@@ -575,13 +593,20 @@ const verifyDeliveryOtp = (userId, userRole, payload) => __awaiter(void 0, void 
         where: { id: payload.orderId },
         include: {
             customer: { include: { owner: true } },
+            product_seller: {
+                include: { UsedReffereCode: { include: { refferCode: true } } },
+            },
         },
     });
     if (!isExistOrder) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Order not exist ');
     }
+    if (isExistOrder.product_seller_id !== isValidStaff.organizationId) {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Order owner id is not your organzation ');
+    }
     const customerPhone = isExistOrder.customer.owner.phone;
     const result = yield prisma_1.default.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {
+        var _j, _k, _l, _m;
         const findOtp = yield prisma.orderOtp.findUnique({
             where: { orderId: isExistOrder.id, phone: customerPhone },
         });
@@ -599,6 +624,93 @@ const verifyDeliveryOtp = (userId, userRole, payload) => __awaiter(void 0, void 
                 where: { orderId: isExistOrder.id, phone: customerPhone },
                 data: {
                     isVerified: true,
+                },
+            });
+            //! calculate reward and commission
+            //* start rearwd given
+            const owner = isExistOrder.product_seller;
+            const customer = isExistOrder.customer;
+            let isValid = false;
+            if (owner.UsedReffereCode) {
+                isValid = (0, referCodeValidity_1.isCodeValid)(new Date((_k = (_j = owner === null || owner === void 0 ? void 0 : owner.UsedReffereCode) === null || _j === void 0 ? void 0 : _j.refferCode) === null || _k === void 0 ? void 0 : _k.validUntil));
+            }
+            let ownerCommissionType = 'NORMAL';
+            if (isValid && ((_m = (_l = owner === null || owner === void 0 ? void 0 : owner.UsedReffereCode) === null || _l === void 0 ? void 0 : _l.refferCode) === null || _m === void 0 ? void 0 : _m.isValid)) {
+                ownerCommissionType = 'REFERRED_MEMBER';
+            }
+            const commissionInfo = yield prisma.commission.findFirst({
+                where: {
+                    AND: [
+                        {
+                            membershipCategory: isExistOrder.product_seller.memberShipCategory,
+                        },
+                        {
+                            commissionType: ownerCommissionType === 'NORMAL' ? 'NORMAL' : 'REFERRED_MEMBER',
+                        },
+                    ],
+                },
+            });
+            if (!commissionInfo) {
+                throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Commission info not found');
+            }
+            const calculatedCommission = isExistOrder.total * (commissionInfo.percentage / 100);
+            yield prisma.order_Commission_History.create({
+                data: {
+                    orderId: isExistOrder.id,
+                    commissionId: commissionInfo.id,
+                    commissionAmount: calculatedCommission,
+                },
+            });
+            //* owner reward
+            const ownerRewardInfo = yield prisma.rewardPoints.findFirst({
+                where: {
+                    AND: [
+                        { rewardType: 'SELLING' },
+                        { membershipCategory: owner.memberShipCategory },
+                    ],
+                },
+            });
+            if (!(ownerRewardInfo === null || ownerRewardInfo === void 0 ? void 0 : ownerRewardInfo.points)) {
+                throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'No reward points defined');
+            }
+            yield prisma.organizationRewardPointsHistory.create({
+                data: {
+                    pointHistoryType: 'IN',
+                    rewardPointsId: ownerRewardInfo === null || ownerRewardInfo === void 0 ? void 0 : ownerRewardInfo.id,
+                    points: ownerRewardInfo === null || ownerRewardInfo === void 0 ? void 0 : ownerRewardInfo.points,
+                    organizationId: owner.id,
+                },
+            });
+            yield prisma.organization.update({
+                where: { id: owner.id },
+                data: {
+                    totalRewardPoints: { increment: ownerRewardInfo === null || ownerRewardInfo === void 0 ? void 0 : ownerRewardInfo.points },
+                },
+            });
+            //* customer reward
+            const customerRewardInfo = yield prisma.rewardPoints.findFirst({
+                where: {
+                    AND: [
+                        { rewardType: 'BUYING' },
+                        { membershipCategory: customer.memberShipCategory },
+                    ],
+                },
+            });
+            if (!(customerRewardInfo === null || customerRewardInfo === void 0 ? void 0 : customerRewardInfo.points)) {
+                throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'No reward points defined');
+            }
+            yield prisma.organizationRewardPointsHistory.create({
+                data: {
+                    pointHistoryType: 'IN',
+                    rewardPointsId: customerRewardInfo === null || customerRewardInfo === void 0 ? void 0 : customerRewardInfo.id,
+                    points: customerRewardInfo === null || customerRewardInfo === void 0 ? void 0 : customerRewardInfo.points,
+                    organizationId: customer.id,
+                },
+            });
+            yield prisma.organization.update({
+                where: { id: customer.id },
+                data: {
+                    totalRewardPoints: { increment: customerRewardInfo === null || customerRewardInfo === void 0 ? void 0 : customerRewardInfo.points },
                 },
             });
             if (isExistOrder.paymentStatus === 'PAID') {
@@ -658,6 +770,8 @@ const getSingle = (id) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield prisma_1.default.order.findUnique({
         where: { id },
         include: {
+            OrderOtp: true,
+            orderPaymentInfo: { include: { paymentSystemOptions: true } },
             customer: {
                 include: {
                     owner: {
@@ -789,6 +903,12 @@ const searchFilterIncomingOrders = (userId, userRole, filters, options) => __awa
                 createdAt: 'desc',
             },
         include: {
+            OrderOtp: true,
+            orderPaymentInfo: {
+                include: {
+                    paymentSystemOptions: true,
+                },
+            },
             assigndForDelivery: true,
             orderItems: {
                 include: {
@@ -882,7 +1002,9 @@ const searchFilterOutgoingOrders = (userId, userRole, filters, options) => __awa
                 createdAt: 'desc',
             },
         include: {
+            OrderOtp: true,
             assigndForDelivery: true,
+            orderPaymentInfo: { include: { paymentSystemOptions: true } },
             orderItems: {
                 include: {
                     product: {
@@ -974,6 +1096,102 @@ const getMyOrderForDelivery = (userId) => __awaiter(void 0, void 0, void 0, func
     });
     return result;
 });
+const updateOrderPaymentOptions = (userId, userRole, payload) => __awaiter(void 0, void 0, void 0, function* () {
+    let isSellerOrganization = null;
+    let orgId = null;
+    const isOrderExist = yield prisma_1.default.order.findUnique({
+        where: { id: payload.orderId },
+        include: {
+            customer: true,
+            product_seller: {
+                include: {
+                    PaymentSystemOptions: true,
+                },
+            },
+            orderPaymentInfo: true,
+        },
+    });
+    if (!isOrderExist) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Order info not found');
+    }
+    if (userRole === 'STAFF') {
+        const userInfo = yield prisma_1.default.staff.findUnique({
+            where: { staffInfoId: userId },
+        });
+        if (!userInfo) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User info not found');
+        }
+        if (userInfo.organizationId === isOrderExist.product_seller_id) {
+            isSellerOrganization = true;
+            orgId = userInfo.organizationId;
+        }
+        if (userInfo.organizationId === isOrderExist.customerId) {
+            isSellerOrganization = false;
+        }
+        if (isSellerOrganization === null) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Please use authorized account');
+        }
+        const validStaff = isSellerOrganization === true
+            ? ['STAFF_ADMIN', 'ORDER_SUPERVISOR']
+            : ['STAFF_ADMIN', 'PURCHASE_OFFICER'];
+        if (!validStaff.includes(userInfo.role)) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Invalid Role staff');
+        }
+    }
+    const isPaymentOptionsExist = yield prisma_1.default.paymentSystemOptions.findFirst({
+        where: {
+            AND: [
+                { id: payload.paymentSystemOptionsId },
+                { organizationId: isOrderExist.product_seller_id },
+            ],
+        },
+    });
+    if (!isPaymentOptionsExist) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Payment options not found');
+    }
+    if (isOrderExist.orderPaymentInfo) {
+        if (!isOrderExist.orderPaymentInfo.id) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Options not found');
+        }
+        if (!isSellerOrganization) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'You have already add payment info for change it contact with bop support');
+        }
+        const findOrderPaymentInfo = yield prisma_1.default.orderPaymentInfo.findFirst({
+            where: {
+                orderId: payload.orderId,
+            },
+            include: {
+                order: true,
+            },
+        });
+        if (!findOrderPaymentInfo) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Options not found');
+        }
+        if (!orgId || orgId !== findOrderPaymentInfo.order.product_seller_id) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Invalid organization info');
+        }
+        const result = yield prisma_1.default.orderPaymentInfo.update({
+            where: { id: findOrderPaymentInfo.id },
+            data: { paymentSystemOptionsId: payload.paymentSystemOptionsId },
+            include: {
+                order: true,
+                paymentSystemOptions: true,
+            },
+        });
+        return result;
+    }
+    const result = yield prisma_1.default.orderPaymentInfo.create({
+        data: {
+            orderId: payload.orderId,
+            paymentSystemOptionsId: payload.paymentSystemOptionsId,
+        },
+        include: {
+            order: true,
+            paymentSystemOptions: true,
+        },
+    });
+    return result;
+});
 exports.OrderService = {
     orderCreate,
     updateOrderStatus,
@@ -986,4 +1204,5 @@ exports.OrderService = {
     verifyDeliveryOtp,
     assignForDelivery,
     getMyOrderForDelivery,
+    updateOrderPaymentOptions,
 };

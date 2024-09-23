@@ -8,7 +8,7 @@ const fs_1 = __importDefault(require("fs"));
 const multer_1 = __importDefault(require("multer"));
 //multer
 const storage = multer_1.default.diskStorage({
-    //*For multiple upload
+    //*For multiple upload ==> product
     destination: (req, file, cb) => {
         const uploadPath = 'uploads/';
         if (!fs_1.default.existsSync(uploadPath)) {
@@ -23,6 +23,7 @@ const storage = multer_1.default.diskStorage({
     },
 });
 const upload = (0, multer_1.default)({ storage: storage });
+//* profile photo
 const profilePhotoStorage = multer_1.default.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'uploads/userPhoto/');
@@ -34,6 +35,7 @@ const profilePhotoStorage = multer_1.default.diskStorage({
     },
 });
 const uploadProfile = (0, multer_1.default)({ storage: profilePhotoStorage });
+//* category
 const categoryPhotoStorage = multer_1.default.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'uploads/categoryPhoto/');
@@ -45,8 +47,21 @@ const categoryPhotoStorage = multer_1.default.diskStorage({
     },
 });
 const uploadCategoryPhoto = (0, multer_1.default)({ storage: categoryPhotoStorage });
+//* organization
+const organizationPhotoStorage = multer_1.default.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/organizationPhoto/');
+    },
+    filename: (req, file, cb) => {
+        // Use a unique name for each file to avoid conflicts
+        const uniqueSuffix = Date.now() + '--' + Math.round(Math.random() * 1e9);
+        cb(null, uniqueSuffix + '-' + file.originalname);
+    },
+});
+const uploadOrganizationPhoto = (0, multer_1.default)({ storage: organizationPhotoStorage });
 exports.FileUploadHelper = {
     upload,
     uploadProfile,
     uploadCategoryPhoto,
+    uploadOrganizationPhoto,
 };

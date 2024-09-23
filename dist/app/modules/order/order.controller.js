@@ -52,38 +52,6 @@ const getOrganizationOutgoingOrders = (0, catchAsync_1.default)((req, res) => __
         data: result,
     });
 }));
-// const getOrganizationIncomingOrders = catchAsync(
-//   async (req: Request, res: Response) => {
-//     const { id: organizationId } = req.params;
-//     const options = pick(req.query, paginationFields);
-//     const result = await OrderService.getOrganizationIncomingOrders(
-//       organizationId,
-//       options,
-//     );
-//     sendResponse(res, {
-//       success: true,
-//       statusCode: httpStatus.OK,
-//       message: 'Incoming orders retrieve',
-//       data: result,
-//     });
-//   },
-// );
-// const getOrganizationOutgoingOrders = catchAsync(
-//   async (req: Request, res: Response) => {
-//     const { id: organizationId } = req.params;
-//     const options = pick(req.query, paginationFields);
-//     const result = await OrderService.getOrganizationOutgoingOrders(
-//       organizationId,
-//       options,
-//     );
-//     sendResponse(res, {
-//       success: true,
-//       statusCode: httpStatus.OK,
-//       message: 'Outgoing orders retrieve',
-//       data: result,
-//     });
-//   },
-// );
 const updateOrderStatus = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id: userId, role } = req.user;
     const { orderId } = req.params;
@@ -173,6 +141,16 @@ const getMyOrderForDelivery = (0, catchAsync_1.default)((req, res) => __awaiter(
         data: result,
     });
 }));
+const updateOrderPaymentOptions = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id, role } = req.user;
+    const result = yield order_service_1.OrderService.updateOrderPaymentOptions(id, role, req.body);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: 'Order updated',
+        data: result,
+    });
+}));
 exports.OrderController = {
     getOrganizationOutgoingOrders,
     getOrganizationIncomingOrders,
@@ -185,4 +163,5 @@ exports.OrderController = {
     verifyDeliveryOtp,
     assigndForDelivery,
     getMyOrderForDelivery,
+    updateOrderPaymentOptions,
 };

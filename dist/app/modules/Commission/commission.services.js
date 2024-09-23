@@ -17,11 +17,6 @@ const http_status_1 = __importDefault(require("http-status"));
 const ApiError_1 = __importDefault(require("../../../errors/ApiError"));
 const prisma_1 = __importDefault(require("../../../shared/prisma"));
 const createNew = (payload) => __awaiter(void 0, void 0, void 0, function* () {
-    if (payload.commissionType === 'REFERRED_MEMBER') {
-        if (!payload.ref_mem_validity) {
-            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Need referred member  commission validity day ');
-        }
-    }
     const isExist = yield prisma_1.default.commission.findFirst({
         where: {
             AND: [

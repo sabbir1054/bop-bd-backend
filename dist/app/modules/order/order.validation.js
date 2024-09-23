@@ -13,6 +13,16 @@ const orderCreateValidation = zod_1.default.object({
         }),
     }),
 });
+const updateOrderPaymentOption = zod_1.default.object({
+    body: zod_1.default.object({
+        paymentSystemOptionsId: zod_1.default.string({
+            required_error: 'Payment option id required',
+        }),
+        orderId: zod_1.default.string({
+            required_error: 'Order id required',
+        }),
+    }),
+});
 const updateOrderStatusValidation = zod_1.default.object({
     body: zod_1.default.object({
         status: zod_1.default.enum([...order_constant_1.OrderStatusConstant]),
@@ -34,4 +44,5 @@ exports.OrderValidation = {
     updateOrderStatusValidation,
     updatePaymentStatusValidation,
     assignForDeliveryValidation,
+    updateOrderPaymentOption,
 };

@@ -17,7 +17,7 @@ const http_status_1 = __importDefault(require("http-status"));
 const ApiError_1 = __importDefault(require("../../../errors/ApiError"));
 const prisma_1 = __importDefault(require("../../../shared/prisma"));
 const createNew = (userid, userRole, payload) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
+    let orgId = null;
     if (userRole === 'STAFF') {
         const userInfo = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userid },
@@ -29,47 +29,39 @@ const createNew = (userid, userRole, payload) => __awaiter(void 0, void 0, void 
         if (!validStaff.includes(userInfo.role)) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only accounts manager and admin staff and owner can cerate Payment options');
         }
+        orgId = userInfo.organizationId;
     }
-    const organizationInfo = yield prisma_1.default.organization.findUnique({
-        where: { ownerId: userid },
-        include: {
-            owner: true,
-        },
-    });
-    if (!((_a = organizationInfo === null || organizationInfo === void 0 ? void 0 : organizationInfo.owner) === null || _a === void 0 ? void 0 : _a.verified)) {
-        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Your organization is not verified');
+    else {
+        const userInfo = yield prisma_1.default.user.findUnique({
+            where: { id: userid },
+        });
+        if (!userInfo) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User info not found');
+        }
+        orgId = userInfo.organizationId;
     }
-    const result = yield prisma_1.default.paymentSystemOptions.create({ data: payload });
-    return result;
-});
-const getAll = (userId, payload) => __awaiter(void 0, void 0, void 0, function* () {
-    const organizationInfo = yield prisma_1.default.user.findUnique({
-        where: { id: userId },
-        include: { organization: { include: { BusinessType: true } } },
-    });
-    if (!organizationInfo) {
-        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization info not found');
+    if (!orgId) {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Organization info not found');
     }
     const result = yield prisma_1.default.paymentSystemOptions.create({
-        data: payload,
-        include: {
-            organization: { include: { BusinessType: true } },
+        data: {
+            paymentCategory: payload.paymentCategory,
+            methodName: payload.methodName,
+            accountNumber: payload.accountNumber,
+            description: payload.description,
+            organizationId: orgId,
         },
     });
     return result;
 });
-const getSingle = (paymentOptionId) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield prisma_1.default.paymentSystemOptions.findUnique({
-        where: { id: paymentOptionId },
-        include: {
-            organization: { include: { BusinessType: true, owner: true } },
-        },
+const getSingle = (organizationId) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield prisma_1.default.paymentSystemOptions.findMany({
+        where: { organizationId: organizationId },
     });
-    if (!result) {
-        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Referred code not found');
-    }
+    return result;
 });
 const updateSingle = (userId, userRole, paymentOptionId, payload) => __awaiter(void 0, void 0, void 0, function* () {
+    let orgId = null;
     if (userRole === 'STAFF') {
         const userInfo = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userId },
@@ -81,6 +73,28 @@ const updateSingle = (userId, userRole, paymentOptionId, payload) => __awaiter(v
         if (!validStaff.includes(userInfo.role)) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only accounts manager and admin staff and owner can change Payment options');
         }
+        orgId = userInfo.organizationId;
+    }
+    else {
+        const userInfo = yield prisma_1.default.user.findUnique({
+            where: { id: userId },
+        });
+        if (!userInfo) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User info not found');
+        }
+        orgId = userInfo.organizationId;
+    }
+    if (!orgId) {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Organization info not found');
+    }
+    const isPaymentOptionsExist = yield prisma_1.default.paymentSystemOptions.findUnique({
+        where: { id: paymentOptionId },
+    });
+    if (!isPaymentOptionsExist) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Payment options not found');
+    }
+    if (orgId !== isPaymentOptionsExist.organizationId) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization id not matched');
     }
     const result = yield prisma_1.default.paymentSystemOptions.update({
         where: { id: paymentOptionId },
@@ -89,6 +103,7 @@ const updateSingle = (userId, userRole, paymentOptionId, payload) => __awaiter(v
     return result;
 });
 const deleteSingle = (userId, userRole, paymentOptionId) => __awaiter(void 0, void 0, void 0, function* () {
+    let orgId = null;
     if (userRole === 'STAFF') {
         const userInfo = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userId },
@@ -98,8 +113,30 @@ const deleteSingle = (userId, userRole, paymentOptionId) => __awaiter(void 0, vo
         }
         const validStaff = ['STAFF_ADMIN', 'ACCOUNTS_MANAGER'];
         if (!validStaff.includes(userInfo.role)) {
-            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only accounts manager and admin staff and owner can change Payment options');
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only accounts manager and admin staff and owner can delete Payment options');
         }
+        orgId = userInfo.organizationId;
+    }
+    else {
+        const userInfo = yield prisma_1.default.user.findUnique({
+            where: { id: userId },
+        });
+        if (!userInfo) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User info not found');
+        }
+        orgId = userInfo.organizationId;
+    }
+    if (!orgId) {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Organization info not found');
+    }
+    const isPaymentOptionsExist = yield prisma_1.default.paymentSystemOptions.findUnique({
+        where: { id: paymentOptionId },
+    });
+    if (!isPaymentOptionsExist) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Payment options not found');
+    }
+    if (orgId !== isPaymentOptionsExist.organizationId) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization id not matched');
     }
     const result = yield prisma_1.default.paymentSystemOptions.delete({
         where: { id: paymentOptionId },
@@ -108,7 +145,6 @@ const deleteSingle = (userId, userRole, paymentOptionId) => __awaiter(void 0, vo
 });
 exports.PaymentSystemOptionsService = {
     createNew,
-    getAll,
     getSingle,
     updateSingle,
     deleteSingle,

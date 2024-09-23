@@ -13,7 +13,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrganizaionServices = void 0;
+const fs_1 = __importDefault(require("fs"));
 const http_status_1 = __importDefault(require("http-status"));
+const path_1 = __importDefault(require("path"));
 const ApiError_1 = __importDefault(require("../../../errors/ApiError"));
 const prisma_1 = __importDefault(require("../../../shared/prisma"));
 const getDashboardMatrics = (userId, userRole) => __awaiter(void 0, void 0, void 0, function* () {
@@ -207,8 +209,170 @@ const getIncomingOrdersByDate = (userId, userRole, date) => __awaiter(void 0, vo
         };
     }));
 });
+const updateOrganization = (req, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const deletePhoto = (photoLink) => {
+        // Delete the image file from the server
+        const filePath = path_1.default.join(process.cwd(), 'uploads/organizationPhoto', path_1.default.basename(photoLink));
+        fs_1.default.unlink(filePath, err => {
+            if (err) {
+                deletePhoto(req.body.photo);
+                next(new ApiError_1.default(http_status_1.default.BAD_REQUEST, `Failed to delete previous image, try again for update,photo `));
+            }
+        });
+    };
+    const { photo, name } = req.body;
+    const { id: userId, role: userRole } = req.user;
+    let orgId = null;
+    if (userRole === 'STAFF') {
+        const userInfo = yield prisma_1.default.staff.findUnique({
+            where: { staffInfoId: userId },
+        });
+        if (!userInfo) {
+            if (photo) {
+                deletePhoto(photo);
+            }
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User info not found');
+        }
+        const validStaff = ['STAFF_ADMIN'];
+        if (!validStaff.includes(userInfo.role)) {
+            if (photo) {
+                deletePhoto(photo);
+            }
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only admin staff and owner can delete Payment options');
+        }
+        orgId = userInfo.organizationId;
+    }
+    else {
+        const userInfo = yield prisma_1.default.user.findUnique({
+            where: { id: userId },
+        });
+        if (!userInfo) {
+            if (photo) {
+                deletePhoto(photo);
+            }
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User info not found');
+        }
+        orgId = userInfo.organizationId;
+    }
+    if (!orgId) {
+        if (photo) {
+            deletePhoto(photo);
+        }
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Organization info not found');
+    }
+    const isOrganizationExist = yield prisma_1.default.organization.findUnique({
+        where: { id: orgId },
+    });
+    if (!isOrganizationExist) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization info not found');
+    }
+    if (isOrganizationExist.photo && photo) {
+        deletePhoto(isOrganizationExist.photo);
+    }
+    if (photo && name) {
+        const result = yield prisma_1.default.organization.update({
+            where: { id: orgId },
+            data: {
+                photo: photo,
+                name: name,
+            },
+        });
+        return result;
+    }
+    else {
+        if (photo) {
+            const result = yield prisma_1.default.organization.update({
+                where: { id: orgId },
+                data: {
+                    photo: photo,
+                },
+            });
+            return result;
+        }
+        if (name) {
+            const result = yield prisma_1.default.organization.update({
+                where: { id: orgId },
+                data: {
+                    name: name,
+                },
+            });
+            return result;
+        }
+    }
+});
+const removePicture = (userId, userRole, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const deletePhoto = (photoLink) => {
+        // Delete the image file from the server
+        const filePath = path_1.default.join(process.cwd(), 'uploads/organizationPhoto', path_1.default.basename(photoLink));
+        fs_1.default.unlink(filePath, err => {
+            if (err) {
+                next(new ApiError_1.default(http_status_1.default.BAD_REQUEST, `Failed to delete previous image, try again for update,photo `));
+            }
+        });
+    };
+    let orgId = null;
+    if (userRole === 'STAFF') {
+        const userInfo = yield prisma_1.default.staff.findUnique({
+            where: { staffInfoId: userId },
+        });
+        if (!userInfo) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User info not found');
+        }
+        const validStaff = ['STAFF_ADMIN'];
+        if (!validStaff.includes(userInfo.role)) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only admin staff and owner can delete Payment options');
+        }
+        orgId = userInfo.organizationId;
+    }
+    else {
+        const userInfo = yield prisma_1.default.user.findUnique({
+            where: { id: userId },
+        });
+        if (!userInfo) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User info not found');
+        }
+        orgId = userInfo.organizationId;
+    }
+    if (!orgId) {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Organization info not found');
+    }
+    const isOrganizationExist = yield prisma_1.default.organization.findUnique({
+        where: { id: orgId },
+    });
+    if (!isOrganizationExist) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization info not found');
+    }
+    if (isOrganizationExist.photo) {
+        deletePhoto(isOrganizationExist.photo);
+    }
+    const result = yield prisma_1.default.organization.update({
+        where: { id: orgId },
+        data: {
+            photo: '',
+        },
+    });
+    return result;
+});
+const updateOrganizationMembershipCategory = (payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const isExist = yield prisma_1.default.organization.findUnique({
+        where: { id: payload.organizationId },
+    });
+    if (!isExist) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization info not found');
+    }
+    const result = yield prisma_1.default.organization.update({
+        where: { id: payload.organizationId },
+        data: {
+            memberShipCategory: payload.memberShipCategory,
+        },
+    });
+    return result;
+});
 exports.OrganizaionServices = {
     getDashboardMatrics,
     getOutgoingOrdersByDate,
     getIncomingOrdersByDate,
+    updateOrganization,
+    removePicture,
+    updateOrganizationMembershipCategory,
 };

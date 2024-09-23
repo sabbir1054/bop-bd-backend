@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Invoice</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="">
+    <div class="max-w-4xl mx-auto bg-white p-8 rounded-lg">
+      <div class="flex justify-between items-center mb-10">
+        <div>
+          <h1 class="text-4xl font-bold">Order #<%= orderNumber %></h1>
+          <p class="text-gray-600 mt-2"><%= orderDate %></p>
+        </div>
+        <div class="text-right">
+          <div class="flex justify-end">
+            <img
+              src="<%= companyLogoUrl %>"
+              alt="Company Logo"
+              width="80px"
+            />
+          </div>
+          <small><%= companyWebsite %></small>
+        </div>
+      </div>
+
+      <!-- Organization Info in Same Row -->
+      <div class="grid grid-cols-4 gap-2 mb-6">
+        <div>
+          <h3 class="text-lg font-semibold">Buyer :</h3>
+          <div class="flex">
+            <img
+              src="<%= buyerLogoUrl %>"
+              alt="Buyer Logo"
+              width="40px"
+            />
+          </div>
+          <p><%= buyerName %></p>
+        </div>
+        <div class="text-left">
+          <h3 class="text-lg font-semibold">Seller :</h3>
+          <div class="flex">
+            <img
+              src="<%= sellerLogoUrl %>"
+              alt="Seller Logo"
+              width="40px"
+            />
+          </div>
+          <p><%= sellerName %></p>
+        </div>
+        <div class="text-left">
+          <h3 class="text-lg font-semibold">Delivery Address :</h3>
+          <p><%= deliveryAddress %></p>
+        </div>
+        <div class="text-left">
+          <h3 class="text-lg font-semibold">Payment Info:</h3>
+          <p><%= paymentMethod %></p>
+          <p><%= bankName %></p>
+          <p>ACC:<%= accountNumber %></p>
+        </div>
+      </div>
+
+      <table class="w-full text-left table-auto mb-6">
+        <thead>
+          <tr class="bg-gray-200">
+            <th class="px-4 py-2">Item</th>
+            <th class="px-4 py-2">Price</th>
+            <th class="px-4 py-2">Qty</th>
+            <th class="px-4 py-2">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.forEach(item => { %>
+          <tr>
+            <td class="border px-4 py-2">
+              <h4 class="font-semibold"><%= item.product.name %></h4>
+              <!-- <p class="text-gray-600 text-sm"><%= item.description %></p> -->
+            </td>
+            <td class="border px-4 py-2"><%= item.price %></td>
+            <td class="border px-4 py-2"><%= item.quantity %></td>
+            <td class="border px-4 py-2"><%= item.price*item.quantity %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+
+      <div class="flex justify-end mb-6">
+        <table class="w-full max-w-xs text-left table-auto">
+          <tr>
+            <th class="px-4 py-2">Subtotal</th>
+            <td class="px-4 py-2"><%= subtotal %></td>
+          </tr>
+          <tr>
+            <th class="px-4 py-2">Delivery Fee</th>
+            <td class="px-4 py-2"><%= deliveryFee %></td>
+          </tr>
+          <tr>
+            <th class="px-4 py-2">Total</th>
+            <td class="px-4 py-2 font-bold"><%= total %></td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="text-center mt-8">
+        <p class="text-gray-500">
+          If you face any inconsistency, please contact us at 
+          <strong><%= supportEmail %></strong> or call: <strong><%= supportPhone %></strong>
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

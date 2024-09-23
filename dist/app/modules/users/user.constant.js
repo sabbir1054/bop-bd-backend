@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.StaffRole = exports.memberCategory = void 0;
+exports.userFilterableFields = exports.userSearchableFields = exports.StaffRole = exports.memberCategory = void 0;
 exports.memberCategory = [
     'SILVER',
     'GOLD',
@@ -15,4 +15,12 @@ exports.StaffRole = [
     'DELIVERY_BOY',
     'ACCOUNTS_MANAGER',
     'PURCHASE_OFFICER',
+];
+exports.userSearchableFields = ['phone'];
+exports.userFilterableFields = [
+    'searchTerm',
+    'verified',
+    'isMobileVerified',
+    'isEmailVerified',
+    'isNidVerified',
 ];

@@ -12,56 +12,56 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PaymentOptionsController = void 0;
+exports.UserPaymentOptionsController = void 0;
 const http_status_1 = __importDefault(require("http-status"));
 const catchAsync_1 = __importDefault(require("../../../shared/catchAsync"));
 const sendResponse_1 = __importDefault(require("../../../shared/sendResponse"));
-const paymentOptions_services_1 = require("./paymentOptions.services");
-const createNew = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const usePaymentOptions_services_1 = require("./usePaymentOptions.services");
+const createPaymentOptions = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id: userId, role } = req.user;
-    const result = yield paymentOptions_services_1.PaymentSystemOptionsService.createNew(userId, role, req.body);
+    const result = yield usePaymentOptions_services_1.UserPaymentOptionsService.createPaymentOptions(userId, role, req.body);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,
-        message: 'Payment options created',
+        message: 'Payment system options created',
         data: result,
     });
 }));
-const getSingle = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield paymentOptions_services_1.PaymentSystemOptionsService.getSingle(req.params.id);
+const organizationAllPaymentOptions = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { organizationId } = req.params;
+    const result = yield usePaymentOptions_services_1.UserPaymentOptionsService.organizationAllPaymentOptions(organizationId);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,
-        message: 'Payment options retrieve',
+        message: 'Payment system options created',
         data: result,
     });
 }));
-const updateSingle = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const updateOrganizationPaymentOptions = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id: userId, role } = req.user;
-    const { id } = req.params;
-    const data = req.body;
-    const result = yield paymentOptions_services_1.PaymentSystemOptionsService.updateSingle(userId, role, id, data);
+    const { organizationId, paymentSystemOptionsId } = req.params;
+    const result = yield usePaymentOptions_services_1.UserPaymentOptionsService.updateorganizationPaymentOptions(userId, role, organizationId, paymentSystemOptionsId, req.body);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,
-        message: 'Payment options updated !',
+        message: 'Payment system options updated',
         data: result,
     });
 }));
-const deleteSingle = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id } = req.params;
+const deleteorganizationPaymentOptions = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id: userId, role } = req.user;
-    const result = yield paymentOptions_services_1.PaymentSystemOptionsService.deleteSingle(userId, role, id);
+    const { organizationId, paymentSystemOptionsId } = req.params;
+    const result = yield usePaymentOptions_services_1.UserPaymentOptionsService.deleteorganizationPaymentOptions(userId, role, organizationId, paymentSystemOptionsId);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,
-        message: 'Payment options deleted !',
+        message: 'Payment system options updated',
         data: result,
     });
 }));
-exports.PaymentOptionsController = {
-    createNew,
-    getSingle,
-    updateSingle,
-    deleteSingle,
+exports.UserPaymentOptionsController = {
+    createPaymentOptions,
+    organizationAllPaymentOptions,
+    updateOrganizationPaymentOptions,
+    deleteorganizationPaymentOptions,
 };
