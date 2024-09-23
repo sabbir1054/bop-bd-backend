@@ -5,7 +5,6 @@ import httpStatus from 'http-status';
 import path from 'path';
 import ApiError from '../../../errors/ApiError';
 import { paginationHelpers } from '../../../helpers/paginationHelper';
-import { IGenericResponse } from '../../../interfaces/common';
 import { IPaginationOptions } from '../../../interfaces/pagination';
 import prisma from '../../../shared/prisma';
 import { IUpdateStaffPayload, userSearchableFields } from './user.constant';
@@ -446,22 +445,39 @@ const getOrganizationStaff = async (
   return staffMembers;
 };
 
-const getMyDeliveryBoy = async (userId: string) => {
-  const isExistStaff = await prisma.staff.findUnique({
-    where: { staffInfoId: userId },
-  });
+const getMyDeliveryBoy = async (userId: string, userRole: string) => {
+  let orgId = null;
+  if (userRole === 'STAFF') {
+    const isExistStaff = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+    });
 
-  if (!isExistStaff) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not found');
+    if (!isExistStaff) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not found');
+    }
+    if (isExistStaff.role !== 'ORDER_SUPERVISOR') {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Only order supervisor can get this',
+      );
+    }
+    orgId = isExistStaff.organizationId;
+  } else {
+    const isUserExist = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!isUserExist) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'User info not found');
+    }
+    orgId = isUserExist.organizationId;
   }
-  if (isExistStaff.role !== 'ORDER_SUPERVISOR') {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
-      'Only order supervisor can get this',
-    );
+
+  if (!orgId) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
   }
   const organization = await prisma.organization.findUnique({
-    where: { id: isExistStaff.organizationId },
+    where: { id: orgId },
   });
 
   if (!organization) {

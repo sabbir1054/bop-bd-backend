@@ -99,9 +99,9 @@ const getOrganizationStaff = catchAsync(async (req: Request, res: Response) => {
   });
 });
 const getMyDeliveryBoy = catchAsync(async (req: Request, res: Response) => {
-  const { id: userId } = req.user as any;
+  const { id: userId, role } = req.user as any;
 
-  const result = await UserServices.getMyDeliveryBoy(userId);
+  const result = await UserServices.getMyDeliveryBoy(userId, role);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

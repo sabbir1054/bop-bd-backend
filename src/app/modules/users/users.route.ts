@@ -27,7 +27,14 @@ router.get(
 router.get(
   '/myDeliveryBoy',
   validateRequest(UsersValidation.getStaffValidation),
-  auth(ENUM_USER_ROLE.STAFF),
+  auth(
+    ENUM_USER_ROLE.DEALER,
+    ENUM_USER_ROLE.IMPORTER,
+    ENUM_USER_ROLE.MANUFACTURER,
+    ENUM_USER_ROLE.RESELLER,
+    ENUM_USER_ROLE.WHOLESALER,
+    ENUM_USER_ROLE.STAFF,
+  ),
   UserController.getMyDeliveryBoy,
 );
 router.patch(
