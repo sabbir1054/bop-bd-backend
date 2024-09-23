@@ -11,6 +11,7 @@ import { FeedbackRoutes } from '../modules/feedback/feedback.routes';
 import { InvoceRoutes } from '../modules/invoices/invoice.route';
 import { OrderRoutes } from '../modules/order/order.route';
 import { OrganizationRoutes } from '../modules/organization/organization.route';
+import { PayCommissionRoutes } from '../modules/payCommission/payCommission.route';
 import { PaymentOptionsRoutes } from '../modules/paymentOptions/paymentOptions.route';
 import { ValidDaysRoutes } from '../modules/refeCodeValidDays/referCodeValidDays.route';
 import { RewardRoutes } from '../modules/reward/reward.route';
@@ -96,7 +97,7 @@ const moduleRoutes = [
   },
   {
     path: '/commissionPay',
-    route: InvoceRoutes,
+    route: PayCommissionRoutes,
   },
 ];
 
