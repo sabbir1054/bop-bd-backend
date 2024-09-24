@@ -199,15 +199,29 @@ const executePaymentHit = async (paymentID: string) => {
           payCommissionId: executeResponse.data.merchantInvoiceNumber,
         },
       });
-    const updateOrganizationRewardAndBalance = await prisma.organization.update(
-      {
+
+    const payCommissionInfo = await prisma.payCommission.findUnique({
+      where: { id: createTransactionPaycommission.payCommissionId },
+    });
+    if (!payCommissionInfo) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Pay commission info not found');
+    }
+    if (payCommissionInfo.commissionPayType === 'CASH') {
+      await prisma.organization.update({
+        where: { id: createTransactionPaycommission.payerReference },
+        data: {
+          totlaCommission: { decrement: createTransactionPaycommission.amount },
+        },
+      });
+    } else {
+      await prisma.organization.update({
         where: { id: createTransactionPaycommission.payerReference },
         data: {
           totalRewardPoints: 0,
           totlaCommission: { decrement: createTransactionPaycommission.amount },
         },
-      },
-    );
+      });
+    }
     return createTransactionPaycommission;
   });
   return result;
