@@ -226,7 +226,48 @@ const executePaymentHit = async (paymentID: string) => {
   return result;
 };
 
+const getOrganizationPayCommissionHistory = async (
+  userId: string,
+  userRole: string,
+) => {
+  let orgId = null;
+  // staff and owner validation
+  if (userRole === 'STAFF') {
+    const isValidStaff = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+    });
+
+    if (!isValidStaff) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not fount');
+    }
+    const validStaffRole = ['STAFF_ADMIN', 'ACCOUNTS_MANAGER'];
+
+    if (!validStaffRole.includes(isValidStaff.role)) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Staff role not valid');
+    }
+
+    orgId = isValidStaff.organizationId;
+  } else {
+    const isValidUser = await prisma.user.findUnique({ where: { id: userId } });
+    if (!isValidUser) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Your info not found');
+    }
+    orgId = isValidUser.organizationId;
+  }
+  if (!orgId) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
+  }
+  const result = await prisma.payCommission.findMany({
+    where: { organizationId: orgId },
+    include: {
+      transactionDetails: true,
+    },
+  });
+  return result;
+};
+
 export const PayCommissionServices = {
   createPayment,
   executePaymentHit,
+  getOrganizationPayCommissionHistory,
 };

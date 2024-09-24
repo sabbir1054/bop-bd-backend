@@ -25,8 +25,22 @@ const executePaymentHit = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const getOrganizationPayCommissionHistory = catchAsync(
+  async (req: Request, res: Response) => {
+    const { id, role } = req.user as any;
+    const result =
+      await PayCommissionServices.getOrganizationPayCommissionHistory(id, role);
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Pay commission history retrieve successully',
+      data: result,
+    });
+  },
+);
 
 export const PayCommissionController = {
   createPayment,
   executePaymentHit,
+  getOrganizationPayCommissionHistory,
 };

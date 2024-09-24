@@ -21,5 +21,17 @@ router.post(
   PayCommissionController.createPayment,
 );
 router.post('/executePayment', PayCommissionController.executePaymentHit);
+router.post(
+  '/payCommissionHistory',
+  auth(
+    ENUM_USER_ROLE.STAFF,
+    ENUM_USER_ROLE.DEALER,
+    ENUM_USER_ROLE.IMPORTER,
+    ENUM_USER_ROLE.MANUFACTURER,
+    ENUM_USER_ROLE.RESELLER,
+    ENUM_USER_ROLE.WHOLESALER,
+  ),
+  PayCommissionController.getOrganizationPayCommissionHistory,
+);
 
 export const PayCommissionRoutes = router;
