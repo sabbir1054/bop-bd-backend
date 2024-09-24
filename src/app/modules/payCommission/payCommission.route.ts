@@ -21,7 +21,7 @@ router.post(
   PayCommissionController.createPayment,
 );
 router.post('/executePayment', PayCommissionController.executePaymentHit);
-router.post(
+router.get(
   '/payCommissionHistory',
   auth(
     ENUM_USER_ROLE.STAFF,
