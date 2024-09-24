@@ -32,15 +32,16 @@ const startGrantToken = () => __awaiter(void 0, void 0, void 0, function* () {
 });
 exports.startGrantToken = startGrantToken;
 const startCreatePayment = (payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const callBackUrl = config_1.default.bkashConfig.callBackURL;
     const createPaymentLink = config_1.default.bkashConfig.createPaymentLink;
     const requestBody = {
         mode: '0011',
         payerReference: payload.orgId,
-        callbackURL: payload.callbackUrl,
+        callbackURL: callBackUrl,
         amount: payload.amount,
         currency: 'BDT',
         intent: 'sale',
-        merchantInvoiceNumber: payload.orgId,
+        merchantInvoiceNumber: payload.payComID,
     };
     const response = yield axios_1.default.post(`${createPaymentLink}`, Object.assign({}, requestBody), {
         headers: {

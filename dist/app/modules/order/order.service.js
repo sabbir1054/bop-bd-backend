@@ -1051,17 +1051,28 @@ const searchFilterOutgoingOrders = (userId, userRole, filters, options) => __awa
         data: result,
     };
 });
-const assignForDelivery = (userId, payload) => __awaiter(void 0, void 0, void 0, function* () {
-    const IsValidUserRole = yield prisma_1.default.user.findUnique({
-        where: { id: userId },
-        include: { Staff: { include: { organization: true } } },
-    });
-    if (!(IsValidUserRole === null || IsValidUserRole === void 0 ? void 0 : IsValidUserRole.Staff)) {
-        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User info not found');
+const assignForDelivery = (userId, userRole, payload) => __awaiter(void 0, void 0, void 0, function* () {
+    let orgId = null;
+    if (userRole === 'STAFF') {
+        const IsValidUserRole = yield prisma_1.default.user.findUnique({
+            where: { id: userId },
+            include: { Staff: { include: { organization: true } } },
+        });
+        if (!IsValidUserRole || !IsValidUserRole.Staff) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User info not found');
+        }
+        const validStaffRole = ['ORDER_SUPERVISOR', 'STAFF_ADMIN'];
+        if (!validStaffRole.includes(IsValidUserRole.Staff.role)) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only order supervisor and staff admin can assign delivery boy');
+        }
+        orgId = IsValidUserRole.Staff.organizationId;
     }
-    const validStaffRole = ['ORDER_SUPERVISOR', 'STAFF_ADMIN'];
-    if (!validStaffRole.includes(IsValidUserRole.Staff.role)) {
-        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only order supervisor and staff admin can assign delivery boy');
+    else {
+        const isUserExist = yield prisma_1.default.user.findUnique({ where: { id: userId } });
+        if (!isUserExist) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User info not found');
+        }
+        orgId = isUserExist.organizationId;
     }
     const isDeliveryBoyExist = yield prisma_1.default.staff.findUnique({
         where: { id: payload.deliveryBoyId },
@@ -1081,12 +1092,12 @@ const assignForDelivery = (userId, payload) => __awaiter(void 0, void 0, void 0,
     if (!isOrderExist) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Order info not found');
     }
-    if (isOrderExist.product_seller_id !== IsValidUserRole.Staff.organization.id) {
+    if (isOrderExist.product_seller_id !== orgId) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Order id not valid ');
     }
     const result = yield prisma_1.default.assigndForDelivery.create({
         data: {
-            assignedby: { connect: { id: IsValidUserRole.Staff.id } },
+            assignedby: { connect: { id: userId } },
             deliveryBoy: { connect: { id: payload.deliveryBoyId } },
             order: { connect: { id: payload.orderId } },
         },

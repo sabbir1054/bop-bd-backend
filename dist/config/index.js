@@ -42,5 +42,6 @@ exports.default = {
         executePaymentLink: process.env.BKASH_EXECUTE_PAYMENT_API_LINK,
         queryPaymentLink: process.env.BKASH_QUERY_PAYMENT_API_LINK,
         searchTransactionLink: process.env.BKASH_SEARCH_TRANSACTION_API_LINK,
+        callBackURL: process.env.BKASH_CALL_BACK_URL,
     },
 };

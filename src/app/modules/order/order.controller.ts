@@ -149,9 +149,9 @@ const verifyDeliveryOtp = catchAsync(async (req: Request, res: Response) => {
   });
 });
 const assigndForDelivery = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.user as any;
+  const { id, role } = req.user as any;
 
-  const result = await OrderService.assignForDelivery(id, req.body);
+  const result = await OrderService.assignForDelivery(id, role, req.body);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

@@ -18,7 +18,8 @@ const catchAsync_1 = __importDefault(require("../../../shared/catchAsync"));
 const sendResponse_1 = __importDefault(require("../../../shared/sendResponse"));
 const payCommission_services_1 = require("./payCommission.services");
 const createPayment = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield payCommission_services_1.PayCommissionServices.createPayment(req.body);
+    const { id, role } = req.user;
+    const result = yield payCommission_services_1.PayCommissionServices.createPayment(req.body, id, role);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,

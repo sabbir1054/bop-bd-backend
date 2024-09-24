@@ -22,5 +22,5 @@ router.patch('/updatePaymentStatus/:orderId', (0, auth_1.default)(user_1.ENUM_US
 router.get('/forDelivery/list', (0, auth_1.default)(user_1.ENUM_USER_ROLE.STAFF), order_controller_1.OrderController.getMyOrderForDelivery);
 router.get('/:id', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.RESELLER, user_1.ENUM_USER_ROLE.ADMIN, user_1.ENUM_USER_ROLE.SUPER_ADMIN, user_1.ENUM_USER_ROLE.STAFF), order_controller_1.OrderController.getSingle);
 router.post('/verifyDelivery', (0, auth_1.default)(user_1.ENUM_USER_ROLE.STAFF), order_controller_1.OrderController.verifyDeliveryOtp);
-router.post('/assignDeliveryBoy', (0, validateRequest_1.default)(order_validation_1.OrderValidation.assignForDeliveryValidation), (0, auth_1.default)(user_1.ENUM_USER_ROLE.STAFF), order_controller_1.OrderController.assigndForDelivery);
+router.post('/assignDeliveryBoy', (0, validateRequest_1.default)(order_validation_1.OrderValidation.assignForDeliveryValidation), (0, auth_1.default)(user_1.ENUM_USER_ROLE.STAFF, user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.RESELLER), order_controller_1.OrderController.assigndForDelivery);
 exports.OrderRoutes = router;
