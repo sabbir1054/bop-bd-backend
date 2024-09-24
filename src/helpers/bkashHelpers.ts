@@ -23,16 +23,16 @@ export const startGrantToken = async () => {
 export type ICreatePaymentPayload = {
   amount: string;
   id_token: string;
-  callbackUrl: string;
   payComID: string;
   orgId: string;
 };
 export const startCreatePayment = async (payload: ICreatePaymentPayload) => {
+  const callBackUrl = config.bkashConfig.callBackURL;
   const createPaymentLink = config.bkashConfig.createPaymentLink;
   const requestBody = {
     mode: '0011',
     payerReference: payload.orgId,
-    callbackURL: payload.callbackUrl,
+    callbackURL: callBackUrl,
     amount: payload.amount,
     currency: 'BDT',
     intent: 'sale',

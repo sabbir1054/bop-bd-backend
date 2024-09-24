@@ -102,7 +102,6 @@ const createPayment = async (
     }
 
     const createPaymentData = {
-      callbackUrl: payload.callbackUrl,
       amount: typeof amount === 'number' ? amount.toString() : amount,
       payComID: createPayCommission.id,
       orgId: payload.orgId,

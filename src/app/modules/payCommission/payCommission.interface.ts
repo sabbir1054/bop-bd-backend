@@ -1,8 +1,6 @@
 export type ICreatePymentService = {
-  callbackUrl: string;
-  amount?: string;
+  amount?: number;
   orgId: string;
   paymentMethod: string;
-  isAdjustreward: boolean;
   commissionPayType: 'CASH' | 'REWARD_POINTS';
 };
