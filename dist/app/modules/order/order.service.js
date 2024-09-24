@@ -368,6 +368,9 @@ const updateOrderStatus = (userId, userRole, orderId, status) => __awaiter(void 
     if (!isExistOrder) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Order not exist ');
     }
+    if (status === 'SHIPPING' && !isExistOrder.deliveryCharge) {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'At first set delivery charge it can be minimum 0');
+    }
     const customerPhone = isExistOrder.customer.owner.phone;
     let orgId = null;
     //* here ensure only owner,staff admin,order supervisor, delivery boy update status
@@ -493,6 +496,12 @@ const updateOrderStatus = (userId, userRole, orderId, status) => __awaiter(void 
                         orderId: isExistOrder.id,
                         commissionId: commissionInfo.id,
                         commissionAmount: calculatedCommission,
+                    },
+                });
+                yield prisma.organization.update({
+                    where: { id: owner.id },
+                    data: {
+                        totlaCommission: { increment: calculatedCommission },
                     },
                 });
                 //* owner reward
@@ -770,6 +779,20 @@ const getSingle = (id) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield prisma_1.default.order.findUnique({
         where: { id },
         include: {
+            assigndForDelivery: {
+                include: {
+                    assignedby: {
+                        include: {
+                            staffInfo: true,
+                        },
+                    },
+                    deliveryBoy: {
+                        include: {
+                            staffInfo: true,
+                        },
+                    },
+                },
+            },
             OrderOtp: true,
             orderPaymentInfo: { include: { paymentSystemOptions: true } },
             customer: {

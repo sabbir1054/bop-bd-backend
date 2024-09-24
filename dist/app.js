@@ -25,6 +25,7 @@ app.set('view engine', 'ejs');
 app.set('views', path_1.default.join(__dirname, 'views'));
 const allowedOrigins = [
     'http://localhost:5173',
+    'http://localhost:3000',
     'https://admin-portal.bopbd.com.bd',
 ];
 app.use((0, cors_1.default)({

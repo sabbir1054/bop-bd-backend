@@ -16,6 +16,7 @@ const feedback_routes_1 = require("../modules/feedback/feedback.routes");
 const invoice_route_1 = require("../modules/invoices/invoice.route");
 const order_route_1 = require("../modules/order/order.route");
 const organization_route_1 = require("../modules/organization/organization.route");
+const payCommission_route_1 = require("../modules/payCommission/payCommission.route");
 const paymentOptions_route_1 = require("../modules/paymentOptions/paymentOptions.route");
 const referCodeValidDays_route_1 = require("../modules/refeCodeValidDays/referCodeValidDays.route");
 const reward_route_1 = require("../modules/reward/reward.route");
@@ -96,6 +97,10 @@ const moduleRoutes = [
     {
         path: '/invoice',
         route: invoice_route_1.InvoceRoutes,
+    },
+    {
+        path: '/commissionPay',
+        route: payCommission_route_1.PayCommissionRoutes,
     },
 ];
 moduleRoutes.forEach(route => router.use(route.path, route.route));

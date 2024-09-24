@@ -24,6 +24,7 @@ export type ICreatePaymentPayload = {
   amount: string;
   id_token: string;
   callbackUrl: string;
+  payComID: string;
   orgId: string;
 };
 export const startCreatePayment = async (payload: ICreatePaymentPayload) => {
@@ -35,7 +36,7 @@ export const startCreatePayment = async (payload: ICreatePaymentPayload) => {
     amount: payload.amount,
     currency: 'BDT',
     intent: 'sale',
-    merchantInvoiceNumber: payload.orgId,
+    merchantInvoiceNumber: payload.payComID,
   };
   const response = await axios.post(
     `${createPaymentLink}`,

@@ -387,7 +387,6 @@ model PaymentSystemOptions {
     createdAt        DateTime             @default(now())
     updatedAt        DateTime             @updatedAt
     OrderPaymentInfo OrderPaymentInfo[]
-    PayCommission    PayCommission[]
 
     @@map("payment_systems_options")
 }
@@ -467,15 +466,17 @@ model CommissionTrnxToken {
     @@map("commissionTrnxToken")
 }
 
+enum CommissionPayType {
+    CASH
+    REWARD_POINTS
+}
+
 model PayCommission {
     id                 String                            @id @default(uuid())
-    paymentMethod      PaymentSystemOptions              @relation(fields: [paymentMethodId], references: [id])
-    paymentMethodId    String
+    commissionPayType  CommissionPayType
     organization       Organization                      @relation(fields: [organizationId], references: [id])
     organizationId     String
-    totalPayable       Float
-    adjustReward       Float
-    amountPay          Float                             @unique
+    amount             Float?                            @unique
     updatedAt          DateTime                          @updatedAt
     createdAt          DateTime                          @default(now())
     transactionDetails TransactionInfoForPayCommission[]
@@ -493,10 +494,8 @@ model TransactionInfoForPayCommission {
     intent                String
     paymentExecuteTime    DateTime
     merchantInvoiceNumber String
-    payerType             String
     payerReference        String
     customerMsisdn        String
-    payerAccount          String
     statusCode            String
     statusMessage         String
     updatedAt             DateTime      @updatedAt

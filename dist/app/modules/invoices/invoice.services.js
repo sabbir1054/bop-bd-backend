@@ -88,7 +88,10 @@ const generateInvoice = (req, res) => __awaiter(void 0, void 0, void 0, function
         // Render the EJS template to HTML
         const html = yield ejs_1.default.renderFile(path_1.default.join(__dirname, 'views', 'invoice.ejs'), data);
         // Generate PDF using Puppeteer
-        const browser = yield puppeteer_1.default.launch({ headless: true });
+        const browser = yield puppeteer_1.default.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        });
         const page = yield browser.newPage();
         yield page.setContent(html, { waitUntil: 'networkidle0' });
         const pdfPath = path_1.default.join(__dirname, 'docs', 'm.pdf');
