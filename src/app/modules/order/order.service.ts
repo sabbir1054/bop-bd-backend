@@ -1241,23 +1241,34 @@ const searchFilterOutgoingOrders = async (
 };
 const assignForDelivery = async (
   userId: string,
+  userRole: string,
   payload: IDeliveryAssignData,
 ) => {
-  const IsValidUserRole = await prisma.user.findUnique({
-    where: { id: userId },
-    include: { Staff: { include: { organization: true } } },
-  });
+  let orgId = null;
+  if (userRole === 'STAFF') {
+    const IsValidUserRole = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { Staff: { include: { organization: true } } },
+    });
 
-  if (!IsValidUserRole?.Staff) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'User info not found');
-  }
+    if (!IsValidUserRole || !IsValidUserRole.Staff) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'User info not found');
+    }
 
-  const validStaffRole = ['ORDER_SUPERVISOR', 'STAFF_ADMIN'];
-  if (!validStaffRole.includes(IsValidUserRole.Staff.role)) {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
-      'Only order supervisor and staff admin can assign delivery boy',
-    );
+    const validStaffRole = ['ORDER_SUPERVISOR', 'STAFF_ADMIN'];
+    if (!validStaffRole.includes(IsValidUserRole.Staff.role)) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Only order supervisor and staff admin can assign delivery boy',
+      );
+    }
+    orgId = IsValidUserRole.Staff.organizationId;
+  } else {
+    const isUserExist = await prisma.user.findUnique({ where: { id: userId } });
+    if (!isUserExist) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'User info not found');
+    }
+    orgId = isUserExist.organizationId;
   }
 
   const isDeliveryBoyExist = await prisma.staff.findUnique({
@@ -1288,15 +1299,13 @@ const assignForDelivery = async (
     throw new ApiError(httpStatus.NOT_FOUND, 'Order info not found');
   }
 
-  if (
-    isOrderExist.product_seller_id !== IsValidUserRole.Staff.organization.id
-  ) {
+  if (isOrderExist.product_seller_id !== orgId) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Order id not valid ');
   }
 
   const result = await prisma.assigndForDelivery.create({
     data: {
-      assignedby: { connect: { id: IsValidUserRole.Staff.id } },
+      assignedby: { connect: { id: userId } },
       deliveryBoy: { connect: { id: payload.deliveryBoyId } },
       order: { connect: { id: payload.orderId } },
     },
