@@ -5,6 +5,7 @@ import {
   startExecutePayment,
   startGrantToken,
 } from '../../../helpers/bkashHelpers';
+import prisma from '../../../shared/prisma';
 import { ICreatePymentService } from './payCommission.interface';
 
 const createPayment = async (payload: ICreatePymentService) => {
@@ -46,15 +47,49 @@ const createPayment = async (payload: ICreatePymentService) => {
       'No payment id info create',
     );
   }
+  const setToken = await prisma.commissionTrnxToken.create({
+    data: {
+      paymentID: startCreatePaymentResponse.data.paymentID,
+      token: grantTokenResponse.data.id_token,
+    },
+  });
+
+  if (!setToken.paymentID) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Token not save db');
+  }
   return {
-    paymentID: startCreatePaymentResponse.data.paymentID,
     bkashURL: startCreatePaymentResponse.data.bkashURL,
-    id_token: grantTokenResponse.data.id_token,
   };
 };
 
-const executePaymentHit = async (paymentID: string, id_token: string) => {
-  const executeResponse = await startExecutePayment(paymentID, id_token);
+const executePaymentHit = async (paymentID: string) => {
+  const isPaymentExist = await prisma.commissionTrnxToken.findUnique({
+    where: { paymentID: paymentID },
+  });
+  if (!isPaymentExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Payment id not found');
+  }
+  const executeResponse = await startExecutePayment(
+    paymentID,
+    isPaymentExist.token,
+  );
+
+  if (executeResponse.data.statusCode !== '0000') {
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      'Payment not successfull, create again',
+    );
+  } else {
+    const removeToken = await prisma.commissionTrnxToken.delete({
+      where: { id: isPaymentExist.id },
+    });
+    if (!removeToken) {
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Payment not successfull, create again 2',
+      );
+    }
+  }
   return executeResponse.data;
 };
 

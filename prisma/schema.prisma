@@ -459,6 +459,14 @@ model OrganizationRewardPointsHistory {
     @@map("organization_rewad_points_history")
 }
 
+model CommissionTrnxToken {
+    id        String @id @default(uuid())
+    paymentID String @unique
+    token     String
+
+    @@map("commissionTrnxToken")
+}
+
 model PayCommission {
     id                 String                            @id @default(uuid())
     paymentMethod      PaymentSystemOptions              @relation(fields: [paymentMethodId], references: [id])
