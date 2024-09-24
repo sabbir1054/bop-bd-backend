@@ -192,11 +192,11 @@ const executePaymentHit = async (paymentID: string) => {
           intent: executeResponse.data.intent,
           paymentExecuteTime: executeResponse.data.paymentExecuteTime,
           merchantInvoiceNumber: executeResponse.data.merchantInvoiceNumber, //pay commission id
-          payerReference: executeResponse.data.payerReference,
+          payerReference: executeResponse.data.payerReference, //organization id
           customerMsisdn: executeResponse.data.customerMsisdn,
           statusCode: executeResponse.data.statusCode,
           statusMessage: executeResponse.data.statusMessage,
-          payCommissionId: executeResponse.data.payerReference, //organization id
+          payCommissionId: executeResponse.data.merchantInvoiceNumber,
         },
       });
     const updateOrganizationRewardAndBalance = await prisma.organization.update(
