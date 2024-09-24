@@ -4,7 +4,7 @@ const createPaymentValidation = z.object({
   body: z.object({
     amount: z.number().optional(),
     orgId: z.string({ required_error: 'Organization id is required' }),
-    paymnetMethod: z.string({
+    paymentMethod: z.string({
       required_error: 'Payment method name is required',
     }),
     commissionPayType: z.enum(['CASH', 'REWARD_POINTS'], {
