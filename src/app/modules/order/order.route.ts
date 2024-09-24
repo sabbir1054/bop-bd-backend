@@ -148,5 +148,18 @@ router.post(
   ),
   OrderController.assigndForDelivery,
 );
+router.patch(
+  '/updateDeliveryCharge', //body te deliverCharge dibe number
+  validateRequest(OrderValidation.updateOrderDeliveryCharge),
+  auth(
+    ENUM_USER_ROLE.STAFF,
+    ENUM_USER_ROLE.DEALER,
+    ENUM_USER_ROLE.IMPORTER,
+    ENUM_USER_ROLE.MANUFACTURER,
+    ENUM_USER_ROLE.WHOLESALER,
+    ENUM_USER_ROLE.RESELLER,
+  ),
+  OrderController.updateOrderDeliveryCharge,
+);
 
 export const OrderRoutes = router;

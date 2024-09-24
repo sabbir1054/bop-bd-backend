@@ -1457,7 +1457,67 @@ const updateOrderPaymentOptions = async (
 
   return result;
 };
+const updateOrderDeliveryCharge = async (
+  userId: string,
+  userRole: string,
+  orderId: string,
+  deliveryCharge: number,
+) => {
+  const isvalidOrder = await prisma.order.findUnique({
+    where: { id: orderId },
+  });
 
+  if (!isvalidOrder) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Order info not found');
+  }
+
+  const orgId = isvalidOrder.product_seller_id;
+
+  // staff and owner validation
+  if (userRole === 'STAFF') {
+    const isValidStaff = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+    });
+
+    if (!isValidStaff) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not fount');
+    }
+    const validStaffRole = ['STAFF_ADMIN', 'ORDER_SUPERVISOR'];
+
+    if (!validStaffRole.includes(isValidStaff.role)) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Staff role not valid');
+    }
+
+    if (orgId !== isValidStaff.organizationId) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Your organization id not match',
+      );
+    }
+  } else {
+    const isValidUser = await prisma.user.findUnique({ where: { id: userId } });
+    if (!isValidUser) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Your info not found');
+    }
+    if (orgId !== isValidUser.organizationId) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Your organization id not match',
+      );
+    }
+  }
+  if (!orgId) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
+  }
+  const result = await prisma.order.update({
+    where: { id: isvalidOrder.id },
+    data: {
+      deliveryCharge: deliveryCharge,
+      totalWithDeliveryCharge: { increment: deliveryCharge },
+    },
+  });
+  return result;
+};
 export const OrderService = {
   orderCreate,
   updateOrderStatus,
@@ -1471,4 +1531,5 @@ export const OrderService = {
   assignForDelivery,
   getMyOrderForDelivery,
   updateOrderPaymentOptions,
+  updateOrderDeliveryCharge,
 };

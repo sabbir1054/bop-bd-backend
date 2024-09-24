@@ -91,10 +91,28 @@ const getSingle = catchAsync(async (req: Request, res: Response) => {
   sendResponse<Order>(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: 'Business type retrieve',
+    message: 'Order  retrieve',
     data: result,
   });
 });
+const updateOrderDeliveryCharge = catchAsync(
+  async (req: Request, res: Response) => {
+    const { id, role } = req.user as any;
+    const { orderId } = req.params;
+    const result = await OrderService.updateOrderDeliveryCharge(
+      id,
+      role,
+      orderId,
+      req.body,
+    );
+    sendResponse<Order>(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Order type retrieve',
+      data: result,
+    });
+  },
+);
 
 const searchFilterIncomingOrders = catchAsync(
   async (req: Request, res: Response) => {
@@ -204,4 +222,5 @@ export const OrderController = {
   assigndForDelivery,
   getMyOrderForDelivery,
   updateOrderPaymentOptions,
+  updateOrderDeliveryCharge,
 };

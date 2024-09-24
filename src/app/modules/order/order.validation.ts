@@ -34,11 +34,16 @@ const assignForDeliveryValidation = z.object({
     deliveryBoyId: z.string({ required_error: 'Delivery boy id is required ' }),
   }),
 });
-
+const updateOrderDeliveryCharge = z.object({
+  body: z.object({
+    deliveryCharge: z.number({ required_error: 'Please set deliveryCharge' }),
+  }),
+});
 export const OrderValidation = {
   orderCreateValidation,
   updateOrderStatusValidation,
   updatePaymentStatusValidation,
   assignForDeliveryValidation,
   updateOrderPaymentOption,
+  updateOrderDeliveryCharge,
 };
