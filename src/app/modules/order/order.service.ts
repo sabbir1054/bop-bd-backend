@@ -822,12 +822,20 @@ const verifyDeliveryOtp = async (
       if (!ownerRewardInfo?.points) {
         throw new ApiError(httpStatus.BAD_REQUEST, 'No reward points defined');
       }
-
+      //* calculate reward
+      if (!ownerRewardInfo.points) {
+        throw new ApiError(
+          httpStatus.NOT_FOUND,
+          'Owner reward points info not found',
+        );
+      }
+      const ownerCalculatedreward =
+        isExistOrder.total * Math.round(ownerRewardInfo.points / 100);
       await prisma.organizationRewardPointsHistory.create({
         data: {
           pointHistoryType: 'IN',
           rewardPointsId: ownerRewardInfo?.id,
-          points: ownerRewardInfo?.points,
+          points: ownerCalculatedreward,
           organizationId: owner.id,
         },
       });
@@ -835,7 +843,7 @@ const verifyDeliveryOtp = async (
       await prisma.organization.update({
         where: { id: owner.id },
         data: {
-          totalRewardPoints: { increment: ownerRewardInfo?.points },
+          totalRewardPoints: { increment: ownerCalculatedreward },
         },
       });
 
@@ -852,12 +860,13 @@ const verifyDeliveryOtp = async (
       if (!customerRewardInfo?.points) {
         throw new ApiError(httpStatus.BAD_REQUEST, 'No reward points defined');
       }
-
+      const customerCalculatedreward =
+        isExistOrder.total * Math.round(customerRewardInfo.points / 100);
       await prisma.organizationRewardPointsHistory.create({
         data: {
           pointHistoryType: 'IN',
           rewardPointsId: customerRewardInfo?.id,
-          points: customerRewardInfo?.points,
+          points: customerCalculatedreward,
           organizationId: customer.id,
         },
       });
@@ -865,7 +874,7 @@ const verifyDeliveryOtp = async (
       await prisma.organization.update({
         where: { id: customer.id },
         data: {
-          totalRewardPoints: { increment: customerRewardInfo?.points },
+          totalRewardPoints: { increment: customerCalculatedreward },
         },
       });
 
