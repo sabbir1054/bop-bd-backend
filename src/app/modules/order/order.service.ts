@@ -948,11 +948,6 @@ const getSingle = async (id: string): Promise<Order | null> => {
     include: {
       assigndForDelivery: {
         include: {
-          assignedby: {
-            include: {
-              staffInfo: true,
-            },
-          },
           deliveryBoy: {
             include: {
               staffInfo: true,
@@ -1318,7 +1313,6 @@ const assignForDelivery = async (
 
   const result = await prisma.assigndForDelivery.create({
     data: {
-      assignedby: { connect: { id: userId } },
       deliveryBoy: { connect: { id: payload.deliveryBoyId } },
       order: { connect: { id: payload.orderId } },
     },
