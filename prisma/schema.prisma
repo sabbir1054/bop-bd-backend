@@ -82,7 +82,7 @@ model OrderOtp {
     id         String   @id @default(uuid())
     phone      String
     otpCode    String
-    countSend  Int
+    countSend  Int      @default(0)
     orderId    String   @unique
     isVerified Boolean  @default(false)
     createdAt  DateTime @default(now())
@@ -275,16 +275,16 @@ model OrderItem {
 }
 
 model Staff {
-    id                 String               @id @default(uuid())
-    role               StaffRole
-    salary             Float?
-    createdAt          DateTime             @default(now())
-    updatedAt          DateTime             @updatedAt
-    organization       Organization         @relation(fields: [organizationId], references: [id])
-    organizationId     String
-    staffInfo          User                 @relation(fields: [staffInfoId], references: [id])
-    staffInfoId        String               @unique
-   
+    id             String       @id @default(uuid())
+    role           StaffRole
+    salary         Float?
+    createdAt      DateTime     @default(now())
+    updatedAt      DateTime     @updatedAt
+    organization   Organization @relation(fields: [organizationId], references: [id])
+    organizationId String
+    staffInfo      User         @relation(fields: [staffInfoId], references: [id])
+    staffInfoId    String       @unique
+
     AssigndForDelivery AssigndForDelivery[] @relation("deliveryBy")
     deliveryArea       String?
     isValidNow         Boolean              @default(true)
@@ -293,14 +293,14 @@ model Staff {
 }
 
 model AssigndForDelivery {
-    id                String   @id @default(uuid())
-    updatedAt         DateTime @updatedAt
-    createdAt         DateTime @default(now())
-   
-    deliveryBoy       Staff    @relation("deliveryBy", fields: [deliveryBoyId], references: [id])
-    deliveryBoyId     String
-    order             Order    @relation(fields: [orderId], references: [id])
-    orderId           String   @unique
+    id        String   @id @default(uuid())
+    updatedAt DateTime @updatedAt
+    createdAt DateTime @default(now())
+
+    deliveryBoy   Staff  @relation("deliveryBy", fields: [deliveryBoyId], references: [id])
+    deliveryBoyId String
+    order         Order  @relation(fields: [orderId], references: [id])
+    orderId       String @unique
 
     @@map("assigned_for_delivery")
 }
@@ -404,14 +404,14 @@ model OrderPaymentInfo {
 }
 
 model Order_Commission_History {
-    id               String @id @default(uuid())
-    order            Order  @relation(fields: [orderId], references: [id])
+    id               String     @id @default(uuid())
+    order            Order      @relation(fields: [orderId], references: [id])
     orderId          String
     commissionAmount Float
-    updatedAt DateTime @updatedAt
-    createdAt DateTime @default(now())
-    commission   Commission @relation(fields: [commissionId], references: [id])
-    commissionId String
+    updatedAt        DateTime   @updatedAt
+    createdAt        DateTime   @default(now())
+    commission       Commission @relation(fields: [commissionId], references: [id])
+    commissionId     String
 
     @@map("order_commission_history")
 }
@@ -474,7 +474,7 @@ model PayCommission {
     commissionPayType  CommissionPayType
     organization       Organization                      @relation(fields: [organizationId], references: [id])
     organizationId     String
-    amount             Float?                            
+    amount             Float?
     updatedAt          DateTime                          @updatedAt
     createdAt          DateTime                          @default(now())
     transactionDetails TransactionInfoForPayCommission[]
@@ -506,7 +506,7 @@ model TransactionInfoForPayCommission {
 
 model DeadlinePayCommission {
     id        String   @id @default(uuid())
-    deadline  String 
+    deadline  String
     updatedAt DateTime @updatedAt
     createdAt DateTime @default(now())
 
