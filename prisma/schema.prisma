@@ -116,7 +116,7 @@ model Organization {
     ClaimReward              ClaimReward[]
     memberShipCategory       MembershipCategory                @default(NORMAL)
     UsedReffereCode          UsedReffereCode?
-    totlaCommission          Float                             @default(0)
+    totalCommission          Float                             @default(0)
 
     @@map("organizations")
 }
@@ -409,10 +409,8 @@ model Order_Commission_History {
     order            Order  @relation(fields: [orderId], references: [id])
     orderId          String
     commissionAmount Float
-
     updatedAt DateTime @updatedAt
     createdAt DateTime @default(now())
-
     commission   Commission @relation(fields: [commissionId], references: [id])
     commissionId String
 

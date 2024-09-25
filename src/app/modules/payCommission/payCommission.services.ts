@@ -210,7 +210,7 @@ const executePaymentHit = async (paymentID: string) => {
       await prisma.organization.update({
         where: { id: createTransactionPaycommission.payerReference },
         data: {
-          totlaCommission: { decrement: createTransactionPaycommission.amount },
+          totalCommission: { decrement: createTransactionPaycommission.amount },
         },
       });
     } else {
@@ -218,7 +218,7 @@ const executePaymentHit = async (paymentID: string) => {
         where: { id: createTransactionPaycommission.payerReference },
         data: {
           totalRewardPoints: 0,
-          totlaCommission: { decrement: createTransactionPaycommission.amount },
+          totalCommission: { decrement: createTransactionPaycommission.amount },
         },
       });
     }
