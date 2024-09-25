@@ -507,7 +507,7 @@ const updateOrderStatus = async (
           where: { orderId: orderId },
         });
 
-        if (isExistOrder) {
+        if (isExistOrderOtp) {
           const makeOtpForUser = await prisma.orderOtp.update({
             where: { orderId: isExistOrder.id },
             data: {
