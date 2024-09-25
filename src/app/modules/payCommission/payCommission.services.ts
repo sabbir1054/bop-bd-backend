@@ -186,7 +186,7 @@ const executePaymentHit = async (paymentID: string) => {
           paymentID: executeResponse.data.paymentID,
           trxID: executeResponse.data.trxID,
           transactionStatus: executeResponse.data.transactionStatus,
-          amount: executeResponse.data.amount,
+          amount: parseFloat(executeResponse.data.amount),
           currency: executeResponse.data.currency,
           intent: executeResponse.data.intent,
           paymentExecuteTime: executeResponse.data.paymentExecuteTime,
