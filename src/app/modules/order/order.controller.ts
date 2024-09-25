@@ -103,7 +103,7 @@ const updateOrderDeliveryCharge = catchAsync(
       id,
       role,
       orderId,
-      req.body,
+      req.body.deliveryCharge,
     );
     sendResponse<Order>(res, {
       statusCode: httpStatus.OK,
