@@ -189,7 +189,8 @@ const executePaymentHit = async (paymentID: string) => {
           amount: parseFloat(executeResponse.data.amount),
           currency: executeResponse.data.currency,
           intent: executeResponse.data.intent,
-          paymentExecuteTime: executeResponse.data.paymentExecuteTime,
+          paymentExecuteTime:
+            executeResponse.data.paymentExecuteTime.toString(),
           merchantInvoiceNumber: executeResponse.data.merchantInvoiceNumber, //pay commission id
           payerReference: executeResponse.data.payerReference, //organization id
           customerMsisdn: executeResponse.data.customerMsisdn,

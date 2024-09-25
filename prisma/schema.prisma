@@ -493,7 +493,7 @@ model TransactionInfoForPayCommission {
     amount                Float
     currency              String
     intent                String
-    paymentExecuteTime    DateTime
+    paymentExecuteTime    String
     merchantInvoiceNumber String
     payerReference        String
     customerMsisdn        String
