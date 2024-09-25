@@ -469,7 +469,7 @@ const updateOrderStatus = async (
         include: { organization: true },
       });
 
-      if (!isValidStaff) {
+      if (!isValidStaff || !isValidStaff.isValidNow) {
         throw new ApiError(
           httpStatus.BAD_REQUEST,
           'Only delivery boy change status to delivered',
@@ -509,7 +509,7 @@ const updateOrderStatus = async (
 
         if (isExistOrder) {
           const makeOtpForUser = await prisma.orderOtp.update({
-            where: { id: isExistOrder.id },
+            where: { orderId: isExistOrder.id },
             data: {
               otpCode: otp,
               countSend: { increment: 1 },
