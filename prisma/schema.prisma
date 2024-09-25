@@ -380,7 +380,7 @@ enum OrderPaymentCategory {
 model PaymentSystemOptions {
     id               String               @id @default(uuid())
     paymentCategory  OrderPaymentCategory
-    methodName       String
+    methodName       String?
     accountNumber    String? // Account number associated with the payment method
     description      String? // Additional details about the payment method
     organization     Organization         @relation(fields: [organizationId], references: [id])
