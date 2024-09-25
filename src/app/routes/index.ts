@@ -18,6 +18,7 @@ import { RewardRoutes } from '../modules/reward/reward.route';
 import { PointsValueRoutes } from '../modules/rewardPointsValue/pointsValue.route';
 import { StaffRoutes } from '../modules/staff/staff.route';
 import { UsersRoutes } from '../modules/users/users.route';
+import { DeadlinePayCommissionRoutes } from '../modules/deadlinePayCommission/deadlinePayCommission.route';
 
 const router = express.Router();
 
@@ -98,6 +99,10 @@ const moduleRoutes = [
   {
     path: '/commissionPay',
     route: PayCommissionRoutes,
+  },
+  {
+    path: '/deadlineCommission',
+    route: DeadlinePayCommissionRoutes,
   },
 ];
 
