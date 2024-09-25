@@ -19,7 +19,7 @@ const createNew = async (
         organization: true,
       },
     });
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not found');
     }
     const validStaffRole = ['STAFF_ADMIN'];
@@ -112,7 +112,7 @@ const getAll = async (role: string, userId: string): Promise<Feedback[]> => {
         organization: true,
       },
     });
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not found');
     }
     const validStaffRole = ['STAFF_ADMIN'];
@@ -231,7 +231,7 @@ const updateSingle = async (
         organization: true,
       },
     });
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not found');
     }
     const validStaffRole = ['STAFF_ADMIN'];
@@ -286,7 +286,7 @@ const deleteSingle = async (
         organization: true,
       },
     });
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not found');
     }
     const validStaffRole = ['STAFF_ADMIN'];

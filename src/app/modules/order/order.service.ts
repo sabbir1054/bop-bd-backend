@@ -34,7 +34,7 @@ const orderCreate = async (
         organization: { include: { cart: true } },
       },
     });
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
     if (
@@ -434,7 +434,7 @@ const updateOrderStatus = async (
       where: { staffInfoId: userId },
       include: { organization: true },
     });
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
 
@@ -707,7 +707,7 @@ const verifyDeliveryOtp = async (
     where: { staffInfoId: userId },
     include: { organization: true },
   });
-  if (!isValidStaff) {
+  if (!isValidStaff || !isValidStaff.isValidNow) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
   }
   if (isValidStaff.role !== 'DELIVERY_BOY') {
@@ -907,7 +907,7 @@ const updatePaymentStatus = async (
       where: { staffInfoId: userId },
       include: { organization: true },
     });
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
 
@@ -1034,7 +1034,7 @@ const searchFilterIncomingOrders = async (
       where: { staffInfoId: userId },
       include: { organization: true },
     });
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
     const validUser = ['ORDER_SUPERVISOR', 'STAFF_ADMIN'];
@@ -1147,7 +1147,7 @@ const searchFilterOutgoingOrders = async (
       where: { staffInfoId: userId },
       include: { organization: true },
     });
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
     const validUser = ['PURCHASE_OFFICER', 'ORDER_SUPERVISOR', 'STAFF_ADMIN'];
@@ -1251,7 +1251,11 @@ const assignForDelivery = async (
       include: { Staff: { include: { organization: true } } },
     });
 
-    if (!IsValidUserRole || !IsValidUserRole.Staff) {
+    if (
+      !IsValidUserRole ||
+      !IsValidUserRole.Staff ||
+      !IsValidUserRole.Staff.isValidNow
+    ) {
       throw new ApiError(httpStatus.NOT_FOUND, 'User info not found');
     }
 
@@ -1319,7 +1323,7 @@ const getMyOrderForDelivery = async (userId: string) => {
     where: { staffInfoId: userId },
   });
 
-  if (!isValidStaff) {
+  if (!isValidStaff || !isValidStaff.isValidNow) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not found');
   }
 
@@ -1372,7 +1376,7 @@ const updateOrderPaymentOptions = async (
     const userInfo = await prisma.staff.findUnique({
       where: { staffInfoId: userId },
     });
-    if (!userInfo) {
+    if (!userInfo || !userInfo.isValidNow) {
       throw new ApiError(httpStatus.NOT_FOUND, 'User info not found');
     }
     if (userInfo.organizationId === isOrderExist.product_seller_id) {
@@ -1479,7 +1483,7 @@ const updateOrderDeliveryCharge = async (
       where: { staffInfoId: userId },
     });
 
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not fount');
     }
     const validStaffRole = ['STAFF_ADMIN', 'ORDER_SUPERVISOR'];

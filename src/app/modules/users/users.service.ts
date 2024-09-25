@@ -388,7 +388,10 @@ const getOrganizationStaff = async (
       include: { Staff: { include: { organization: true } } },
     });
 
-    if (findOwnerId?.Staff?.role !== 'STAFF_ADMIN') {
+    if (
+      findOwnerId?.Staff?.role !== 'STAFF_ADMIN' ||
+      !findOwnerId?.Staff?.isValidNow
+    ) {
       throw new ApiError(
         httpStatus.FORBIDDEN,
         'Only staff admins can see this',
@@ -454,6 +457,9 @@ const getMyDeliveryBoy = async (userId: string, userRole: string) => {
 
     if (!isExistStaff) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not found');
+    }
+    if (!isExistStaff.isValidNow) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Staff is not valid');
     }
     if (isExistStaff.role !== 'ORDER_SUPERVISOR') {
       throw new ApiError(
@@ -539,6 +545,10 @@ const deleteMySingleStaff = async (
         'Only owner and admin staff can delete staff',
       );
     }
+
+    if (!isValidStaff?.isValidNow) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Invalid staff');
+    }
   }
 
   const result = prisma.$transaction(async prisma => {
@@ -579,6 +589,9 @@ const updateMySingleStaffRole = async (
         httpStatus.NOT_FOUND,
         'Only owner and admin staff can update staff',
       );
+    }
+    if (!isValidStaff?.isValidNow) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Invalid staff');
     }
   }
 

@@ -26,7 +26,7 @@ const createNew = async (req: Request): Promise<Product> => {
       },
     });
 
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff  is invalid');
     } else {
       if (
@@ -261,7 +261,7 @@ const deleteImageFromProduct = async (
       where: { staffInfoId: userId },
       include: { organization: true },
     });
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
     if (
@@ -353,7 +353,7 @@ const addNewImageForProduct = async (req: Request): Promise<Product | null> => {
       where: { staffInfoId: userId },
       include: { organization: true },
     });
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
     if (
@@ -459,7 +459,7 @@ const updateProductInfo = async (
       where: { staffInfoId: userId },
       include: { organization: true },
     });
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
     if (
@@ -522,7 +522,7 @@ const deleteProduct = async (
       where: { staffInfoId: userId },
       include: { organization: true },
     });
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
     if (

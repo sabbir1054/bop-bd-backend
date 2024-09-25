@@ -15,7 +15,7 @@ const getDashboardMatrics = async (userId: string, userRole: string) => {
         organization: true,
       },
     });
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not found');
     }
     if (isValidStaff.role !== 'STAFF_ADMIN') {
@@ -108,7 +108,7 @@ const getOutgoingOrdersByDate = async (
         organization: true,
       },
     });
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not found');
     }
     const validStaffRole = ['STAFF_ADMIN', 'ACCOUNTS_MANAGER'];
@@ -169,7 +169,7 @@ const getIncomingOrdersByDate = async (
         organization: true,
       },
     });
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not found');
     }
     const validStaffRole = ['STAFF_ADMIN', 'ACCOUNTS_MANAGER'];
@@ -240,7 +240,7 @@ const updateOrganization = async (req: Request, next: NextFunction) => {
     const userInfo = await prisma.staff.findUnique({
       where: { staffInfoId: userId },
     });
-    if (!userInfo) {
+    if (!userInfo || !userInfo.isValidNow) {
       if (photo) {
         deletePhoto(photo);
       }
@@ -350,7 +350,7 @@ const removePicture = async (
     const userInfo = await prisma.staff.findUnique({
       where: { staffInfoId: userId },
     });
-    if (!userInfo) {
+    if (!userInfo || !userInfo.isValidNow) {
       throw new ApiError(httpStatus.NOT_FOUND, 'User info not found');
     }
     const validStaff = ['STAFF_ADMIN'];

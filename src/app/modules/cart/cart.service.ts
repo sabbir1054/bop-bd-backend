@@ -25,7 +25,7 @@ const updateCartSingle = async (
       where: { staffInfoId: userId },
       include: { organization: true },
     });
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
     const validPurchaseRole = ['PURCHASE_OFFICER', 'STAFF_ADMIN'];
@@ -164,7 +164,7 @@ const updateCartMultiple = async (
       where: { staffInfoId: userId },
       include: { organization: true },
     });
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
     if (isValidStaff.role !== ('PURCHASE_OFFICER' || 'STAFF_ADMIN')) {
@@ -296,7 +296,7 @@ const removeItemsFromCart = async (
       where: { staffInfoId: userId },
       include: { organization: true },
     });
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
     if (isValidStaff.role !== ('PURCHASE_OFFICER' || 'STAFF_ADMIN')) {
@@ -344,7 +344,7 @@ const getMyCart = async (userId: string, userRole: string) => {
       where: { staffInfoId: userId },
       include: { organization: true },
     });
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
     if (isValidStaff.role !== ('PURCHASE_OFFICER' || 'STAFF_ADMIN')) {

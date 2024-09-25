@@ -14,7 +14,7 @@ const createNew = async (
     const userInfo = await prisma.staff.findUnique({
       where: { staffInfoId: userid },
     });
-    if (!userInfo) {
+    if (!userInfo || !userInfo.isValidNow) {
       throw new ApiError(httpStatus.NOT_FOUND, 'User info not found');
     }
     const validStaff = ['STAFF_ADMIN', 'ACCOUNTS_MANAGER'];
@@ -69,7 +69,7 @@ const updateSingle = async (
     const userInfo = await prisma.staff.findUnique({
       where: { staffInfoId: userId },
     });
-    if (!userInfo) {
+    if (!userInfo || !userInfo.isValidNow) {
       throw new ApiError(httpStatus.NOT_FOUND, 'User info not found');
     }
     const validStaff = ['STAFF_ADMIN', 'ACCOUNTS_MANAGER'];
@@ -120,7 +120,7 @@ const deleteSingle = async (
     const userInfo = await prisma.staff.findUnique({
       where: { staffInfoId: userId },
     });
-    if (!userInfo) {
+    if (!userInfo || !userInfo.isValidNow) {
       throw new ApiError(httpStatus.NOT_FOUND, 'User info not found');
     }
     const validStaff = ['STAFF_ADMIN', 'ACCOUNTS_MANAGER'];

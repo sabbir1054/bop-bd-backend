@@ -15,7 +15,11 @@ const createNew = async (
       where: { staffInfoId: userid },
     });
 
-    if (!validStaff || validStaff.role !== 'STAFF_ADMIN') {
+    if (
+      !validStaff ||
+      validStaff.role !== 'STAFF_ADMIN' ||
+      !validStaff.isValidNow
+    ) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid staff role');
     }
     const organizationInfo = await prisma.organization.findUnique({

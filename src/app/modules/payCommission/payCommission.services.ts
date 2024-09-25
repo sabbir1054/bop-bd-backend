@@ -26,7 +26,7 @@ const createPayment = async (
       where: { staffInfoId: userId },
     });
 
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not fount');
     }
     const validStaffRole = ['STAFF_ADMIN', 'ACCOUNTS_MANAGER'];
@@ -237,7 +237,7 @@ const getOrganizationPayCommissionHistory = async (
       where: { staffInfoId: userId },
     });
 
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not fount');
     }
     const validStaffRole = ['STAFF_ADMIN', 'ACCOUNTS_MANAGER'];

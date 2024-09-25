@@ -14,7 +14,11 @@ const createPaymentOptions = async (
     const validStaff = await prisma.staff.findUnique({
       where: { staffInfoId: userId },
     });
-    if (!validStaff || validStaff.role !== 'STAFF_ADMIN') {
+    if (
+      !validStaff ||
+      validStaff.role !== 'STAFF_ADMIN' ||
+      !validStaff.isValidNow
+    ) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid staff role');
     }
     orgId = validStaff.organizationId;
@@ -86,7 +90,11 @@ const updateorganizationPaymentOptions = async (
     const validStaff = await prisma.staff.findUnique({
       where: { staffInfoId: userId },
     });
-    if (!validStaff || validStaff.role !== 'STAFF_ADMIN') {
+    if (
+      !validStaff ||
+      validStaff.role !== 'STAFF_ADMIN' ||
+      !validStaff.isValidNow
+    ) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid staff role');
     }
     orgId = validStaff.organizationId;
@@ -149,7 +157,11 @@ const deleteorganizationPaymentOptions = async (
     const validStaff = await prisma.staff.findUnique({
       where: { staffInfoId: userId },
     });
-    if (!validStaff || validStaff.role !== 'STAFF_ADMIN') {
+    if (
+      !validStaff ||
+      validStaff.role !== 'STAFF_ADMIN' ||
+      !validStaff.isValidNow
+    ) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid staff role');
     }
     orgId = validStaff.organizationId;
