@@ -14,6 +14,8 @@ const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
   'https://admin-portal.bopbd.com.bd',
+  'https://www.bopbd.com.bd',
+  'https://www.bopbd.com',
 ];
 
 app.use(
