@@ -593,7 +593,7 @@ const updateOrderStatus = async (
         await prisma.organization.update({
           where: { id: owner.id },
           data: {
-            totlaCommission: { increment: calculatedCommission },
+            totalCommission: { increment: calculatedCommission },
           },
         });
         //* owner reward
