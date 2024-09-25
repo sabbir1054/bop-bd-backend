@@ -149,7 +149,7 @@ router.post(
   OrderController.assigndForDelivery,
 );
 router.patch(
-  '/updateDeliveryCharge/:orderID', //body te deliverCharge dibe number
+  '/updateDeliveryCharge/:orderId', //body te deliverCharge dibe number
   validateRequest(OrderValidation.updateOrderDeliveryCharge),
   auth(
     ENUM_USER_ROLE.STAFF,
