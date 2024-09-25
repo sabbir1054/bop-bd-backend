@@ -259,7 +259,18 @@ const getOrganizationPayCommissionHistory = async (
     throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
   }
   const result = await prisma.payCommission.findMany({
-    where: { organizationId: orgId },
+    where: {
+      AND: [
+        { organizationId: orgId },
+        {
+          transactionDetails: {
+            some: {
+              statusCode: '0000',
+            },
+          },
+        },
+      ],
+    },
     include: {
       transactionDetails: true,
     },
