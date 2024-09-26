@@ -52,6 +52,22 @@ const getSingle = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const extendDeadlineRequest = catchAsync(
+  async (req: Request, res: Response) => {
+    const { id, role } = req.user as any;
+    const result = await DeadlinePayCommissionServices.extendDeadlineRequest(
+      id,
+      role,
+      req.body.comment,
+    );
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Deadline extend request sent',
+      data: result,
+    });
+  },
+);
 
 export const DeadlinePayCommissionController = {
   create,
@@ -59,4 +75,5 @@ export const DeadlinePayCommissionController = {
   updatedSingle,
   deleteSingle,
   getSingle,
+  extendDeadlineRequest,
 };

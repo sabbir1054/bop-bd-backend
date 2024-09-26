@@ -86,10 +86,49 @@ const getSingle = async (id: string) => {
   return result;
 };
 
+const extendDeadlineRequest = async (
+  userId: string,
+  userRole: string,
+  comment: string,
+) => {
+  let orgId = null;
+  if (userRole === 'STAFF') {
+    const isValidStaff = await prisma.staff.findUnique({
+      where: { staffInfoId: userId },
+    });
+
+    if (!isValidStaff || !isValidStaff.isValidNow) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid staff user id');
+    }
+
+    if (isValidStaff.role !== 'STAFF_ADMIN') {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'You are not able to request');
+    }
+
+    orgId = isValidStaff.organizationId;
+  } else {
+    const userInfo = await prisma.user.findUnique({ where: { id: userId } });
+    if (!userInfo) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid user  id');
+    }
+    orgId = userInfo.organizationId;
+  }
+
+  if (!orgId) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
+  }
+
+  const result = await prisma.requestExtendDeadline.create({
+    data: { organizationId: orgId, comment: comment },
+  });
+  return result;
+};
+
 export const DeadlinePayCommissionServices = {
   createNew,
   getAll,
   updateSingle,
   deleteSingle,
   getSingle,
+  extendDeadlineRequest,
 };

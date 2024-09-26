@@ -19,6 +19,11 @@ const updateDeadlinePaycommissionValidation = z.object({
     deadline: z.string({ required_error: 'Deadline is required' }).optional(),
   }),
 });
+// const requestExtendDeadlineValidation = z.object({
+//   body: z.object({
+//     organizationId: z.string({ required_error: 'Organization id is required' }),
+//   }),
+// });
 
 export const DeadlinePayCommissionValidation = {
   createDeadlinePaycommissionValidation,

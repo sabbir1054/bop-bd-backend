@@ -31,4 +31,17 @@ router.delete(
   DeadlinePayCommissionController.deleteSingle,
 );
 
+router.post(
+  '/extendRequest',
+  auth(
+    ENUM_USER_ROLE.DEALER,
+    ENUM_USER_ROLE.IMPORTER,
+    ENUM_USER_ROLE.MANUFACTURER,
+    ENUM_USER_ROLE.RESELLER,
+    ENUM_USER_ROLE.STAFF,
+    ENUM_USER_ROLE.WHOLESALER,
+  ),
+  DeadlinePayCommissionController.extendDeadlineRequest,
+);
+
 export const DeadlinePayCommissionRoutes = router;
