@@ -266,6 +266,11 @@ const getSingle = async (
       include: {
         organization: {
           include: {
+            UsedReffereCode: {
+              include: {
+                refferCode: true,
+              },
+            },
             owner: true,
           },
         },
@@ -286,6 +291,11 @@ const getSingle = async (
     include: {
       organization: {
         include: {
+          UsedReffereCode: {
+            include: {
+              refferCode: true,
+            },
+          },
           feedbacks: true,
           cart: {
             include: {
