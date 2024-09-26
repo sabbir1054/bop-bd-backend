@@ -1,6 +1,7 @@
 import express from 'express';
 import { ENUM_USER_ROLE } from '../../../enums/user';
 import auth from '../../middlewares/auth';
+import { checkSuspension } from '../../middlewares/organizationSuspenCheck';
 import validateRequest from '../../middlewares/validateRequest';
 import { CartController } from './cart.controller';
 import { CartValidation } from './cart.validation';
@@ -19,6 +20,7 @@ router.post(
     ENUM_USER_ROLE.SUPER_ADMIN,
     ENUM_USER_ROLE.STAFF,
   ),
+  checkSuspension,
   validateRequest(CartValidation.updateCartSingleValidation),
   CartController.updateCartSingle,
 );
@@ -34,6 +36,7 @@ router.post(
     ENUM_USER_ROLE.SUPER_ADMIN,
     ENUM_USER_ROLE.STAFF,
   ),
+  checkSuspension,
   validateRequest(CartValidation.updateCartMultipleValidation),
   CartController.updateCartMultiple,
 );

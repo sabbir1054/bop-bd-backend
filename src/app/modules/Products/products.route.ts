@@ -10,6 +10,7 @@ import auth from '../../middlewares/auth';
 import validateRequest from '../../middlewares/validateRequest';
 import { ProductController } from './products.controller';
 import { ProductsValidation } from './products.validations';
+import { checkSuspension } from '../../middlewares/organizationSuspenCheck';
 const router = express.Router();
 // Extend Request interface to include files property
 interface MulterRequest extends Request {
@@ -25,6 +26,7 @@ router.post(
     ENUM_USER_ROLE.RESELLER,
     ENUM_USER_ROLE.STAFF,
   ),
+  checkSuspension,
   FileUploadHelper.upload.array('files', 5),
   (req: Request, res: Response, next: NextFunction) => {
     const multerReq = req as MulterRequest;

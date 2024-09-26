@@ -4,6 +4,7 @@ import auth from '../../middlewares/auth';
 import validateRequest from '../../middlewares/validateRequest';
 import { OrderController } from './order.controller';
 import { OrderValidation } from './order.validation';
+import { checkSuspension } from '../../middlewares/organizationSuspenCheck';
 
 const router = express.Router();
 
@@ -19,6 +20,7 @@ router.post(
     ENUM_USER_ROLE.SUPER_ADMIN,
     ENUM_USER_ROLE.STAFF,
   ),
+  checkSuspension,
   validateRequest(OrderValidation.orderCreateValidation),
   OrderController.orderCreate,
 );
