@@ -117,6 +117,8 @@ model Organization {
     memberShipCategory       MembershipCategory                @default(NORMAL)
     UsedReffereCode          UsedReffereCode?
     totalCommission          Float                             @default(0)
+    isSuspend                Boolean                           @default(false)
+    deadlineExtendfor        Int                               @default(0)
 
     @@map("organizations")
 }
@@ -505,10 +507,11 @@ model TransactionInfoForPayCommission {
 }
 
 model DeadlinePayCommission {
-    id        String   @id @default(uuid())
-    deadline  String
-    updatedAt DateTime @updatedAt
-    createdAt DateTime @default(now())
+    id             String             @id @default(uuid())
+    memberCategory MembershipCategory @default(NORMAL)
+    deadline       String
+    updatedAt      DateTime           @updatedAt
+    createdAt      DateTime           @default(now())
 
     @@map("deadline_payCommission")
 }
