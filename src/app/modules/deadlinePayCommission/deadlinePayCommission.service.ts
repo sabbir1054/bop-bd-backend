@@ -2,6 +2,7 @@ import { DeadlinePayCommission } from '@prisma/client';
 import httpStatus from 'http-status';
 import ApiError from '../../../errors/ApiError';
 import prisma from '../../../shared/prisma';
+import { IHandleDeadlineRequest } from './deadlineCommisssionPay.interface';
 
 const createNew = async (
   payload: DeadlinePayCommission,
@@ -120,6 +121,36 @@ const extendDeadlineRequest = async (
 
   const result = await prisma.requestExtendDeadline.create({
     data: { organizationId: orgId, comment: comment },
+  });
+  return result;
+};
+
+const handleDeadlineRequest = async (payload: IHandleDeadlineRequest) => {
+  const isRequestExist = await prisma.requestExtendDeadline.findUnique({
+    where: { id: payload.requestId },
+  });
+
+  if (!isRequestExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Request is not found');
+  }
+  const result = await prisma.$transaction(async prisma => {
+    const handlerequest = await prisma.requestExtendDeadline.update({
+      where: { id: payload.requestId },
+      data: {
+        requestStatus: payload.updatedStatus,
+      },
+    });
+    const updateExtendDays = await prisma.organization.update({
+      where: { id: isRequestExist.organizationId },
+      data: {
+        deadlineExtendfor: payload.extendDays,
+      },
+    });
+
+    return {
+      ...handleDeadlineRequest,
+      extededDays: updateExtendDays.deadlineExtendfor,
+    };
   });
   return result;
 };
