@@ -4,12 +4,14 @@ import express, { Application, NextFunction, Request, Response } from 'express';
 import httpStatus from 'http-status';
 import path from 'path';
 import globalErrorHandler from './app/middlewares/globalErrorHandler';
+import { initializeCronJobs } from './app/modules/cron/cron.services';
 import routes from './app/routes';
 const app: Application = express();
 // Set EJS as the templating engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-
+// Initialize cron jobs when the app starts
+initializeCronJobs();
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',

@@ -328,6 +328,39 @@ const getSingleRequest = async (
   return result;
 };
 
+//? cron jobs
+const suspendOrganizations = async () => {
+  const fixedDaysAgo = new Date();
+  const result = await prisma.$transaction(async prisma => {
+    //* get all kind of deadline
+    const getAllDeadline = await prisma.deadlinePayCommission.findMany();
+    getAllDeadline.map(async deadline => {
+      fixedDaysAgo.setDate(
+        fixedDaysAgo.getDate() - parseInt(deadline.deadline),
+      );
+      const isDueExist = await prisma.organization.updateMany({
+        where: {
+          AND: [
+            { memberShipCategory: deadline.memberCategory },
+            { totalCommission: { gt: 0 } },
+            {
+              PayCommission: {
+                some: {
+                  updatedAt: {
+                    gte: fixedDaysAgo, // Checks if updatedAt is within the last 10 days
+                  },
+                },
+              },
+            },
+          ],
+        },
+        data: {
+          isSuspend: true,
+        },
+      });
+    });
+  });
+};
 export const DeadlinePayCommissionServices = {
   createNew,
   getAll,
@@ -339,4 +372,5 @@ export const DeadlinePayCommissionServices = {
   getSingleRequest,
   getAllDeadlineExtendRequest,
   updateMyRequest,
+  suspendOrganizations,
 };
