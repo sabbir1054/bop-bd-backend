@@ -531,6 +531,7 @@ model RequestExtendDeadline {
     organizationId String
     requestStatus  DeadlineExtendRequestStatus @default(PENDING)
     comment        String
+    isResolved     Boolean                     @default(false)
 
     @@map("extendDeadline_request")
 }

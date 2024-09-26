@@ -1,5 +1,5 @@
 export type IHandleDeadlineRequest = {
-  requestId: string;
-  updatedStatus: 'PENDING' | 'APPROVED' | 'CANCEL';
-  extendDays: number;
+  updatedStatus?: 'PENDING' | 'APPROVED' | 'CANCEL';
+  extendDays?: number;
+  comment?: string;
 };

@@ -68,6 +68,65 @@ const extendDeadlineRequest = catchAsync(
     });
   },
 );
+const handleDeadlineRequest = catchAsync(
+  async (req: Request, res: Response) => {
+    const { requestId } = req.params;
+    const result = await DeadlinePayCommissionServices.handleDeadlineRequest(
+      requestId,
+      req.body,
+    );
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Handle deadline extend request sent',
+      data: result,
+    });
+  },
+);
+const updateMyRequest = catchAsync(async (req: Request, res: Response) => {
+  const { requestId } = req.params;
+  const { id, role } = req.user as any;
+  const result = await DeadlinePayCommissionServices.updateMyRequest(
+    id,
+    role,
+    requestId,
+    req.body,
+  );
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Updated request',
+    data: result,
+  });
+});
+const getAllDeadlineExtendRequest = catchAsync(
+  async (req: Request, res: Response) => {
+    const { id, role } = req.user as any;
+    const result =
+      await DeadlinePayCommissionServices.getAllDeadlineExtendRequest(id, role);
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Request retrieve',
+      data: result,
+    });
+  },
+);
+const getSingleRequest = catchAsync(async (req: Request, res: Response) => {
+  const { requestId } = req.params;
+  const { id, role } = req.user as any;
+  const result = await DeadlinePayCommissionServices.getSingleRequest(
+    id,
+    role,
+    requestId,
+  );
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Request retrieve',
+    data: result,
+  });
+});
 
 export const DeadlinePayCommissionController = {
   create,
@@ -76,4 +135,8 @@ export const DeadlinePayCommissionController = {
   deleteSingle,
   getSingle,
   extendDeadlineRequest,
+  handleDeadlineRequest,
+  updateMyRequest,
+  getAllDeadlineExtendRequest,
+  getSingleRequest,
 };
