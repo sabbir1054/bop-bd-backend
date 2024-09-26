@@ -54,8 +54,8 @@ const createPayment = async (
     }
   }
 
-  if (payload.commissionPayType === 'CASH' && !payload.amount) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Enter amount for cash payment');
+  if (isValidOrganization.totalCommission <= 0) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'You have nothing to pay');
   }
 
   const result = await prisma.$transaction(async prisma => {
@@ -68,15 +68,22 @@ const createPayment = async (
       throw new ApiError(httpStatus.NOT_FOUND, 'Points value not set 2');
     }
 
-    //* convert point to taka
-    const rewardConvertedToAmount =
-      valueOfPoint.perPointsTk * isValidOrganization.totalRewardPoints;
+    // //* convert point to taka
+    // const rewardConvertedToAmount = (
+    //   valueOfPoint.perPointsTk * isValidOrganization.totalRewardPoints
+    // ).toFixed(2);
+
+    // const isRewarddBig =
+    //   isValidOrganization.totalCommission <=
+    //   parseFloat(rewardConvertedToAmount);
+
     //* set amount
 
-    const amount =
+    /*  const amount =
       payload?.commissionPayType === 'CASH'
         ? payload.amount
-        : rewardConvertedToAmount;
+        : rewardConvertedToAmount; */
+    const amount = isValidOrganization?.totalCommission;
     if (!amount) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Amount not get');
     }
@@ -180,6 +187,14 @@ const executePaymentHit = async (paymentID: string) => {
         );
       }
     }
+    //* organization info
+    const organizationInfo = await prisma.organization.findUnique({
+      where: {
+        id: executeResponse.data.payerReference,
+      },
+    });
+    //* points value info
+    const pointsValue = await prisma.pointsValue.findFirst();
     const createTransactionPaycommission =
       await prisma.transactionInfoForPayCommission.create({
         data: {
@@ -214,10 +229,24 @@ const executePaymentHit = async (paymentID: string) => {
         },
       });
     } else {
+      if (!pointsValue?.perPointsTk || !organizationInfo?.totalRewardPoints) {
+        throw new ApiError(
+          httpStatus.NOT_FOUND,
+          'Points value or your reward not found',
+        );
+      }
+      //* reawd point calc
+      const countUsesReward =
+        pointsValue.perPointsTk * organizationInfo.totalRewardPoints -
+        createTransactionPaycommission.amount;
+
       await prisma.organization.update({
         where: { id: createTransactionPaycommission.payerReference },
         data: {
-          totalRewardPoints: 0,
+          totalRewardPoints:
+            countUsesReward <= 0
+              ? 0
+              : countUsesReward / pointsValue.perPointsTk,
           totalCommission: { decrement: createTransactionPaycommission.amount },
         },
       });
