@@ -6,11 +6,15 @@ import prisma from '../../../shared/prisma';
 const createNew = async (
   payload: DeadlinePayCommission,
 ): Promise<DeadlinePayCommission> => {
-  const isExist = await prisma.deadlinePayCommission.findMany();
-  if (isExist.length > 0) {
+  const isExist = await prisma.deadlinePayCommission.findUnique({
+    where: {
+      memberCategory: payload.memberCategory,
+    },
+  });
+  if (isExist) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
-      'Date already create now edit it',
+      'Deadline for the member category alredyexist, now edit it',
     );
   }
   const result = await prisma.deadlinePayCommission.create({
@@ -25,50 +29,59 @@ const getAll = async (): Promise<DeadlinePayCommission[]> => {
 };
 
 const updateSingle = async (
-  deadline: string,
+  id: string,
+  payload: Partial<DeadlinePayCommission>,
 ): Promise<DeadlinePayCommission | null> => {
-  const isExist = await prisma.deadlinePayCommission.findMany();
+  const isExist = await prisma.deadlinePayCommission.findMany({
+    where: { id: id },
+  });
 
-  if (isExist.length === 0) {
+  if (!isExist) {
     throw new ApiError(
       httpStatus.NOT_FOUND,
       'Deadline not found, create first !',
     );
   }
-  if (!isExist[0]) {
-    throw new ApiError(
-      httpStatus.NOT_FOUND,
-      'Deadline not found, create first !',
-    );
-  }
+
   const result = await prisma.deadlinePayCommission.update({
-    where: { id: isExist[0].id },
+    where: { id: id },
     data: {
-      deadline: deadline,
+      ...payload,
     },
   });
 
   return result;
 };
 
-const deleteSingle = async () => {
-  const isExist = await prisma.deadlinePayCommission.findMany();
-
-  if (isExist.length === 0) {
-    throw new ApiError(
-      httpStatus.NOT_FOUND,
-      'Deadline not found, create first !',
-    );
-  }
-  if (!isExist[0]) {
-    throw new ApiError(
-      httpStatus.NOT_FOUND,
-      'Deadline not found, create first !',
-    );
-  }
-  const result = await prisma.deadlinePayCommission.delete({
-    where: { id: isExist[0].id },
+const deleteSingle = async (id: string) => {
+  const isExist = await prisma.deadlinePayCommission.findMany({
+    where: { id: id },
   });
+
+  if (!isExist) {
+    throw new ApiError(
+      httpStatus.NOT_FOUND,
+      'Deadline not found, create first !',
+    );
+  }
+
+  const result = await prisma.deadlinePayCommission.delete({
+    where: { id: id },
+  });
+
+  return result;
+};
+const getSingle = async (id: string) => {
+  const result = await prisma.deadlinePayCommission.findMany({
+    where: { id: id },
+  });
+
+  if (!result) {
+    throw new ApiError(
+      httpStatus.NOT_FOUND,
+      'Deadline not found, create first !',
+    );
+  }
 
   return result;
 };
@@ -78,4 +91,5 @@ export const DeadlinePayCommissionServices = {
   getAll,
   updateSingle,
   deleteSingle,
+  getSingle,
 };

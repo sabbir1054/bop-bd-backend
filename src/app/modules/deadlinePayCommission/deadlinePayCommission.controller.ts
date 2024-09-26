@@ -23,9 +23,8 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
   });
 });
 const updatedSingle = catchAsync(async (req: Request, res: Response) => {
-  const result = await DeadlinePayCommissionServices.updateSingle(
-    req.body.deadline,
-  );
+  const { id } = req.params;
+  const result = await DeadlinePayCommissionServices.updateSingle(id, req.body);
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -34,11 +33,22 @@ const updatedSingle = catchAsync(async (req: Request, res: Response) => {
   });
 });
 const deleteSingle = catchAsync(async (req: Request, res: Response) => {
-  const result = await DeadlinePayCommissionServices.deleteSingle();
+  const { id } = req.params;
+  const result = await DeadlinePayCommissionServices.deleteSingle(id);
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: 'Deadline deleted',
+    data: result,
+  });
+});
+const getSingle = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await DeadlinePayCommissionServices.getSingle(id);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Deadline retrieve',
     data: result,
   });
 });
@@ -48,4 +58,5 @@ export const DeadlinePayCommissionController = {
   getAll,
   updatedSingle,
   deleteSingle,
+  getSingle,
 };

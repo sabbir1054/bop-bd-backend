@@ -508,7 +508,7 @@ model TransactionInfoForPayCommission {
 
 model DeadlinePayCommission {
     id             String             @id @default(uuid())
-    memberCategory MembershipCategory @default(NORMAL)
+    memberCategory MembershipCategory @unique @default(NORMAL)
     deadline       String
     updatedAt      DateTime           @updatedAt
     createdAt      DateTime           @default(now())
