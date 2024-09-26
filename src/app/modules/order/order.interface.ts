@@ -1,5 +1,6 @@
 export interface IOrderCreate {
   shipping_address: string;
+  isInstantRewardUse: boolean;
 }
 
 export interface IVerificationDeliveryPayload {

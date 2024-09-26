@@ -68,8 +68,8 @@ const generateInvoice = async (req: Request, res: any) => {
     items: isExistOrder.orderItems,
     subtotal: isExistOrder.total ? isExistOrder.total : '',
     deliveryFee: isExistOrder.deliveryCharge ? isExistOrder.deliveryCharge : '',
-    total: isExistOrder.totalWithDeliveryCharge
-      ? isExistOrder.totalWithDeliveryCharge
+    total: isExistOrder.totalWithDeliveryChargeAndDiscount
+      ? isExistOrder.totalWithDeliveryChargeAndDiscount
       : '',
     supportEmail: 'support@bopbd.com.bd',
     supportPhone: '+8801969669908',

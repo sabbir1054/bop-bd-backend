@@ -106,6 +106,11 @@ const orderCreate = async (
 
   // Begin transaction after ensuring valid cart items
   const result = await prisma.$transaction(async prisma => {
+    //* get points value
+    const pointsValue = await prisma.pointsValue.findFirst();
+    if (!pointsValue) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Points value not set yet');
+    }
     // Proceed with valid cart items to create orders
     const productIds = validCartItems.map(item => item.productId);
     const products = await prisma.product.findMany({
@@ -174,14 +179,33 @@ const orderCreate = async (
           isUnique = true;
         }
       } while (!isUnique);
-
+      //* instant reward use
+      let caculateDiscountWithReward = 0;
+      if (orderData.isInstantRewardUse === true) {
+        const rewardInfo = await prisma.rewardPoints.findFirst({
+          where: {
+            AND: [
+              { rewardType: 'BUYING' },
+              { membershipCategory: cart.Organization.memberShipCategory },
+            ],
+          },
+        });
+        if (!rewardInfo) {
+          throw new ApiError(httpStatus.NOT_FOUND, 'Reward info not found');
+        }
+        caculateDiscountWithReward = parseFloat(
+          (pointsValue.perPointsTk * (rewardInfo.points / 100)).toFixed(2),
+        );
+      }
+      const totalAfterDiscount = total - caculateDiscountWithReward;
       // Create the order
       const order = await prisma.order.create({
         data: {
           orderCode, // Add the generated order code here
           shipping_address: shipping_address,
           total,
-          totalWithDeliveryCharge: total,
+          discount: caculateDiscountWithReward,
+          totalWithDeliveryChargeAndDiscount: totalAfterDiscount,
           customer: {
             connect: { id: cart?.organizationId },
           },
@@ -829,13 +853,15 @@ const verifyDeliveryOtp = async (
           'Owner reward points info not found',
         );
       }
-      const ownerCalculatedreward =
-        isExistOrder.total * Math.round(ownerRewardInfo.points / 100);
+      const ownerCalculatedreward = (
+        isExistOrder.total *
+        (ownerRewardInfo.points / 100)
+      ).toFixed(2);
       await prisma.organizationRewardPointsHistory.create({
         data: {
           pointHistoryType: 'IN',
           rewardPointsId: ownerRewardInfo?.id,
-          points: ownerCalculatedreward,
+          points: parseFloat(ownerCalculatedreward),
           organizationId: owner.id,
         },
       });
@@ -843,7 +869,7 @@ const verifyDeliveryOtp = async (
       await prisma.organization.update({
         where: { id: owner.id },
         data: {
-          totalRewardPoints: { increment: ownerCalculatedreward },
+          totalRewardPoints: { increment: parseFloat(ownerCalculatedreward) },
         },
       });
 
@@ -860,13 +886,15 @@ const verifyDeliveryOtp = async (
       if (!customerRewardInfo?.points) {
         throw new ApiError(httpStatus.BAD_REQUEST, 'No reward points defined');
       }
-      const customerCalculatedreward =
-        isExistOrder.total * Math.round(customerRewardInfo.points / 100);
+      const customerCalculatedreward = (
+        isExistOrder.total *
+        (customerRewardInfo.points / 100)
+      ).toFixed(2);
       await prisma.organizationRewardPointsHistory.create({
         data: {
           pointHistoryType: 'IN',
           rewardPointsId: customerRewardInfo?.id,
-          points: customerCalculatedreward,
+          points: parseFloat(customerCalculatedreward),
           organizationId: customer.id,
         },
       });
@@ -874,7 +902,9 @@ const verifyDeliveryOtp = async (
       await prisma.organization.update({
         where: { id: customer.id },
         data: {
-          totalRewardPoints: { increment: customerCalculatedreward },
+          totalRewardPoints: {
+            increment: parseFloat(customerCalculatedreward),
+          },
         },
       });
 
@@ -1520,7 +1550,7 @@ const updateOrderDeliveryCharge = async (
     where: { id: isvalidOrder.id },
     data: {
       deliveryCharge: deliveryCharge,
-      totalWithDeliveryCharge: { increment: deliveryCharge },
+      totalWithDeliveryChargeAndDiscount: { increment: deliveryCharge },
     },
   });
   return result;

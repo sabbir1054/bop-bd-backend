@@ -240,25 +240,27 @@ model CartItem {
 
 //* totla = withoutdelivery charge
 model Order {
-    id                       String                     @id @default(uuid())
-    orderCode                String                     @unique
-    total                    Float
-    orderStatus              OrderStatus                @default(PENDING)
-    paymentStatus            PaymentStatus              @default(PENDING)
-    customer                 Organization               @relation("customer_orders", fields: [customerId], references: [id])
-    customerId               String
-    product_seller           Organization               @relation("product_seller_orders", fields: [product_seller_id], references: [id])
-    product_seller_id        String
-    shipping_address         String
-    updatedAt                DateTime                   @updatedAt
-    createdAt                DateTime                   @default(now())
-    orderItems               OrderItem[]
-    assigndForDelivery       AssigndForDelivery?
-    OrderOtp                 OrderOtp[]
-    Order_Commission_History Order_Commission_History[]
-    orderPaymentInfo         OrderPaymentInfo?
-    deliveryCharge           Float?
-    totalWithDeliveryCharge  Float
+    id                                 String                     @id @default(uuid())
+    orderCode                          String                     @unique
+    total                              Float
+    orderStatus                        OrderStatus                @default(PENDING)
+    paymentStatus                      PaymentStatus              @default(PENDING)
+    customer                           Organization               @relation("customer_orders", fields: [customerId], references: [id])
+    customerId                         String
+    product_seller                     Organization               @relation("product_seller_orders", fields: [product_seller_id], references: [id])
+    product_seller_id                  String
+    shipping_address                   String
+    updatedAt                          DateTime                   @updatedAt
+    createdAt                          DateTime                   @default(now())
+    orderItems                         OrderItem[]
+    assigndForDelivery                 AssigndForDelivery?
+    OrderOtp                           OrderOtp[]
+    Order_Commission_History           Order_Commission_History[]
+    orderPaymentInfo                   OrderPaymentInfo?
+    deliveryCharge                     Float?
+    totalWithDeliveryChargeAndDiscount Float
+    isInstantRewardUse                 Boolean                    @default(false)
+    discount                           Float?
 
     @@map("orders")
 }

@@ -3,6 +3,9 @@ import { OrderStatusConstant, PaymentStatusConstant } from './order.constant';
 
 const orderCreateValidation = z.object({
   body: z.object({
+    isInstantRewardUse: z.boolean({
+      required_error: 'Is instant reward use value is required',
+    }),
     shipping_address: z.string({
       required_error: 'Shipping address is required',
     }),
