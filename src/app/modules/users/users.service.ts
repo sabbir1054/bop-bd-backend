@@ -227,7 +227,11 @@ const getAll = async (filters: any, options: IPaginationOptions) => {
       organization: {
         include: {
           BusinessType: true,
-          UsedReffereCode: true,
+          UsedReffereCode: {
+            include: {
+              refferCode: true,
+            },
+          },
         },
       },
       isMobileVerified: true,
