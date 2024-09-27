@@ -65,7 +65,7 @@ router.patch(
 
 //* here admin get all organization request and other get own organization request
 router.get(
-  '/getAllRequest',
+  '/request/getall',
   auth(
     ENUM_USER_ROLE.DEALER,
     ENUM_USER_ROLE.IMPORTER,
