@@ -230,50 +230,55 @@ const getAllDeadlineExtendRequest = async (
   userId: string,
   userRole: string,
 ) => {
-  const result = await prisma.$transaction(async prisma => {
-    if (userRole === 'SUPER_ADMIN' || userRole === 'ADMIN') {
-      const result = await prisma.requestExtendDeadline.findMany();
-      return result;
-    }
+  // const result = await prisma.$transaction(async prisma => {
+  //   if (userRole === 'SUPER_ADMIN' || userRole === 'ADMIN') {
+  //     const result = await prisma.requestExtendDeadline.findMany();
+  //     return result;
+  //   } else {
+  //     let orgId = null;
 
-    let orgId = null;
+  //     if (userRole === 'STAFF') {
+  //       const isValidStaff = await prisma.staff.findUnique({
+  //         where: { staffInfoId: userId },
+  //       });
 
-    if (userRole === 'STAFF') {
-      const isValidStaff = await prisma.staff.findUnique({
-        where: { staffInfoId: userId },
-      });
+  //       if (!isValidStaff || !isValidStaff.isValidNow) {
+  //         throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid staff user id');
+  //       }
 
-      if (!isValidStaff || !isValidStaff.isValidNow) {
-        throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid staff user id');
-      }
+  //       if (isValidStaff.role !== 'STAFF_ADMIN') {
+  //         throw new ApiError(
+  //           httpStatus.BAD_REQUEST,
+  //           'You are not able to request',
+  //         );
+  //       }
 
-      if (isValidStaff.role !== 'STAFF_ADMIN') {
-        throw new ApiError(
-          httpStatus.BAD_REQUEST,
-          'You are not able to request',
-        );
-      }
+  //       orgId = isValidStaff.organizationId;
+  //     } else {
+  //       const userInfo = await prisma.user.findUnique({
+  //         where: { id: userId },
+  //       });
+  //       if (!userInfo) {
+  //         throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid user  id');
+  //       }
+  //       orgId = userInfo.organizationId;
+  //     }
 
-      orgId = isValidStaff.organizationId;
-    } else {
-      const userInfo = await prisma.user.findUnique({ where: { id: userId } });
-      if (!userInfo) {
-        throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid user  id');
-      }
-      orgId = userInfo.organizationId;
-    }
+  //     if (!orgId) {
+  //       throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
+  //     }
 
-    if (!orgId) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
-    }
+  //     const result = await prisma.requestExtendDeadline.findMany({
+  //       where: {
+  //         organizationId: orgId,
+  //       },
+  //     });
+  //     return result;
+  //   }
+  // });
+  console.log(userId, userRole);
 
-    const result = await prisma.requestExtendDeadline.findMany({
-      where: {
-        organizationId: orgId,
-      },
-    });
-    return result;
-  });
+  const result = await prisma.requestExtendDeadline.findMany();
   return result;
 };
 const getSingleRequest = async (
