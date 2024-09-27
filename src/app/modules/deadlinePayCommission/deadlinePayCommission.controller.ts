@@ -102,6 +102,8 @@ const updateMyRequest = catchAsync(async (req: Request, res: Response) => {
 const getAllDeadlineExtendRequest = catchAsync(
   async (req: Request, res: Response) => {
     const { id, role } = req.user as any;
+    console.log(id, role);
+
     const result =
       await DeadlinePayCommissionServices.getAllDeadlineExtendRequest(id, role);
     sendResponse(res, {
