@@ -204,6 +204,7 @@ const orderCreate = async (
           orderCode, // Add the generated order code here
           shipping_address: shipping_address,
           total,
+          isInstantRewardUse: orderData.isInstantRewardUse,
           discount: caculateDiscountWithReward,
           totalWithDeliveryChargeAndDiscount: totalAfterDiscount,
           customer: {
@@ -833,6 +834,7 @@ const verifyDeliveryOtp = async (
           commissionAmount: calculatedCommission,
         },
       });
+
       //* owner reward
       const ownerRewardInfo = await prisma.rewardPoints.findFirst({
         where: {
@@ -857,6 +859,7 @@ const verifyDeliveryOtp = async (
         isExistOrder.total *
         (ownerRewardInfo.points / 100)
       ).toFixed(2);
+
       await prisma.organizationRewardPointsHistory.create({
         data: {
           pointHistoryType: 'IN',
@@ -870,6 +873,7 @@ const verifyDeliveryOtp = async (
         where: { id: owner.id },
         data: {
           totalRewardPoints: { increment: parseFloat(ownerCalculatedreward) },
+          totalCommission: { increment: calculatedCommission },
         },
       });
 
@@ -890,23 +894,24 @@ const verifyDeliveryOtp = async (
         isExistOrder.total *
         (customerRewardInfo.points / 100)
       ).toFixed(2);
-      await prisma.organizationRewardPointsHistory.create({
-        data: {
-          pointHistoryType: 'IN',
-          rewardPointsId: customerRewardInfo?.id,
-          points: parseFloat(customerCalculatedreward),
-          organizationId: customer.id,
-        },
-      });
-
-      await prisma.organization.update({
-        where: { id: customer.id },
-        data: {
-          totalRewardPoints: {
-            increment: parseFloat(customerCalculatedreward),
+      if (isExistOrder.isInstantRewardUse !== true) {
+        await prisma.organizationRewardPointsHistory.create({
+          data: {
+            pointHistoryType: 'IN',
+            rewardPointsId: customerRewardInfo?.id,
+            points: parseFloat(customerCalculatedreward),
+            organizationId: customer.id,
           },
-        },
-      });
+        });
+        await prisma.organization.update({
+          where: { id: customer.id },
+          data: {
+            totalRewardPoints: {
+              increment: parseFloat(customerCalculatedreward),
+            },
+          },
+        });
+      }
 
       if (isExistOrder.paymentStatus === 'PAID') {
         const result = await prisma.order.update({

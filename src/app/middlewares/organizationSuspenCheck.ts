@@ -9,42 +9,45 @@ export const checkSuspension = async (
   next: NextFunction,
 ) => {
   const { id, role } = req.user as any;
+  try {
+    if (role === 'STAFF') {
+      const staffInf = await prisma.staff.findUnique({
+        where: { staffInfoId: id },
+        include: {
+          organization: true,
+        },
+      });
 
-  if (role === 'STAFF') {
-    const staffInf = await prisma.staff.findUnique({
-      where: { staffInfoId: id },
-      include: {
-        organization: true,
-      },
-    });
+      if (!staffInf) {
+        throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not found');
+      }
+      if (staffInf.organization?.isSuspend === true) {
+        throw new ApiError(
+          httpStatus.NOT_FOUND,
+          'Your organization accound is suspend',
+        );
+      }
+    } else {
+      const userInfo = await prisma.user.findUnique({
+        where: { id },
+        include: {
+          organization: true,
+        },
+      });
+      if (!userInfo) {
+        throw new ApiError(httpStatus.NOT_FOUND, 'User info not found');
+      }
 
-    if (!staffInf) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not found');
-    }
-    if (staffInf.organization?.isSuspend === true) {
-      throw new ApiError(
-        httpStatus.NOT_FOUND,
-        'Your organization accound is suspend',
-      );
-    }
-  } else {
-    const userInfo = await prisma.user.findUnique({
-      where: { id },
-      include: {
-        organization: true,
-      },
-    });
-    if (!userInfo) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'User info not found');
+      if (userInfo.organization?.isSuspend === true) {
+        throw new ApiError(
+          httpStatus.NOT_FOUND,
+          'Your organization accound is suspend',
+        );
+      }
     }
 
-    if (userInfo.organization?.isSuspend === true) {
-      throw new ApiError(
-        httpStatus.NOT_FOUND,
-        'Your organization accound is suspend',
-      );
-    }
+    next();
+  } catch (error) {
+    next(error);
   }
-
-  next();
 };
