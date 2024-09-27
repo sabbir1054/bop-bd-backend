@@ -12,12 +12,12 @@ export const initializeCronJobs = () => {
   // Weekly task
   cron.schedule(cronJobsConfig.weeklyTask, () => {
     console.log('Running weekly task');
-    runWeeklyTask();
+    // runWeeklyTask();
   });
 
   // Hourly task
   cron.schedule(cronJobsConfig.hourlyTask, () => {
     console.log('Running hourly task');
-    runHourlyTask();
+    // runHourlyTask();
   });
 };

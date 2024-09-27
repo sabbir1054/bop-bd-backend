@@ -8,10 +8,10 @@ export const runDailyTask = async () => {
 
 export const runWeeklyTask = async () => {
   // Your weekly task logic here
-  console.log('Weekly task completed');
+  //   console.log('Weekly task completed');
 };
 
 export const runHourlyTask = async () => {
   // Your hourly task logic here
-  console.log('Hourly task completed');
+  //   console.log('Hourly task completed');
 };
