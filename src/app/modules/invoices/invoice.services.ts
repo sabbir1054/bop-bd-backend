@@ -34,6 +34,7 @@ const generateInvoice = async (req: Request, res: any) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Order does not exist');
   }
   const data = {
+    discount: isExistOrder.discount ? isExistOrder.discount : '0',
     orderNumber: isExistOrder.orderCode ? isExistOrder.orderCode : '',
     orderDate: isExistOrder?.createdAt.toISOString().split('T')[0]
       ? isExistOrder?.createdAt.toISOString().split('T')[0]
@@ -67,7 +68,7 @@ const generateInvoice = async (req: Request, res: any) => {
       : '',
     items: isExistOrder.orderItems,
     subtotal: isExistOrder.total ? isExistOrder.total : '',
-    deliveryFee: isExistOrder.deliveryCharge ? isExistOrder.deliveryCharge : '',
+    deliveryFee: isExistOrder.deliveryCharge ? isExistOrder.deliveryCharge : 0,
     total: isExistOrder.totalWithDeliveryChargeAndDiscount
       ? isExistOrder.totalWithDeliveryChargeAndDiscount
       : '',
