@@ -337,38 +337,90 @@ const getSingleRequest = async (
 };
 
 //? cron jobs
+// const suspendOrganizations = async () => {
+//   const fixedDaysAgo = new Date();
+//   const result = await prisma.$transaction(async prisma => {
+//     //* get all kind of deadline
+//     const getAllDeadline = await prisma.deadlinePayCommission.findMany();
+//     getAllDeadline.map(async deadline => {
+//       fixedDaysAgo.setDate(
+//         fixedDaysAgo.getDate() - parseInt(deadline.deadline),
+//       );
+//       const isDueExist = await prisma.organization.updateMany({
+//         where: {
+//           AND: [
+//             { memberShipCategory: deadline.memberCategory },
+//             { totalCommission: { gt: 0 } },
+//             {
+//               PayCommission: {
+//                 some: {
+//                   updatedAt: {
+//                     gte: fixedDaysAgo, // Checks if updatedAt is within the last 10 days
+//                   },
+//                 },
+//               },
+//             },
+//           ],
+//         },
+//         data: {
+//           isSuspend: true,
+//         },
+//       });
+//     });
+//   });
+// };
 const suspendOrganizations = async () => {
-  const fixedDaysAgo = new Date();
   const result = await prisma.$transaction(async prisma => {
-    //* get all kind of deadline
+    // Get all kinds of deadlines
     const getAllDeadline = await prisma.deadlinePayCommission.findMany();
-    getAllDeadline.map(async deadline => {
-      fixedDaysAgo.setDate(
-        fixedDaysAgo.getDate() - parseInt(deadline.deadline),
-      );
-      const isDueExist = await prisma.organization.updateMany({
+
+    // Loop through each deadline and process accordingly
+    for (const deadline of getAllDeadline) {
+      // Find organizations with unpaid commissions and consider deadlineExtendFor
+      const organizations = await prisma.organization.findMany({
         where: {
-          AND: [
-            { memberShipCategory: deadline.memberCategory },
-            { totalCommission: { gt: 0 } },
-            {
-              PayCommission: {
-                some: {
-                  updatedAt: {
-                    gte: fixedDaysAgo, // Checks if updatedAt is within the last 10 days
-                  },
-                },
-              },
-            },
-          ],
+          memberShipCategory: deadline.memberCategory,
+          totalCommission: { gt: 0 },
+          isSuspend: false, // Only active organizations
         },
-        data: {
-          isSuspend: true,
+        select: {
+          id: true,
+          deadlineExtendfor: true, // We need this for calculating adjusted deadline
+          PayCommission: {
+            select: {
+              updatedAt: true,
+            },
+            orderBy: {
+              updatedAt: 'desc',
+            },
+            take: 1, // Get the latest payment commission date
+          },
         },
       });
-    });
+
+      for (const org of organizations) {
+        // Calculate the adjusted deadline with extended days
+        const fixedDaysAgo = new Date();
+        const totalDeadlineDays =
+          parseInt(deadline.deadline) + (org.deadlineExtendfor || 0); // Sum of original deadline + extended days
+        fixedDaysAgo.setDate(fixedDaysAgo.getDate() - totalDeadlineDays);
+
+        // Check if the latest payment commission was before the adjusted deadline
+        const latestCommission = org.PayCommission[0];
+        if (latestCommission && latestCommission.updatedAt < fixedDaysAgo) {
+          // Suspend the organization if it hasn't paid within the adjusted deadline
+          await prisma.organization.update({
+            where: { id: org.id },
+            data: { isSuspend: true },
+          });
+        }
+      }
+    }
   });
+
+  return result;
 };
+
 export const DeadlinePayCommissionServices = {
   createNew,
   getAll,
