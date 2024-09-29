@@ -71,6 +71,16 @@ const getSingle = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const deleteUser = catchAsync(async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  const result = await UserServices.deleteUser(userId);
+  sendResponse<User | Staff>(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'User profile deleted',
+    data: result,
+  });
+});
 const deleteUnverifiedOtp = catchAsync(async (req: Request, res: Response) => {
   const result = await UserServices.deleteUnverifiedOtp(req.body.phone);
 
@@ -151,4 +161,5 @@ export const UserController = {
   getMyDeliveryBoy,
   deleteMySingleStaff,
   updateMySingleStaffRole,
+  deleteUser,
 };

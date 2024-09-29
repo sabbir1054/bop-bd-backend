@@ -148,4 +148,5 @@ router.patch(
   validateRequest(UsersValidation.staffUpdateRoleValidation),
   UserController.updateMySingleStaffRole,
 );
+router.delete('/removeUser/:userId', UserController.deleteUser);
 export const UsersRoutes = router;

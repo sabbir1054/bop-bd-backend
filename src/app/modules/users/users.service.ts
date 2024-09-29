@@ -617,6 +617,15 @@ const updateMySingleStaffRole = async (
   return result;
 };
 
+const deleteUser = async (userId: string) => {
+  const isExist = await prisma.user.findUnique({ where: { id: userId } });
+  if (!isExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+  }
+  const result = await prisma.user.delete({ where: { id: userId } });
+  return result;
+};
+
 export const UserServices = {
   updateUserProfile,
   removeProfilePicture,
@@ -628,4 +637,5 @@ export const UserServices = {
   getMyDeliveryBoy,
   deleteMySingleStaff,
   updateMySingleStaffRole,
+  deleteUser,
 };
