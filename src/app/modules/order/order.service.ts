@@ -34,6 +34,12 @@ const orderCreate = async (
         organization: { include: { cart: true } },
       },
     });
+    if (isValidStaff?.organization?.isSuspend) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Your organization is suspend, can not buy now',
+      );
+    }
     if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
@@ -58,6 +64,12 @@ const orderCreate = async (
     }
     if (!isValidUser?.organization?.cart[0].id) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Cart info not found');
+    }
+    if (isValidUser.organization.isSuspend) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Your Organization is suspended, can not buy now',
+      );
     }
     cartId = isValidUser?.organization?.cart[0].id;
   }

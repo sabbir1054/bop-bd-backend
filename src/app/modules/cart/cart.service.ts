@@ -18,6 +18,12 @@ const updateCartSingle = async (
     throw new ApiError(httpStatus.NOT_FOUND, 'Product not found');
   }
 
+  if (isProductExist.organization.isSuspend) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'Product organizatios is suspended',
+    );
+  }
   let orgId = null;
 
   if (userRole === 'STAFF') {
@@ -50,6 +56,13 @@ const updateCartSingle = async (
     where: { id: orgId },
     include: { owner: true },
   });
+  if (organizationInfo?.isSuspend) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'Organization is suspen, can not buy now',
+    );
+  }
+
   const isValidOwner = await prisma.user.findUnique({
     where: { id: organizationInfo?.owner.id },
   });
@@ -151,12 +164,18 @@ const updateCartMultiple = async (
 
   const isProductExist = await prisma.product.findUnique({
     where: { id: productId },
+    include: { organization: true },
   });
 
   if (!isProductExist) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Product not found');
   }
-
+  if (isProductExist.organization.isSuspend) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'Product organizatios is suspended',
+    );
+  }
   let orgId = null;
 
   if (userRole === 'STAFF') {
@@ -189,6 +208,12 @@ const updateCartMultiple = async (
     where: { id: orgId },
     include: { owner: true },
   });
+  if (organizationInfo?.isSuspend) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'Organization is suspen, can not buy now',
+    );
+  }
   const isValidOwner = await prisma.user.findUnique({
     where: { id: organizationInfo?.owner.id },
   });

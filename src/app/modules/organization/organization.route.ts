@@ -111,4 +111,9 @@ router.patch(
   validateRequest(OrganizationValidation.UpdateOrganizationMembership),
   OrganizationController.updateOrganizationMembershipCategory,
 );
+router.patch(
+  '/suspend/:id',
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  OrganizationController.suspendOrganization,
+);
 export const OrganizationRoutes = router;

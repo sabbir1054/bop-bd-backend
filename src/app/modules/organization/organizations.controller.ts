@@ -90,6 +90,18 @@ const removePicture = catchAsync(
     });
   },
 );
+const suspendOrganization = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const result = await OrganizaionServices.suspendOrganization(id);
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Organization suspended ',
+      data: result,
+    });
+  },
+);
 export const OrganizationController = {
   getDashboardMatrics,
   getOutgoingOrdersByDate,
@@ -97,4 +109,5 @@ export const OrganizationController = {
   updateOrganization,
   removePicture,
   updateOrganizationMembershipCategory,
+  suspendOrganization,
 };

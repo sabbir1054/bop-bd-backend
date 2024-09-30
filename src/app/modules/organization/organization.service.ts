@@ -413,11 +413,31 @@ const updateOrganizationMembershipCategory = async (
   return result;
 };
 
+const suspendOrganization = async (orgId: string) => {
+  const isExist = await prisma.organization.findUnique({
+    where: { id: orgId },
+  });
+
+  if (!isExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization not found');
+  }
+
+  const result = await prisma.organization.update({
+    where: { id: orgId },
+    data: {
+      isSuspend: true,
+    },
+  });
+
+  return result;
+};
+
 export const OrganizaionServices = {
   getDashboardMatrics,
   getOutgoingOrdersByDate,
   getIncomingOrdersByDate,
   updateOrganization,
   removePicture,
+  suspendOrganization,
   updateOrganizationMembershipCategory,
 };
