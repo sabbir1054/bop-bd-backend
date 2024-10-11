@@ -18,7 +18,6 @@ const allowedOrigins = [
   'https://admin-portal.bopbd.com.bd',
   'https://www.bopbd.com.bd',
   'https://www.bopbd.com',
-  'https://bop-bd-admin-panel-frontend.vercel.app',
 ];
 
 app.use(
