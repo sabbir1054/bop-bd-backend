@@ -139,7 +139,7 @@
 //   generateInvoice,
 // };
 import ejs from 'ejs';
-import { Request } from 'express';
+import { NextFunction, Request } from 'express';
 import fs from 'fs';
 import httpStatus from 'http-status';
 import path from 'path';
@@ -147,7 +147,7 @@ import puppeteer from 'puppeteer';
 import ApiError from '../../../errors/ApiError';
 import prisma from '../../../shared/prisma';
 
-const generateInvoice = async (req: Request, res: any) => {
+const generateInvoice = async (req: Request, res: any, next: NextFunction) => {
   const { orderId } = req.params;
   if (!orderId) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Order id not found');
@@ -272,6 +272,7 @@ const generateInvoice = async (req: Request, res: any) => {
     fs.unlink(pdfPath, err => {
       if (err) {
         console.error('Error deleting PDF file:', err);
+        next(err); // Pass to the global error handler
       }
     });
   } catch (error) {
@@ -288,11 +289,8 @@ const generateInvoice = async (req: Request, res: any) => {
         res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
           message: 'Error generating invoice PDF',
         });
+        next(error); // Pass to the global error handler
       }
     }
   }
-};
-
-export const InvoiceServices = {
-  generateInvoice,
 };
