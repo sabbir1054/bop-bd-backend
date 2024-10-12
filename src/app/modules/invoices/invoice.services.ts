@@ -294,3 +294,6 @@ const generateInvoice = async (req: Request, res: any, next: NextFunction) => {
     }
   }
 };
+export const InvoiceServices = {
+  generateInvoice,
+};
