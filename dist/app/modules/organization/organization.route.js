@@ -44,4 +44,5 @@ router.get('/photo/:fileName', (req, res) => {
 });
 router.delete('/removePicture', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.RESELLER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.STAFF), organizations_controller_1.OrganizationController.removePicture);
 router.patch('/changeMembershipCategory', (0, auth_1.default)(user_1.ENUM_USER_ROLE.ADMIN, user_1.ENUM_USER_ROLE.SUPER_ADMIN), (0, validateRequest_1.default)(organization_validation_1.OrganizationValidation.UpdateOrganizationMembership), organizations_controller_1.OrganizationController.updateOrganizationMembershipCategory);
+router.patch('/suspend/:id', (0, auth_1.default)(user_1.ENUM_USER_ROLE.ADMIN, user_1.ENUM_USER_ROLE.SUPER_ADMIN), organizations_controller_1.OrganizationController.suspendOrganization);
 exports.OrganizationRoutes = router;

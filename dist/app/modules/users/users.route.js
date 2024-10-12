@@ -48,4 +48,5 @@ router.post('/update/status', (0, auth_1.default)(user_1.ENUM_USER_ROLE.ADMIN, u
 //users/updateStaffRole
 router.delete('/deleteStaff/:staffId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.RESELLER, user_1.ENUM_USER_ROLE.WHOLESALER), users_controller_1.UserController.deleteMySingleStaff);
 router.patch('/updateStaffRole', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.RESELLER, user_1.ENUM_USER_ROLE.WHOLESALER), (0, validateRequest_1.default)(user_validation_1.UsersValidation.staffUpdateRoleValidation), users_controller_1.UserController.updateMySingleStaffRole);
+router.get('/removeUser/:userId', users_controller_1.UserController.deleteUser);
 exports.UsersRoutes = router;

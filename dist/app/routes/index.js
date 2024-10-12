@@ -23,6 +23,7 @@ const reward_route_1 = require("../modules/reward/reward.route");
 const pointsValue_route_1 = require("../modules/rewardPointsValue/pointsValue.route");
 const staff_route_1 = require("../modules/staff/staff.route");
 const users_route_1 = require("../modules/users/users.route");
+const deadlinePayCommission_route_1 = require("../modules/deadlinePayCommission/deadlinePayCommission.route");
 const router = express_1.default.Router();
 const moduleRoutes = [
     // ... routes
@@ -101,6 +102,10 @@ const moduleRoutes = [
     {
         path: '/commissionPay',
         route: payCommission_route_1.PayCommissionRoutes,
+    },
+    {
+        path: '/deadlineCommission',
+        route: deadlinePayCommission_route_1.DeadlinePayCommissionRoutes,
     },
 ];
 moduleRoutes.forEach(route => router.use(route.path, route.route));

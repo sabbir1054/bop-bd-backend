@@ -29,7 +29,7 @@ const createPayment = (payload, userId, userRole) => __awaiter(void 0, void 0, v
         const isValidStaff = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userId },
         });
-        if (!isValidStaff) {
+        if (!isValidStaff || !isValidStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff info not fount');
         }
         const validStaffRole = ['STAFF_ADMIN', 'ACCOUNTS_MANAGER'];
@@ -49,8 +49,8 @@ const createPayment = (payload, userId, userRole) => __awaiter(void 0, void 0, v
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Your organization id not match');
         }
     }
-    if (payload.commissionPayType === 'CASH' && !payload.amount) {
-        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Enter amount for cash payment');
+    if (isValidOrganization.totalCommission <= 0) {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'You have nothing to pay');
     }
     const result = yield prisma_1.default.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {
         const valueOfPoint = yield prisma.pointsValue.findFirst();
@@ -60,12 +60,19 @@ const createPayment = (payload, userId, userRole) => __awaiter(void 0, void 0, v
         if (!valueOfPoint || !valueOfPoint.perPointsTk) {
             throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Points value not set 2');
         }
-        //* convert point to taka
-        const rewardConvertedToAmount = valueOfPoint.perPointsTk * isValidOrganization.totalRewardPoints;
+        // //* convert point to taka
+        // const rewardConvertedToAmount = (
+        //   valueOfPoint.perPointsTk * isValidOrganization.totalRewardPoints
+        // ).toFixed(2);
+        // const isRewarddBig =
+        //   isValidOrganization.totalCommission <=
+        //   parseFloat(rewardConvertedToAmount);
         //* set amount
-        const amount = (payload === null || payload === void 0 ? void 0 : payload.commissionPayType) === 'CASH'
+        /*  const amount =
+          payload?.commissionPayType === 'CASH'
             ? payload.amount
-            : rewardConvertedToAmount;
+            : rewardConvertedToAmount; */
+        const amount = isValidOrganization === null || isValidOrganization === void 0 ? void 0 : isValidOrganization.totalCommission;
         if (!amount) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Amount not get');
         }
@@ -139,15 +146,23 @@ const executePaymentHit = (paymentID) => __awaiter(void 0, void 0, void 0, funct
                 throw new ApiError_1.default(http_status_1.default.INTERNAL_SERVER_ERROR, 'Payment not successfull, create again 2');
             }
         }
+        //* organization info
+        const organizationInfo = yield prisma.organization.findUnique({
+            where: {
+                id: executeResponse.data.payerReference,
+            },
+        });
+        //* points value info
+        const pointsValue = yield prisma.pointsValue.findFirst();
         const createTransactionPaycommission = yield prisma.transactionInfoForPayCommission.create({
             data: {
                 paymentID: executeResponse.data.paymentID,
                 trxID: executeResponse.data.trxID,
                 transactionStatus: executeResponse.data.transactionStatus,
-                amount: executeResponse.data.amount,
+                amount: parseFloat(executeResponse.data.amount),
                 currency: executeResponse.data.currency,
                 intent: executeResponse.data.intent,
-                paymentExecuteTime: executeResponse.data.paymentExecuteTime,
+                paymentExecuteTime: executeResponse.data.paymentExecuteTime.toString(),
                 merchantInvoiceNumber: executeResponse.data.merchantInvoiceNumber, //pay commission id
                 payerReference: executeResponse.data.payerReference, //organization id
                 customerMsisdn: executeResponse.data.customerMsisdn,
@@ -166,16 +181,24 @@ const executePaymentHit = (paymentID) => __awaiter(void 0, void 0, void 0, funct
             yield prisma.organization.update({
                 where: { id: createTransactionPaycommission.payerReference },
                 data: {
-                    totlaCommission: { decrement: createTransactionPaycommission.amount },
+                    totalCommission: { decrement: createTransactionPaycommission.amount },
                 },
             });
         }
         else {
+            if (!(pointsValue === null || pointsValue === void 0 ? void 0 : pointsValue.perPointsTk) || !(organizationInfo === null || organizationInfo === void 0 ? void 0 : organizationInfo.totalRewardPoints)) {
+                throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Points value or your reward not found');
+            }
+            //* reawd point calc
+            const countUsesReward = pointsValue.perPointsTk * organizationInfo.totalRewardPoints -
+                createTransactionPaycommission.amount;
             yield prisma.organization.update({
                 where: { id: createTransactionPaycommission.payerReference },
                 data: {
-                    totalRewardPoints: 0,
-                    totlaCommission: { decrement: createTransactionPaycommission.amount },
+                    totalRewardPoints: countUsesReward <= 0
+                        ? 0
+                        : countUsesReward / pointsValue.perPointsTk,
+                    totalCommission: { decrement: createTransactionPaycommission.amount },
                 },
             });
         }
@@ -183,7 +206,53 @@ const executePaymentHit = (paymentID) => __awaiter(void 0, void 0, void 0, funct
     }));
     return result;
 });
+const getOrganizationPayCommissionHistory = (userId, userRole) => __awaiter(void 0, void 0, void 0, function* () {
+    let orgId = null;
+    // staff and owner validation
+    if (userRole === 'STAFF') {
+        const isValidStaff = yield prisma_1.default.staff.findUnique({
+            where: { staffInfoId: userId },
+        });
+        if (!isValidStaff || !isValidStaff.isValidNow) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff info not fount');
+        }
+        const validStaffRole = ['STAFF_ADMIN', 'ACCOUNTS_MANAGER'];
+        if (!validStaffRole.includes(isValidStaff.role)) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff role not valid');
+        }
+        orgId = isValidStaff.organizationId;
+    }
+    else {
+        const isValidUser = yield prisma_1.default.user.findUnique({ where: { id: userId } });
+        if (!isValidUser) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Your info not found');
+        }
+        orgId = isValidUser.organizationId;
+    }
+    if (!orgId) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization info not found');
+    }
+    const result = yield prisma_1.default.payCommission.findMany({
+        where: {
+            AND: [
+                { organizationId: orgId },
+                {
+                    transactionDetails: {
+                        some: {
+                            statusCode: '0000',
+                        },
+                    },
+                },
+            ],
+        },
+        include: {
+            transactionDetails: true,
+        },
+    });
+    return result;
+});
 exports.PayCommissionServices = {
     createPayment,
     executePaymentHit,
+    getOrganizationPayCommissionHistory,
 };

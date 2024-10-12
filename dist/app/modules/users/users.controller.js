@@ -73,6 +73,16 @@ const getSingle = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void
         data: result,
     });
 }));
+const deleteUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { userId } = req.params;
+    const result = yield users_service_1.UserServices.deleteUser(userId);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: 'User profile deleted',
+        data: result,
+    });
+}));
 const deleteUnverifiedOtp = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield users_service_1.UserServices.deleteUnverifiedOtp(req.body.phone);
     (0, sendResponse_1.default)(res, {
@@ -134,4 +144,5 @@ exports.UserController = {
     getMyDeliveryBoy,
     deleteMySingleStaff,
     updateMySingleStaffRole,
+    deleteUser,
 };

@@ -25,8 +25,9 @@ const auth_1 = __importDefault(require("../../middlewares/auth"));
 const validateRequest_1 = __importDefault(require("../../middlewares/validateRequest"));
 const products_controller_1 = require("./products.controller");
 const products_validations_1 = require("./products.validations");
+const organizationSuspenCheck_1 = require("../../middlewares/organizationSuspenCheck");
 const router = express_1.default.Router();
-router.post('/createProduct', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.RESELLER, user_1.ENUM_USER_ROLE.STAFF), fileUpload_1.FileUploadHelper.upload.array('files', 5), (req, res, next) => {
+router.post('/createProduct', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.RESELLER, user_1.ENUM_USER_ROLE.STAFF), organizationSuspenCheck_1.checkSuspension, fileUpload_1.FileUploadHelper.upload.array('files', 5), (req, res, next) => {
     const multerReq = req;
     multerReq.body = products_validations_1.ProductsValidation.createProductValidation.parse(JSON.parse(multerReq.body.data));
     if (multerReq.files) {

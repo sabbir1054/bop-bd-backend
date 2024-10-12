@@ -27,6 +27,17 @@ const getAll = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0,
         data: result,
     });
 }));
+const blockstaff = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id, role } = req.user;
+    const { staffId } = req.params;
+    const result = yield staff_service_1.staffServices.blockstaff(id, role, staffId);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: 'Staff retrieve',
+        data: result,
+    });
+}));
 const getSingle = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id: userId } = req.user;
     const { id } = req.params;
@@ -41,4 +52,5 @@ const getSingle = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void
 exports.StaffController = {
     getAll,
     getSingle,
+    blockstaff,
 };

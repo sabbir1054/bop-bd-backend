@@ -75,6 +75,16 @@ const removePicture = (0, catchAsync_1.default)((req, res, next) => __awaiter(vo
         data: result,
     });
 }));
+const suspendOrganization = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    const result = yield organization_service_1.OrganizaionServices.suspendOrganization(id);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: 'Organization suspended ',
+        data: result,
+    });
+}));
 exports.OrganizationController = {
     getDashboardMatrics,
     getOutgoingOrdersByDate,
@@ -82,4 +92,5 @@ exports.OrganizationController = {
     updateOrganization,
     removePicture,
     updateOrganizationMembershipCategory,
+    suspendOrganization,
 };

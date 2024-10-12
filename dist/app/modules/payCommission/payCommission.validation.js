@@ -9,7 +9,7 @@ const createPaymentValidation = zod_1.default.object({
     body: zod_1.default.object({
         amount: zod_1.default.number().optional(),
         orgId: zod_1.default.string({ required_error: 'Organization id is required' }),
-        paymnetMethod: zod_1.default.string({
+        paymentMethod: zod_1.default.string({
             required_error: 'Payment method name is required',
         }),
         commissionPayType: zod_1.default.enum(['CASH', 'REWARD_POINTS'], {

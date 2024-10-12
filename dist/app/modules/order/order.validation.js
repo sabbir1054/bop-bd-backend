@@ -8,6 +8,9 @@ const zod_1 = __importDefault(require("zod"));
 const order_constant_1 = require("./order.constant");
 const orderCreateValidation = zod_1.default.object({
     body: zod_1.default.object({
+        isInstantRewardUse: zod_1.default.boolean({
+            required_error: 'Is instant reward use value is required',
+        }),
         shipping_address: zod_1.default.string({
             required_error: 'Shipping address is required',
         }),
@@ -39,10 +42,16 @@ const assignForDeliveryValidation = zod_1.default.object({
         deliveryBoyId: zod_1.default.string({ required_error: 'Delivery boy id is required ' }),
     }),
 });
+const updateOrderDeliveryCharge = zod_1.default.object({
+    body: zod_1.default.object({
+        deliveryCharge: zod_1.default.number({ required_error: 'Please set deliveryCharge' }),
+    }),
+});
 exports.OrderValidation = {
     orderCreateValidation,
     updateOrderStatusValidation,
     updatePaymentStatusValidation,
     assignForDeliveryValidation,
     updateOrderPaymentOption,
+    updateOrderDeliveryCharge,
 };

@@ -23,7 +23,9 @@ const createNew = (userid, role, payload) => __awaiter(void 0, void 0, void 0, f
         const validStaff = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userid },
         });
-        if (!validStaff || validStaff.role !== 'STAFF_ADMIN') {
+        if (!validStaff ||
+            validStaff.role !== 'STAFF_ADMIN' ||
+            !validStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Invalid staff role');
         }
         const organizationInfo = yield prisma_1.default.organization.findUnique({

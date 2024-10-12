@@ -22,7 +22,9 @@ const createPaymentOptions = (userId, role, payload) => __awaiter(void 0, void 0
         const validStaff = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userId },
         });
-        if (!validStaff || validStaff.role !== 'STAFF_ADMIN') {
+        if (!validStaff ||
+            validStaff.role !== 'STAFF_ADMIN' ||
+            !validStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Invalid staff role');
         }
         orgId = validStaff.organizationId;
@@ -73,7 +75,9 @@ const updateorganizationPaymentOptions = (userId, role, organizationId, paymentS
         const validStaff = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userId },
         });
-        if (!validStaff || validStaff.role !== 'STAFF_ADMIN') {
+        if (!validStaff ||
+            validStaff.role !== 'STAFF_ADMIN' ||
+            !validStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Invalid staff role');
         }
         orgId = validStaff.organizationId;
@@ -121,7 +125,9 @@ const deleteorganizationPaymentOptions = (userId, role, organizationId, paymentS
         const validStaff = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userId },
         });
-        if (!validStaff || validStaff.role !== 'STAFF_ADMIN') {
+        if (!validStaff ||
+            validStaff.role !== 'STAFF_ADMIN' ||
+            !validStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Invalid staff role');
         }
         orgId = validStaff.organizationId;

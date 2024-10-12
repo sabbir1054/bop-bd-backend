@@ -18,15 +18,20 @@ const express_1 = __importDefault(require("express"));
 const http_status_1 = __importDefault(require("http-status"));
 const path_1 = __importDefault(require("path"));
 const globalErrorHandler_1 = __importDefault(require("./app/middlewares/globalErrorHandler"));
+const cron_services_1 = require("./app/modules/cron/cron.services");
 const routes_1 = __importDefault(require("./app/routes"));
 const app = (0, express_1.default)();
 // Set EJS as the templating engine
 app.set('view engine', 'ejs');
 app.set('views', path_1.default.join(__dirname, 'views'));
+// Initialize cron jobs when the app starts
+(0, cron_services_1.initializeCronJobs)();
 const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:3000',
     'https://admin-portal.bopbd.com.bd',
+    'https://www.bopbd.com.bd',
+    'https://www.bopbd.com',
 ];
 app.use((0, cors_1.default)({
     origin: function (origin, callback) {

@@ -27,7 +27,7 @@ const getDashboardMatrics = (userId, userRole) => __awaiter(void 0, void 0, void
                 organization: true,
             },
         });
-        if (!isValidStaff) {
+        if (!isValidStaff || !isValidStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff info not found');
         }
         if (isValidStaff.role !== 'STAFF_ADMIN') {
@@ -109,7 +109,7 @@ const getOutgoingOrdersByDate = (userId, userRole, date) => __awaiter(void 0, vo
                 organization: true,
             },
         });
-        if (!isValidStaff) {
+        if (!isValidStaff || !isValidStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff info not found');
         }
         const validStaffRole = ['STAFF_ADMIN', 'ACCOUNTS_MANAGER'];
@@ -165,7 +165,7 @@ const getIncomingOrdersByDate = (userId, userRole, date) => __awaiter(void 0, vo
                 organization: true,
             },
         });
-        if (!isValidStaff) {
+        if (!isValidStaff || !isValidStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff info not found');
         }
         const validStaffRole = ['STAFF_ADMIN', 'ACCOUNTS_MANAGER'];
@@ -227,7 +227,7 @@ const updateOrganization = (req, next) => __awaiter(void 0, void 0, void 0, func
         const userInfo = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userId },
         });
-        if (!userInfo) {
+        if (!userInfo || !userInfo.isValidNow) {
             if (photo) {
                 deletePhoto(photo);
             }
@@ -315,7 +315,7 @@ const removePicture = (userId, userRole, next) => __awaiter(void 0, void 0, void
         const userInfo = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userId },
         });
-        if (!userInfo) {
+        if (!userInfo || !userInfo.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User info not found');
         }
         const validStaff = ['STAFF_ADMIN'];
@@ -368,11 +368,27 @@ const updateOrganizationMembershipCategory = (payload) => __awaiter(void 0, void
     });
     return result;
 });
+const suspendOrganization = (orgId) => __awaiter(void 0, void 0, void 0, function* () {
+    const isExist = yield prisma_1.default.organization.findUnique({
+        where: { id: orgId },
+    });
+    if (!isExist) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization not found');
+    }
+    const result = yield prisma_1.default.organization.update({
+        where: { id: orgId },
+        data: {
+            isSuspend: true,
+        },
+    });
+    return result;
+});
 exports.OrganizaionServices = {
     getDashboardMatrics,
     getOutgoingOrdersByDate,
     getIncomingOrdersByDate,
     updateOrganization,
     removePicture,
+    suspendOrganization,
     updateOrganizationMembershipCategory,
 };

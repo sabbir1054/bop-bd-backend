@@ -48,7 +48,49 @@ const getSingle = (userId, staffUserId) => __awaiter(void 0, void 0, void 0, fun
     }
     return result;
 });
+const blockstaff = (userId, userRole, staffId) => __awaiter(void 0, void 0, void 0, function* () {
+    let orgId = null;
+    if (userRole === 'STAFF') {
+        const isValidStaff = yield prisma_1.default.staff.findUnique({
+            where: { staffInfoId: userId },
+        });
+        if (!isValidStaff || !isValidStaff.isValidNow) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Invalid user');
+        }
+        if (isValidStaff.role !== 'STAFF_ADMIN') {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'You can not block user');
+        }
+        orgId = isValidStaff.organizationId;
+    }
+    else {
+        const userInfo = yield prisma_1.default.user.findUnique({
+            where: { id: userId },
+        });
+        if (!userInfo) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User info not found');
+        }
+        orgId = userInfo.organizationId;
+    }
+    if (!orgId) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization info not found');
+    }
+    const isStaffExist = yield prisma_1.default.staff.findUnique({
+        where: { id: staffId },
+    });
+    if (!isStaffExist) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff info not found');
+    }
+    if (isStaffExist.organizationId !== orgId) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff not from your organization');
+    }
+    const result = yield prisma_1.default.staff.update({
+        where: { id: staffId },
+        data: { isValidNow: false },
+    });
+    return result;
+});
 exports.staffServices = {
     getAll,
     getSingle,
+    blockstaff,
 };

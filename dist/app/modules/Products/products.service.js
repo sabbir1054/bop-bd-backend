@@ -44,7 +44,7 @@ const createNew = (req) => __awaiter(void 0, void 0, void 0, function* () {
                 organization: true,
             },
         });
-        if (!isValidStaff) {
+        if (!isValidStaff || !isValidStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff  is invalid');
         }
         else {
@@ -227,7 +227,7 @@ const deleteImageFromProduct = (imageId, productId, userId, userRole) => __await
             where: { staffInfoId: userId },
             include: { organization: true },
         });
-        if (!isValidStaff) {
+        if (!isValidStaff || !isValidStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
         }
         if (isValidStaff.role === 'STORE_MANAGER' ||
@@ -298,7 +298,7 @@ const addNewImageForProduct = (req) => __awaiter(void 0, void 0, void 0, functio
             where: { staffInfoId: userId },
             include: { organization: true },
         });
-        if (!isValidStaff) {
+        if (!isValidStaff || !isValidStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
         }
         if (isValidStaff.role === 'STORE_MANAGER' ||
@@ -377,7 +377,7 @@ const updateProductInfo = (productId, userId, userRole, payload) => __awaiter(vo
             where: { staffInfoId: userId },
             include: { organization: true },
         });
-        if (!isValidStaff) {
+        if (!isValidStaff || !isValidStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
         }
         if (isValidStaff.role === 'STORE_MANAGER' ||
@@ -424,7 +424,7 @@ const deleteProduct = (productId, userId, userRole) => __awaiter(void 0, void 0,
             where: { staffInfoId: userId },
             include: { organization: true },
         });
-        if (!isValidStaff) {
+        if (!isValidStaff || !isValidStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
         }
         if (isValidStaff.role === 'STORE_MANAGER' ||

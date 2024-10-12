@@ -206,7 +206,11 @@ const getAll = (filters, options) => __awaiter(void 0, void 0, void 0, function*
             organization: {
                 include: {
                     BusinessType: true,
-                    UsedReffereCode: true,
+                    UsedReffereCode: {
+                        include: {
+                            refferCode: true,
+                        },
+                    },
                 },
             },
             isMobileVerified: true,
@@ -239,6 +243,11 @@ const getSingle = (userId, profileId, role) => __awaiter(void 0, void 0, void 0,
             include: {
                 organization: {
                     include: {
+                        UsedReffereCode: {
+                            include: {
+                                refferCode: true,
+                            },
+                        },
                         owner: true,
                     },
                 },
@@ -256,6 +265,11 @@ const getSingle = (userId, profileId, role) => __awaiter(void 0, void 0, void 0,
         include: {
             organization: {
                 include: {
+                    UsedReffereCode: {
+                        include: {
+                            refferCode: true,
+                        },
+                    },
                     feedbacks: true,
                     cart: {
                         include: {
@@ -329,7 +343,7 @@ const userVerifiedStatusChange = (status, userId, role) => __awaiter(void 0, voi
     return result;
 });
 const getOrganizationStaff = (userId, userRole, role) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c;
+    var _a, _b, _c, _d;
     const andConditions = [];
     let ownerId = null;
     if (userRole === 'STAFF') {
@@ -337,13 +351,14 @@ const getOrganizationStaff = (userId, userRole, role) => __awaiter(void 0, void 
             where: { id: userId },
             include: { Staff: { include: { organization: true } } },
         });
-        if (((_a = findOwnerId === null || findOwnerId === void 0 ? void 0 : findOwnerId.Staff) === null || _a === void 0 ? void 0 : _a.role) !== 'STAFF_ADMIN') {
+        if (((_a = findOwnerId === null || findOwnerId === void 0 ? void 0 : findOwnerId.Staff) === null || _a === void 0 ? void 0 : _a.role) !== 'STAFF_ADMIN' ||
+            !((_b = findOwnerId === null || findOwnerId === void 0 ? void 0 : findOwnerId.Staff) === null || _b === void 0 ? void 0 : _b.isValidNow)) {
             throw new ApiError_1.default(http_status_1.default.FORBIDDEN, 'Only staff admins can see this');
         }
-        if (!((_b = findOwnerId === null || findOwnerId === void 0 ? void 0 : findOwnerId.Staff) === null || _b === void 0 ? void 0 : _b.organization.ownerId)) {
+        if (!((_c = findOwnerId === null || findOwnerId === void 0 ? void 0 : findOwnerId.Staff) === null || _c === void 0 ? void 0 : _c.organization.ownerId)) {
             throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization info not found');
         }
-        ownerId = (_c = findOwnerId.Staff) === null || _c === void 0 ? void 0 : _c.organization.ownerId;
+        ownerId = (_d = findOwnerId.Staff) === null || _d === void 0 ? void 0 : _d.organization.ownerId;
     }
     else {
         ownerId = userId;
@@ -390,6 +405,9 @@ const getMyDeliveryBoy = (userId, userRole) => __awaiter(void 0, void 0, void 0,
         });
         if (!isExistStaff) {
             throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff info not found');
+        }
+        if (!isExistStaff.isValidNow) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff is not valid');
         }
         if (isExistStaff.role !== 'ORDER_SUPERVISOR') {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only order supervisor can get this');
@@ -456,6 +474,9 @@ const deleteMySingleStaff = (userId, userRole, staffId) => __awaiter(void 0, voi
         if ((isValidStaff === null || isValidStaff === void 0 ? void 0 : isValidStaff.role) !== 'STAFF_ADMIN') {
             throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Only owner and admin staff can delete staff');
         }
+        if (!(isValidStaff === null || isValidStaff === void 0 ? void 0 : isValidStaff.isValidNow)) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Invalid staff');
+        }
     }
     const result = prisma_1.default.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {
         yield prisma.staff.delete({ where: { id: staffId } });
@@ -484,11 +505,22 @@ const updateMySingleStaffRole = (userId, userRole, payload) => __awaiter(void 0,
         if ((isValidStaff === null || isValidStaff === void 0 ? void 0 : isValidStaff.role) !== 'STAFF_ADMIN') {
             throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Only owner and admin staff can update staff');
         }
+        if (!(isValidStaff === null || isValidStaff === void 0 ? void 0 : isValidStaff.isValidNow)) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Invalid staff');
+        }
     }
     const result = yield prisma_1.default.staff.update({
         where: { id: payload.staffId },
         data: { role: payload.updatedRole },
     });
+    return result;
+});
+const deleteUser = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    const isExist = yield prisma_1.default.user.findUnique({ where: { id: userId } });
+    if (!isExist) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User not found');
+    }
+    const result = yield prisma_1.default.user.delete({ where: { id: userId } });
     return result;
 });
 exports.UserServices = {
@@ -502,4 +534,5 @@ exports.UserServices = {
     getMyDeliveryBoy,
     deleteMySingleStaff,
     updateMySingleStaffRole,
+    deleteUser,
 };

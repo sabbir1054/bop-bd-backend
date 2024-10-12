@@ -22,7 +22,7 @@ const createNew = (userid, userRole, payload) => __awaiter(void 0, void 0, void 
         const userInfo = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userid },
         });
-        if (!userInfo) {
+        if (!userInfo || !userInfo.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User info not found');
         }
         const validStaff = ['STAFF_ADMIN', 'ACCOUNTS_MANAGER'];
@@ -66,7 +66,7 @@ const updateSingle = (userId, userRole, paymentOptionId, payload) => __awaiter(v
         const userInfo = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userId },
         });
-        if (!userInfo) {
+        if (!userInfo || !userInfo.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User info not found');
         }
         const validStaff = ['STAFF_ADMIN', 'ACCOUNTS_MANAGER'];
@@ -108,7 +108,7 @@ const deleteSingle = (userId, userRole, paymentOptionId) => __awaiter(void 0, vo
         const userInfo = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userId },
         });
-        if (!userInfo) {
+        if (!userInfo || !userInfo.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User info not found');
         }
         const validStaff = ['STAFF_ADMIN', 'ACCOUNTS_MANAGER'];

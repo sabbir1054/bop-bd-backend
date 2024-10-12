@@ -33,7 +33,7 @@ const referCodeValidity_1 = require("../../../helpers/referCodeValidity");
 const prisma_1 = __importDefault(require("../../../shared/prisma"));
 const order_constant_1 = require("./order.constant");
 const orderCreate = (userId, userRole, orderData) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
+    var _a, _b, _c;
     const { shipping_address } = orderData;
     let cartId = null;
     // Determine the user's role and validate accordingly
@@ -44,7 +44,10 @@ const orderCreate = (userId, userRole, orderData) => __awaiter(void 0, void 0, v
                 organization: { include: { cart: true } },
             },
         });
-        if (!isValidStaff) {
+        if ((_a = isValidStaff === null || isValidStaff === void 0 ? void 0 : isValidStaff.organization) === null || _a === void 0 ? void 0 : _a.isSuspend) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Your organization is suspend, can not buy now');
+        }
+        if (!isValidStaff || !isValidStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
         }
         if (isValidStaff.role === 'PURCHASE_OFFICER' ||
@@ -63,10 +66,13 @@ const orderCreate = (userId, userRole, orderData) => __awaiter(void 0, void 0, v
         if (!isValidUser) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Not valid user');
         }
-        if (!((_a = isValidUser === null || isValidUser === void 0 ? void 0 : isValidUser.organization) === null || _a === void 0 ? void 0 : _a.cart[0].id)) {
+        if (!((_b = isValidUser === null || isValidUser === void 0 ? void 0 : isValidUser.organization) === null || _b === void 0 ? void 0 : _b.cart[0].id)) {
             throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Cart info not found');
         }
-        cartId = (_b = isValidUser === null || isValidUser === void 0 ? void 0 : isValidUser.organization) === null || _b === void 0 ? void 0 : _b.cart[0].id;
+        if (isValidUser.organization.isSuspend) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Your Organization is suspended, can not buy now');
+        }
+        cartId = (_c = isValidUser === null || isValidUser === void 0 ? void 0 : isValidUser.organization) === null || _c === void 0 ? void 0 : _c.cart[0].id;
     }
     if (!cartId) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Cart information not found');
@@ -98,7 +104,12 @@ const orderCreate = (userId, userRole, orderData) => __awaiter(void 0, void 0, v
     //check paymentoptions id
     // Begin transaction after ensuring valid cart items
     const result = yield prisma_1.default.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {
-        var _c, _d;
+        var _d, _e;
+        //* get points value
+        const pointsValue = yield prisma.pointsValue.findFirst();
+        if (!pointsValue) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Points value not set yet');
+        }
         // Proceed with valid cart items to create orders
         const productIds = validCartItems.map(item => item.productId);
         const products = yield prisma.product.findMany({
@@ -145,7 +156,7 @@ const orderCreate = (userId, userRole, orderData) => __awaiter(void 0, void 0, v
                 throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization info not found');
             }
             do {
-                orderCode = (0, orderIdcodeGenerator_1.orderCodeGenerator)((_d = (_c = cart === null || cart === void 0 ? void 0 : cart.Organization) === null || _c === void 0 ? void 0 : _c.owner) === null || _d === void 0 ? void 0 : _d.phone, items[0].product.organization.owner.phone);
+                orderCode = (0, orderIdcodeGenerator_1.orderCodeGenerator)((_e = (_d = cart === null || cart === void 0 ? void 0 : cart.Organization) === null || _d === void 0 ? void 0 : _d.owner) === null || _e === void 0 ? void 0 : _e.phone, items[0].product.organization.owner.phone);
                 const existingOrder = yield prisma.order.findUnique({
                     where: { orderCode },
                 });
@@ -153,13 +164,32 @@ const orderCreate = (userId, userRole, orderData) => __awaiter(void 0, void 0, v
                     isUnique = true;
                 }
             } while (!isUnique);
+            //* instant reward use
+            let caculateDiscountWithReward = 0;
+            if (orderData.isInstantRewardUse === true) {
+                const rewardInfo = yield prisma.rewardPoints.findFirst({
+                    where: {
+                        AND: [
+                            { rewardType: 'BUYING' },
+                            { membershipCategory: cart.Organization.memberShipCategory },
+                        ],
+                    },
+                });
+                if (!rewardInfo) {
+                    throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Reward info not found');
+                }
+                caculateDiscountWithReward = parseFloat((pointsValue.perPointsTk * (rewardInfo.points / 100)).toFixed(2));
+            }
+            const totalAfterDiscount = total - caculateDiscountWithReward;
             // Create the order
             const order = yield prisma.order.create({
                 data: {
                     orderCode, // Add the generated order code here
                     shipping_address: shipping_address,
                     total,
-                    totalWithDeliveryCharge: total,
+                    isInstantRewardUse: orderData.isInstantRewardUse,
+                    discount: caculateDiscountWithReward,
+                    totalWithDeliveryChargeAndDiscount: totalAfterDiscount,
                     customer: {
                         connect: { id: cart === null || cart === void 0 ? void 0 : cart.organizationId },
                     },
@@ -379,7 +409,7 @@ const updateOrderStatus = (userId, userRole, orderId, status) => __awaiter(void 
             where: { staffInfoId: userId },
             include: { organization: true },
         });
-        if (!isValidStaff) {
+        if (!isValidStaff || !isValidStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
         }
         if (!order_constant_1.validStaffRoleForOrderStatusUpdate.includes(isValidStaff.role)) {
@@ -406,7 +436,7 @@ const updateOrderStatus = (userId, userRole, orderId, status) => __awaiter(void 
                 where: { staffInfoId: userId },
                 include: { organization: true },
             });
-            if (!isValidStaff) {
+            if (!isValidStaff || !isValidStaff.isValidNow) {
                 throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Only delivery boy change status to delivered');
             }
             staffRole = isValidStaff === null || isValidStaff === void 0 ? void 0 : isValidStaff.role;
@@ -426,9 +456,9 @@ const updateOrderStatus = (userId, userRole, orderId, status) => __awaiter(void 
                 const isExistOrderOtp = yield prisma.orderOtp.findFirst({
                     where: { orderId: orderId },
                 });
-                if (isExistOrder) {
+                if (isExistOrderOtp) {
                     const makeOtpForUser = yield prisma.orderOtp.update({
-                        where: { id: isExistOrder.id },
+                        where: { orderId: isExistOrder.id },
                         data: {
                             otpCode: otp,
                             countSend: { increment: 1 },
@@ -460,17 +490,17 @@ const updateOrderStatus = (userId, userRole, orderId, status) => __awaiter(void 
         }
         else {
             const result = yield prisma_1.default.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {
-                var _e, _f, _g, _h;
+                var _f, _g, _h, _j;
                 //! calculate reward and commission
                 //* start rearwd given
                 const owner = isExistOrder.product_seller;
                 const customer = isExistOrder.customer;
                 let isValid = false;
                 if (owner.UsedReffereCode) {
-                    isValid = (0, referCodeValidity_1.isCodeValid)(new Date((_f = (_e = owner === null || owner === void 0 ? void 0 : owner.UsedReffereCode) === null || _e === void 0 ? void 0 : _e.refferCode) === null || _f === void 0 ? void 0 : _f.validUntil));
+                    isValid = (0, referCodeValidity_1.isCodeValid)(new Date((_g = (_f = owner === null || owner === void 0 ? void 0 : owner.UsedReffereCode) === null || _f === void 0 ? void 0 : _f.refferCode) === null || _g === void 0 ? void 0 : _g.validUntil));
                 }
                 let ownerCommissionType = 'NORMAL';
-                if (isValid && ((_h = (_g = owner === null || owner === void 0 ? void 0 : owner.UsedReffereCode) === null || _g === void 0 ? void 0 : _g.refferCode) === null || _h === void 0 ? void 0 : _h.isValid)) {
+                if (isValid && ((_j = (_h = owner === null || owner === void 0 ? void 0 : owner.UsedReffereCode) === null || _h === void 0 ? void 0 : _h.refferCode) === null || _j === void 0 ? void 0 : _j.isValid)) {
                     ownerCommissionType = 'REFERRED_MEMBER';
                 }
                 const commissionInfo = yield prisma.commission.findFirst({
@@ -501,7 +531,7 @@ const updateOrderStatus = (userId, userRole, orderId, status) => __awaiter(void 
                 yield prisma.organization.update({
                     where: { id: owner.id },
                     data: {
-                        totlaCommission: { increment: calculatedCommission },
+                        totalCommission: { increment: calculatedCommission },
                     },
                 });
                 //* owner reward
@@ -592,7 +622,7 @@ const verifyDeliveryOtp = (userId, userRole, payload) => __awaiter(void 0, void 
         where: { staffInfoId: userId },
         include: { organization: true },
     });
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
         throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
     }
     if (isValidStaff.role !== 'DELIVERY_BOY') {
@@ -615,7 +645,7 @@ const verifyDeliveryOtp = (userId, userRole, payload) => __awaiter(void 0, void 
     }
     const customerPhone = isExistOrder.customer.owner.phone;
     const result = yield prisma_1.default.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {
-        var _j, _k, _l, _m;
+        var _k, _l, _m, _o;
         const findOtp = yield prisma.orderOtp.findUnique({
             where: { orderId: isExistOrder.id, phone: customerPhone },
         });
@@ -641,10 +671,10 @@ const verifyDeliveryOtp = (userId, userRole, payload) => __awaiter(void 0, void 
             const customer = isExistOrder.customer;
             let isValid = false;
             if (owner.UsedReffereCode) {
-                isValid = (0, referCodeValidity_1.isCodeValid)(new Date((_k = (_j = owner === null || owner === void 0 ? void 0 : owner.UsedReffereCode) === null || _j === void 0 ? void 0 : _j.refferCode) === null || _k === void 0 ? void 0 : _k.validUntil));
+                isValid = (0, referCodeValidity_1.isCodeValid)(new Date((_l = (_k = owner === null || owner === void 0 ? void 0 : owner.UsedReffereCode) === null || _k === void 0 ? void 0 : _k.refferCode) === null || _l === void 0 ? void 0 : _l.validUntil));
             }
             let ownerCommissionType = 'NORMAL';
-            if (isValid && ((_m = (_l = owner === null || owner === void 0 ? void 0 : owner.UsedReffereCode) === null || _l === void 0 ? void 0 : _l.refferCode) === null || _m === void 0 ? void 0 : _m.isValid)) {
+            if (isValid && ((_o = (_m = owner === null || owner === void 0 ? void 0 : owner.UsedReffereCode) === null || _m === void 0 ? void 0 : _m.refferCode) === null || _o === void 0 ? void 0 : _o.isValid)) {
                 ownerCommissionType = 'REFERRED_MEMBER';
             }
             const commissionInfo = yield prisma.commission.findFirst({
@@ -682,18 +712,25 @@ const verifyDeliveryOtp = (userId, userRole, payload) => __awaiter(void 0, void 
             if (!(ownerRewardInfo === null || ownerRewardInfo === void 0 ? void 0 : ownerRewardInfo.points)) {
                 throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'No reward points defined');
             }
+            //* calculate reward
+            if (!ownerRewardInfo.points) {
+                throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Owner reward points info not found');
+            }
+            const ownerCalculatedreward = (isExistOrder.total *
+                (ownerRewardInfo.points / 100)).toFixed(2);
             yield prisma.organizationRewardPointsHistory.create({
                 data: {
                     pointHistoryType: 'IN',
                     rewardPointsId: ownerRewardInfo === null || ownerRewardInfo === void 0 ? void 0 : ownerRewardInfo.id,
-                    points: ownerRewardInfo === null || ownerRewardInfo === void 0 ? void 0 : ownerRewardInfo.points,
+                    points: parseFloat(ownerCalculatedreward),
                     organizationId: owner.id,
                 },
             });
             yield prisma.organization.update({
                 where: { id: owner.id },
                 data: {
-                    totalRewardPoints: { increment: ownerRewardInfo === null || ownerRewardInfo === void 0 ? void 0 : ownerRewardInfo.points },
+                    totalRewardPoints: { increment: parseFloat(ownerCalculatedreward) },
+                    totalCommission: { increment: calculatedCommission },
                 },
             });
             //* customer reward
@@ -708,20 +745,26 @@ const verifyDeliveryOtp = (userId, userRole, payload) => __awaiter(void 0, void 
             if (!(customerRewardInfo === null || customerRewardInfo === void 0 ? void 0 : customerRewardInfo.points)) {
                 throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'No reward points defined');
             }
-            yield prisma.organizationRewardPointsHistory.create({
-                data: {
-                    pointHistoryType: 'IN',
-                    rewardPointsId: customerRewardInfo === null || customerRewardInfo === void 0 ? void 0 : customerRewardInfo.id,
-                    points: customerRewardInfo === null || customerRewardInfo === void 0 ? void 0 : customerRewardInfo.points,
-                    organizationId: customer.id,
-                },
-            });
-            yield prisma.organization.update({
-                where: { id: customer.id },
-                data: {
-                    totalRewardPoints: { increment: customerRewardInfo === null || customerRewardInfo === void 0 ? void 0 : customerRewardInfo.points },
-                },
-            });
+            const customerCalculatedreward = (isExistOrder.total *
+                (customerRewardInfo.points / 100)).toFixed(2);
+            if (isExistOrder.isInstantRewardUse !== true) {
+                yield prisma.organizationRewardPointsHistory.create({
+                    data: {
+                        pointHistoryType: 'IN',
+                        rewardPointsId: customerRewardInfo === null || customerRewardInfo === void 0 ? void 0 : customerRewardInfo.id,
+                        points: parseFloat(customerCalculatedreward),
+                        organizationId: customer.id,
+                    },
+                });
+                yield prisma.organization.update({
+                    where: { id: customer.id },
+                    data: {
+                        totalRewardPoints: {
+                            increment: parseFloat(customerCalculatedreward),
+                        },
+                    },
+                });
+            }
             if (isExistOrder.paymentStatus === 'PAID') {
                 const result = yield prisma.order.update({
                     where: { id: payload.orderId },
@@ -754,7 +797,7 @@ const updatePaymentStatus = (userId, userRole, orderId, status) => __awaiter(voi
             where: { staffInfoId: userId },
             include: { organization: true },
         });
-        if (!isValidStaff) {
+        if (!isValidStaff || !isValidStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
         }
         if (!order_constant_1.validStaffRoleForOrderStatusUpdate.includes(isValidStaff.role)) {
@@ -781,11 +824,6 @@ const getSingle = (id) => __awaiter(void 0, void 0, void 0, function* () {
         include: {
             assigndForDelivery: {
                 include: {
-                    assignedby: {
-                        include: {
-                            staffInfo: true,
-                        },
-                    },
                     deliveryBoy: {
                         include: {
                             staffInfo: true,
@@ -867,7 +905,7 @@ const searchFilterIncomingOrders = (userId, userRole, filters, options) => __awa
             where: { staffInfoId: userId },
             include: { organization: true },
         });
-        if (!isValidStaff) {
+        if (!isValidStaff || !isValidStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
         }
         const validUser = ['ORDER_SUPERVISOR', 'STAFF_ADMIN'];
@@ -966,7 +1004,7 @@ const searchFilterOutgoingOrders = (userId, userRole, filters, options) => __awa
             where: { staffInfoId: userId },
             include: { organization: true },
         });
-        if (!isValidStaff) {
+        if (!isValidStaff || !isValidStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
         }
         const validUser = ['PURCHASE_OFFICER', 'ORDER_SUPERVISOR', 'STAFF_ADMIN'];
@@ -1058,7 +1096,9 @@ const assignForDelivery = (userId, userRole, payload) => __awaiter(void 0, void 
             where: { id: userId },
             include: { Staff: { include: { organization: true } } },
         });
-        if (!IsValidUserRole || !IsValidUserRole.Staff) {
+        if (!IsValidUserRole ||
+            !IsValidUserRole.Staff ||
+            !IsValidUserRole.Staff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User info not found');
         }
         const validStaffRole = ['ORDER_SUPERVISOR', 'STAFF_ADMIN'];
@@ -1097,7 +1137,6 @@ const assignForDelivery = (userId, userRole, payload) => __awaiter(void 0, void 
     }
     const result = yield prisma_1.default.assigndForDelivery.create({
         data: {
-            assignedby: { connect: { id: userId } },
             deliveryBoy: { connect: { id: payload.deliveryBoyId } },
             order: { connect: { id: payload.orderId } },
         },
@@ -1108,7 +1147,7 @@ const getMyOrderForDelivery = (userId) => __awaiter(void 0, void 0, void 0, func
     const isValidStaff = yield prisma_1.default.staff.findUnique({
         where: { staffInfoId: userId },
     });
-    if (!isValidStaff) {
+    if (!isValidStaff || !isValidStaff.isValidNow) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff info not found');
     }
     if (isValidStaff.role !== 'DELIVERY_BOY') {
@@ -1152,7 +1191,7 @@ const updateOrderPaymentOptions = (userId, userRole, payload) => __awaiter(void 
         const userInfo = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userId },
         });
-        if (!userInfo) {
+        if (!userInfo || !userInfo.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'User info not found');
         }
         if (userInfo.organizationId === isOrderExist.product_seller_id) {
@@ -1226,6 +1265,51 @@ const updateOrderPaymentOptions = (userId, userRole, payload) => __awaiter(void 
     });
     return result;
 });
+const updateOrderDeliveryCharge = (userId, userRole, orderId, deliveryCharge) => __awaiter(void 0, void 0, void 0, function* () {
+    const isvalidOrder = yield prisma_1.default.order.findUnique({
+        where: { id: orderId },
+    });
+    if (!isvalidOrder) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Order info not found');
+    }
+    const orgId = isvalidOrder.product_seller_id;
+    // staff and owner validation
+    if (userRole === 'STAFF') {
+        const isValidStaff = yield prisma_1.default.staff.findUnique({
+            where: { staffInfoId: userId },
+        });
+        if (!isValidStaff || !isValidStaff.isValidNow) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff info not fount');
+        }
+        const validStaffRole = ['STAFF_ADMIN', 'ORDER_SUPERVISOR'];
+        if (!validStaffRole.includes(isValidStaff.role)) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff role not valid');
+        }
+        if (orgId !== isValidStaff.organizationId) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Your organization id not match');
+        }
+    }
+    else {
+        const isValidUser = yield prisma_1.default.user.findUnique({ where: { id: userId } });
+        if (!isValidUser) {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Your info not found');
+        }
+        if (orgId !== isValidUser.organizationId) {
+            throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Your organization id not match');
+        }
+    }
+    if (!orgId) {
+        throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Organization info not found');
+    }
+    const result = yield prisma_1.default.order.update({
+        where: { id: isvalidOrder.id },
+        data: {
+            deliveryCharge: deliveryCharge,
+            totalWithDeliveryChargeAndDiscount: { increment: deliveryCharge },
+        },
+    });
+    return result;
+});
 exports.OrderService = {
     orderCreate,
     updateOrderStatus,
@@ -1239,4 +1323,5 @@ exports.OrderService = {
     assignForDelivery,
     getMyOrderForDelivery,
     updateOrderPaymentOptions,
+    updateOrderDeliveryCharge,
 };

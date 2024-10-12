@@ -26,7 +26,7 @@ const createNew = (id, userRole, payload) => __awaiter(void 0, void 0, void 0, f
                 organization: true,
             },
         });
-        if (!isValidStaff) {
+        if (!isValidStaff || !isValidStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff info not found');
         }
         const validStaffRole = ['STAFF_ADMIN'];
@@ -107,7 +107,7 @@ const getAll = (role, userId) => __awaiter(void 0, void 0, void 0, function* () 
                 organization: true,
             },
         });
-        if (!isValidStaff) {
+        if (!isValidStaff || !isValidStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff info not found');
         }
         const validStaffRole = ['STAFF_ADMIN'];
@@ -218,7 +218,7 @@ const updateSingle = (userId, role, feedbackId, payload) => __awaiter(void 0, vo
                 organization: true,
             },
         });
-        if (!isValidStaff) {
+        if (!isValidStaff || !isValidStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff info not found');
         }
         const validStaffRole = ['STAFF_ADMIN'];
@@ -263,7 +263,7 @@ const deleteSingle = (userId, role, feedbackId) => __awaiter(void 0, void 0, voi
                 organization: true,
             },
         });
-        if (!isValidStaff) {
+        if (!isValidStaff || !isValidStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Staff info not found');
         }
         const validStaffRole = ['STAFF_ADMIN'];

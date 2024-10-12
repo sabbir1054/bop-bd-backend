@@ -9,7 +9,9 @@ const paymentOptions_constant_1 = require("./paymentOptions.constant");
 const createPaymentOptionsValidation = zod_1.default.object({
     body: zod_1.default.object({
         paymentCategory: zod_1.default.enum([...paymentOptions_constant_1.OrderPaymentCategory], { required_error: 'Payment category is required' }),
-        methodName: zod_1.default.string({ required_error: 'Method Name is required' }),
+        methodName: zod_1.default
+            .string({ required_error: 'Method Name is required' })
+            .optional(),
         accountNumber: zod_1.default
             .string({ required_error: 'Account number is required' })
             .optional(),

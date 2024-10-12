@@ -47,6 +47,7 @@ const generateInvoice = (req, res) => __awaiter(void 0, void 0, void 0, function
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Order does not exist');
     }
     const data = {
+        discount: isExistOrder.discount ? isExistOrder.discount : '0',
         orderNumber: isExistOrder.orderCode ? isExistOrder.orderCode : '',
         orderDate: (isExistOrder === null || isExistOrder === void 0 ? void 0 : isExistOrder.createdAt.toISOString().split('T')[0])
             ? isExistOrder === null || isExistOrder === void 0 ? void 0 : isExistOrder.createdAt.toISOString().split('T')[0]
@@ -77,9 +78,9 @@ const generateInvoice = (req, res) => __awaiter(void 0, void 0, void 0, function
             : '',
         items: isExistOrder.orderItems,
         subtotal: isExistOrder.total ? isExistOrder.total : '',
-        deliveryFee: isExistOrder.deliveryCharge ? isExistOrder.deliveryCharge : '',
-        total: isExistOrder.totalWithDeliveryCharge
-            ? isExistOrder.totalWithDeliveryCharge
+        deliveryFee: isExistOrder.deliveryCharge ? isExistOrder.deliveryCharge : 0,
+        total: isExistOrder.totalWithDeliveryChargeAndDiscount
+            ? isExistOrder.totalWithDeliveryChargeAndDiscount
             : '',
         supportEmail: 'support@bopbd.com.bd',
         supportPhone: '+8801969669908',

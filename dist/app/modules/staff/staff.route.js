@@ -11,4 +11,5 @@ const staff_controller_1 = require("./staff.controller");
 const router = express_1.default.Router();
 router.get('/getAll', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.RESELLER, user_1.ENUM_USER_ROLE.WHOLESALER), staff_controller_1.StaffController.getAll);
 router.get('/getStaff/:id', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.RESELLER, user_1.ENUM_USER_ROLE.WHOLESALER), staff_controller_1.StaffController.getSingle);
+router.patch('/blockStaff/:staffId', (0, auth_1.default)(user_1.ENUM_USER_ROLE.DEALER, user_1.ENUM_USER_ROLE.IMPORTER, user_1.ENUM_USER_ROLE.MANUFACTURER, user_1.ENUM_USER_ROLE.RESELLER, user_1.ENUM_USER_ROLE.WHOLESALER, user_1.ENUM_USER_ROLE.STAFF), staff_controller_1.StaffController.blockstaff);
 exports.StaffRoutes = router;

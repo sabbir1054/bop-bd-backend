@@ -24,13 +24,16 @@ const updateCartSingle = (userId, userRole, productId, action) => __awaiter(void
     if (!isProductExist) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Product not found');
     }
+    if (isProductExist.organization.isSuspend) {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Product organizatios is suspended');
+    }
     let orgId = null;
     if (userRole === 'STAFF') {
         const isValidStaff = yield prisma_1.default.staff.findUnique({
             where: { staffInfoId: userId },
             include: { organization: true },
         });
-        if (!isValidStaff) {
+        if (!isValidStaff || !isValidStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
         }
         const validPurchaseRole = ['PURCHASE_OFFICER', 'STAFF_ADMIN'];
@@ -53,6 +56,9 @@ const updateCartSingle = (userId, userRole, productId, action) => __awaiter(void
         where: { id: orgId },
         include: { owner: true },
     });
+    if (organizationInfo === null || organizationInfo === void 0 ? void 0 : organizationInfo.isSuspend) {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Organization is suspen, can not buy now');
+    }
     const isValidOwner = yield prisma_1.default.user.findUnique({
         where: { id: organizationInfo === null || organizationInfo === void 0 ? void 0 : organizationInfo.owner.id },
     });
@@ -132,9 +138,13 @@ const updateCartMultiple = (userId, userRole, productId, action, quantity) => __
     }
     const isProductExist = yield prisma_1.default.product.findUnique({
         where: { id: productId },
+        include: { organization: true },
     });
     if (!isProductExist) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Product not found');
+    }
+    if (isProductExist.organization.isSuspend) {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Product organizatios is suspended');
     }
     let orgId = null;
     if (userRole === 'STAFF') {
@@ -142,7 +152,7 @@ const updateCartMultiple = (userId, userRole, productId, action, quantity) => __
             where: { staffInfoId: userId },
             include: { organization: true },
         });
-        if (!isValidStaff) {
+        if (!isValidStaff || !isValidStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
         }
         if (isValidStaff.role !== ('PURCHASE_OFFICER' || 'STAFF_ADMIN')) {
@@ -164,6 +174,9 @@ const updateCartMultiple = (userId, userRole, productId, action, quantity) => __
         where: { id: orgId },
         include: { owner: true },
     });
+    if (organizationInfo === null || organizationInfo === void 0 ? void 0 : organizationInfo.isSuspend) {
+        throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Organization is suspen, can not buy now');
+    }
     const isValidOwner = yield prisma_1.default.user.findUnique({
         where: { id: organizationInfo === null || organizationInfo === void 0 ? void 0 : organizationInfo.owner.id },
     });
@@ -254,7 +267,7 @@ const removeItemsFromCart = (userId, userRole, cartItemIds) => __awaiter(void 0,
             where: { staffInfoId: userId },
             include: { organization: true },
         });
-        if (!isValidStaff) {
+        if (!isValidStaff || !isValidStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
         }
         if (isValidStaff.role !== ('PURCHASE_OFFICER' || 'STAFF_ADMIN')) {
@@ -291,7 +304,7 @@ const getMyCart = (userId, userRole) => __awaiter(void 0, void 0, void 0, functi
             where: { staffInfoId: userId },
             include: { organization: true },
         });
-        if (!isValidStaff) {
+        if (!isValidStaff || !isValidStaff.isValidNow) {
             throw new ApiError_1.default(http_status_1.default.BAD_REQUEST, 'Staff is invalid');
         }
         if (isValidStaff.role !== ('PURCHASE_OFFICER' || 'STAFF_ADMIN')) {
