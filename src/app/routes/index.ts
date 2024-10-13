@@ -8,7 +8,7 @@ import { AuthRoutes } from '../modules/auth/auth.route';
 import { BusinessTypeRoutes } from '../modules/businessType/businessType.route';
 import { CartRoutes } from '../modules/cart/cart.routes';
 import { FeedbackRoutes } from '../modules/feedback/feedback.routes';
-import { InvoceRoutes } from '../modules/invoices/invoice.route';
+// import { InvoceRoutes } from '../modules/invoices/invoice.route';
 import { OrderRoutes } from '../modules/order/order.route';
 import { OrganizationRoutes } from '../modules/organization/organization.route';
 import { PayCommissionRoutes } from '../modules/payCommission/payCommission.route';
@@ -92,10 +92,10 @@ const moduleRoutes = [
     path: '/paymentOptions',
     route: PaymentOptionsRoutes,
   },
-  {
-    path: '/invoice',
-    route: InvoceRoutes,
-  },
+  // {
+  //   path: '/invoice',
+  //   route: InvoceRoutes,
+  // },
   {
     path: '/commissionPay',
     route: PayCommissionRoutes,
