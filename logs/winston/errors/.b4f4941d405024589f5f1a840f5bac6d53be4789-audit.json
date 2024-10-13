@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "E:\\bop-bd\\bop-bd-backend-v1\\logs\\winston\\errors\\.b4f4941d405024589f5f1a840f5bac6d53be4789-audit.json",
+    "files": [
+        {
+            "date": 1728778323535,
+            "name": "E:\\bop-bd\\bop-bd-backend-v1\\logs\\winston\\errors\\ump-2024-10-13-06.error.log",
+            "hash": "f96ad1f293b2d89754a2495710721be54bd7a5057c7449a90567ed0d4b66e409"
+        }
+    ],
+    "hashType": "sha256"
+}

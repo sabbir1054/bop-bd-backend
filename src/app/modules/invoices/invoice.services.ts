@@ -150,74 +150,77 @@ import prisma from '../../../shared/prisma';
 const generateInvoice = async (req: Request, res: any, next: NextFunction) => {
   const { orderId } = req.params;
   if (!orderId) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Order id not found');
+    return next(new ApiError(httpStatus.BAD_REQUEST, 'Order id not found'));
   }
-  const isExistOrder = await prisma.order.findUnique({
-    where: { id: orderId },
-    include: {
-      customer: true,
-      product_seller: true,
-      orderPaymentInfo: {
-        include: {
-          paymentSystemOptions: true,
-        },
-      },
-      orderItems: {
-        include: {
-          product: true,
-        },
-      },
-    },
-  });
-
-  if (!isExistOrder) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Order does not exist');
-  }
-
-  const data = {
-    discount: isExistOrder.discount ? isExistOrder.discount : '0',
-    orderNumber: isExistOrder.orderCode ? isExistOrder.orderCode : '',
-    orderDate: isExistOrder?.createdAt.toISOString().split('T')[0]
-      ? isExistOrder?.createdAt.toISOString().split('T')[0]
-      : '',
-    companyLogoUrl:
-      'https://bopbd.com.bd/_next/image?url=%2Fassets%2Fbopbdlogo.png&w=128&q=75',
-    companyWebsite: 'bopbd.com.bd',
-    buyerLogoUrl: isExistOrder.customer.photo
-      ? isExistOrder.customer.photo
-      : '',
-    buyerName: isExistOrder.customer.name ? isExistOrder.customer.name : '',
-    sellerLogoUrl: isExistOrder.product_seller.photo
-      ? isExistOrder.product_seller.photo
-      : '',
-    sellerName: isExistOrder.product_seller.name
-      ? isExistOrder.product_seller.name
-      : '',
-    deliveryAddress: isExistOrder.shipping_address
-      ? isExistOrder.shipping_address
-      : '',
-    paymentMethod: isExistOrder.orderPaymentInfo?.paymentSystemOptions
-      .paymentCategory
-      ? isExistOrder.orderPaymentInfo?.paymentSystemOptions.paymentCategory
-      : '',
-    bankName: isExistOrder.orderPaymentInfo?.paymentSystemOptions.methodName
-      ? isExistOrder.orderPaymentInfo?.paymentSystemOptions.methodName
-      : '',
-    accountNumber: isExistOrder.orderPaymentInfo?.paymentSystemOptions
-      .accountNumber
-      ? isExistOrder.orderPaymentInfo?.paymentSystemOptions.accountNumber
-      : '',
-    items: isExistOrder.orderItems,
-    subtotal: isExistOrder.total ? isExistOrder.total : '',
-    deliveryFee: isExistOrder.deliveryCharge ? isExistOrder.deliveryCharge : 0,
-    total: isExistOrder.totalWithDeliveryChargeAndDiscount
-      ? isExistOrder.totalWithDeliveryChargeAndDiscount
-      : '',
-    supportEmail: 'support@bopbd.com.bd',
-    supportPhone: '+8801969669908',
-  };
 
   try {
+    const isExistOrder = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        customer: true,
+        product_seller: true,
+        orderPaymentInfo: {
+          include: {
+            paymentSystemOptions: true,
+          },
+        },
+        orderItems: {
+          include: {
+            product: true,
+          },
+        },
+      },
+    });
+
+    if (!isExistOrder) {
+      return next(new ApiError(httpStatus.NOT_FOUND, 'Order does not exist'));
+    }
+
+    const data = {
+      discount: isExistOrder.discount ? isExistOrder.discount : '0',
+      orderNumber: isExistOrder.orderCode ? isExistOrder.orderCode : '',
+      orderDate: isExistOrder?.createdAt.toISOString().split('T')[0]
+        ? isExistOrder?.createdAt.toISOString().split('T')[0]
+        : '',
+      companyLogoUrl:
+        'https://bopbd.com.bd/_next/image?url=%2Fassets%2Fbopbdlogo.png&w=128&q=75',
+      companyWebsite: 'bopbd.com.bd',
+      buyerLogoUrl: isExistOrder.customer.photo
+        ? isExistOrder.customer.photo
+        : '',
+      buyerName: isExistOrder.customer.name ? isExistOrder.customer.name : '',
+      sellerLogoUrl: isExistOrder.product_seller.photo
+        ? isExistOrder.product_seller.photo
+        : '',
+      sellerName: isExistOrder.product_seller.name
+        ? isExistOrder.product_seller.name
+        : '',
+      deliveryAddress: isExistOrder.shipping_address
+        ? isExistOrder.shipping_address
+        : '',
+      paymentMethod: isExistOrder.orderPaymentInfo?.paymentSystemOptions
+        .paymentCategory
+        ? isExistOrder.orderPaymentInfo?.paymentSystemOptions.paymentCategory
+        : '',
+      bankName: isExistOrder.orderPaymentInfo?.paymentSystemOptions.methodName
+        ? isExistOrder.orderPaymentInfo?.paymentSystemOptions.methodName
+        : '',
+      accountNumber: isExistOrder.orderPaymentInfo?.paymentSystemOptions
+        .accountNumber
+        ? isExistOrder.orderPaymentInfo?.paymentSystemOptions.accountNumber
+        : '',
+      items: isExistOrder.orderItems,
+      subtotal: isExistOrder.total ? isExistOrder.total : '',
+      deliveryFee: isExistOrder.deliveryCharge
+        ? isExistOrder.deliveryCharge
+        : 0,
+      total: isExistOrder.totalWithDeliveryChargeAndDiscount
+        ? isExistOrder.totalWithDeliveryChargeAndDiscount
+        : '',
+      supportEmail: 'support@bopbd.com.bd',
+      supportPhone: '+8801969669908',
+    };
+
     // Render the EJS template to HTML
     const html = await ejs.renderFile(
       path.join(__dirname, 'views', 'invoice.ejs'),
@@ -250,16 +253,20 @@ const generateInvoice = async (req: Request, res: any, next: NextFunction) => {
 
     await browser.close();
 
-    // Check if the file exists before attempting to read it
-    if (!fs.existsSync(pdfPath)) {
-      throw new ApiError(
-        httpStatus.INTERNAL_SERVER_ERROR,
-        'PDF file not found after generation',
+    // Read and send the PDF file
+    let pdfBuffer;
+    try {
+      pdfBuffer = fs.readFileSync(pdfPath);
+    } catch (fsError) {
+      console.error('Error reading PDF file:', fsError);
+      return next(
+        new ApiError(
+          httpStatus.INTERNAL_SERVER_ERROR,
+          'Failed to read PDF file',
+        ),
       );
     }
 
-    // Read and send the PDF file
-    const pdfBuffer = fs.readFileSync(pdfPath);
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': 'attachment; filename=invoice.pdf',
@@ -272,28 +279,25 @@ const generateInvoice = async (req: Request, res: any, next: NextFunction) => {
     fs.unlink(pdfPath, err => {
       if (err) {
         console.error('Error deleting PDF file:', err);
-        next(err); // Pass to the global error handler
+        return next(err); // Pass to the global error handler
       }
     });
   } catch (error) {
     console.error('Error generating invoice PDF:', error);
 
     if (!res.headersSent) {
-      // Use ApiError for consistent error handling
-      if (error instanceof ApiError) {
-        res.status(error.statusCode).json({
-          message: error.message,
-        });
-      } else {
-        // If it's an unknown error, send a generic error response
-        res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-          message: 'Error generating invoice PDF',
-        });
-        next(error); // Pass to the global error handler
-      }
+      return next(
+        error instanceof ApiError
+          ? error
+          : new ApiError(
+              httpStatus.INTERNAL_SERVER_ERROR,
+              'Error generating invoice PDF',
+            ),
+      );
     }
   }
 };
+
 export const InvoiceServices = {
   generateInvoice,
 };
