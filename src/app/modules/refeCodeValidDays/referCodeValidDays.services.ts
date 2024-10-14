@@ -41,7 +41,7 @@ const updateSingle = async (
 const deleteSingle = async (): Promise<ValidityDays | null> => {
   const isExist = await prisma.validityDays.findFirst();
   if (!isExist) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Business type not found !');
+    throw new ApiError(httpStatus.NOT_FOUND, '7>Business type not found !');
   }
   const result = await prisma.validityDays.delete({
     where: { id: isExist.id },

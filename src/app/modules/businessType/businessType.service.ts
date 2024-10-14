@@ -25,7 +25,7 @@ const getSingle = async (id: string): Promise<BusinessType | null> => {
   });
 
   if (!result) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Business type not found !');
+    throw new ApiError(httpStatus.NOT_FOUND, '1>Business type not found !');
   }
 
   return result;
@@ -37,7 +37,7 @@ const updateSingle = async (
   const isExist = await prisma.businessType.findUnique({ where: { id } });
 
   if (!isExist) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Business type not found !');
+    throw new ApiError(httpStatus.NOT_FOUND, '2>Business type not found !');
   }
   const result = await prisma.businessType.update({ where: { id }, data });
 
@@ -48,7 +48,7 @@ const deleteSingle = async (id: string): Promise<BusinessType | null> => {
   const isExist = await prisma.businessType.findUnique({ where: { id } });
 
   if (!isExist) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Business type not found !');
+    throw new ApiError(httpStatus.NOT_FOUND, '3>Business type not found !');
   }
   const result = await prisma.businessType.delete({ where: { id } });
 
@@ -91,7 +91,7 @@ const getAllProductBusinessType = async (id: string): Promise<Category[]> => {
     },
   });
   if (!isBusinessTypeExist) {
-    throw new ApiError(httpStatus.NOT_FOUND, ' Business type not found !');
+    throw new ApiError(httpStatus.NOT_FOUND, ' 4>Business type not found !');
   }
   const result = isBusinessTypeExist.category;
   return result;

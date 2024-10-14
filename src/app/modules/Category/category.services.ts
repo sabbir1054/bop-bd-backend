@@ -15,7 +15,7 @@ const createNew = async (req: any): Promise<Category> => {
     where: { id: businessTypeId },
   });
   if (!isBusinessTypeExist) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Business type not found !');
+    throw new ApiError(httpStatus.NOT_FOUND, '5>Business type not found !');
   }
 
   const result = await prisma.category.create({
