@@ -22,8 +22,9 @@ const globalErrorHandler: ErrorRequestHandler = (
   config.env === 'development'
     ? console.log(`🐱‍🏍 globalErrorHandler ~~`, error)
     : errorLogger.error(
-        `Request from IP: ${req.ip}, User-Agent: ${req.headers['user-agent']}`,
+        `🐱‍🏍 globalErrorHandler ~~`,
         error,
+        `Request from IP: ${req.ip}, User-Agent: ${req.headers['user-agent']}`,
       );
 
   let statusCode = 500;
