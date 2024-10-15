@@ -167,6 +167,7 @@ const getAll = async (filters: any, options: IPaginationOptions) => {
     verified,
     isMobileVerified,
     isNidVerified,
+    role,
     ...filtersData
   } = filters;
   const andConditions: any[] = [];
@@ -205,6 +206,10 @@ const getAll = async (filters: any, options: IPaginationOptions) => {
   }
   if (isNidVerified === 'false') {
     andConditions.push({ AND: { isNidVerified: false } });
+  }
+
+  if (role) {
+    andConditions.push({ AND: { role: role } });
   }
 
   const whereConditions =
@@ -323,7 +328,7 @@ const getSingle = async (
     throw new ApiError(httpStatus.NOT_FOUND, 'User not found !');
   }
 
-  if (role === ('ADMIN' || 'SUPER_ADMIN')) {
+  if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
     return result;
   } else {
     if (userId !== result.id) {
@@ -377,7 +382,8 @@ const userVerifiedStatusChange = async (
   if (!isUserExist) {
     throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
   }
-  if (role !== ('ADMIN' || 'SUPER_ADMIN')) {
+  const validUsers = ['ADMIN', 'SUPER_ADMIN'];
+  if (!validUsers.includes(role)) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'You are not able to change');
   }
   const result = await prisma.user.update({

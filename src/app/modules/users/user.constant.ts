@@ -31,4 +31,5 @@ export const userFilterableFields: string[] = [
   'isMobileVerified',
   'isEmailVerified',
   'isNidVerified',
+  'role', //new
 ];
