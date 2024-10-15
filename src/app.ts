@@ -6,6 +6,7 @@ import path from 'path';
 import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import { initializeCronJobs } from './app/modules/cron/cron.services';
 import routes from './app/routes';
+import { logger } from './shared/logger';
 const app: Application = express();
 // Set EJS as the templating engine
 app.set('view engine', 'ejs');
@@ -47,7 +48,13 @@ app.use('/api/v1', routes);
 
 //global error handler
 app.use(globalErrorHandler);
-
+//! check request
+app.use((req, res, next) => {
+  logger.info(
+    `Request from IP: ${req.ip}, User-Agent: ${req.headers['user-agent']}`,
+  );
+  next();
+});
 //handle not found
 app.use((req: Request, res: Response, next: NextFunction) => {
   res.status(httpStatus.NOT_FOUND).json({
