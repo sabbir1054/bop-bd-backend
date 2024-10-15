@@ -21,7 +21,11 @@ const globalErrorHandler: ErrorRequestHandler = (
 ) => {
   config.env === 'development'
     ? console.log(`🐱‍🏍 globalErrorHandler ~~`, error)
-    : errorLogger.error(`🐱‍🏍 globalErrorHandler ~~`, error);
+    : errorLogger.error(
+        `🐱‍🏍 globalErrorHandler ~~`,
+        error,
+        `Request from IP: ${req.ip}, User-Agent: ${req.headers['user-agent']}`,
+      );
 
   let statusCode = 500;
   let message = 'Something went wrong !';
