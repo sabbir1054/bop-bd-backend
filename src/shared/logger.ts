@@ -3,20 +3,25 @@ import config from '../config';
 import DailyRotateFile from 'winston-daily-rotate-file';
 const { combine, timestamp, label, printf } = format;
 import path from 'path';
-// custom log formate
 
+// custom log format with BD time (Asia/Dhaka)
 const myFormat = printf(({ level, message, label, timestamp }) => {
-  const date = new Date(timestamp);
-  const hour = date.getHours();
-  const minutes = date.getMinutes();
-  const seconds = date.getSeconds();
-  return `${date.toDateString()} ${hour}:${minutes}:${seconds} } [${label}] ${level}: ${message}`;
+  // Convert timestamp to Bangladesh Standard Time (BST, UTC+6)
+  const date = new Date(timestamp).toLocaleString('en-US', {
+    timeZone: 'Asia/Dhaka',
+  });
+
+  const formattedDate = new Date(date); // Re-convert to Date object to get time components
+  const hour = formattedDate.getHours();
+  const minutes = formattedDate.getMinutes();
+  const seconds = formattedDate.getSeconds();
+
+  return `${formattedDate.toDateString()} ${hour}:${minutes}:${seconds} } [${label}] ${level}: ${message}`;
 });
 
 const logger = createLogger({
   level: 'info',
   format: combine(label({ label: 'UMP' }), timestamp(), myFormat),
-  // save log file based on condition
   transports:
     config.env === 'production'
       ? [
