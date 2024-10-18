@@ -3,7 +3,10 @@ import fs from 'fs';
 import httpStatus from 'http-status';
 import path from 'path';
 import ApiError from '../../../errors/ApiError';
+import { paginationHelpers } from '../../../helpers/paginationHelper';
+import { IPaginationOptions } from '../../../interfaces/pagination';
 import prisma from '../../../shared/prisma';
+import { organizationSearchableFields } from './organization.constant';
 import { IRangeOfDate, IupdateOrgaCategory } from './organization.interface';
 const getDashboardMatrics = async (userId: string, userRole: string) => {
   let ownerId = null;
@@ -432,6 +435,105 @@ const suspendOrganization = async (orgId: string) => {
   return result;
 };
 
+const getAllOrganization = async (
+  filters: any,
+  options: IPaginationOptions,
+) => {
+  const { limit, page, skip } = paginationHelpers.calculatePagination(options);
+  const { searchTerm, businessTypeId, location, ...filtersData } = filters;
+  const andConditions: any[] = [];
+
+  if (searchTerm) {
+    andConditions.push({
+      OR: organizationSearchableFields.map(field => ({
+        [field]: {
+          contains: searchTerm,
+          mode: 'insensitive',
+        },
+      })),
+    });
+  }
+
+  if (Object.keys(filtersData).length) {
+    const conditions = Object.entries(filtersData).map(([field, value]) => ({
+      [field]: value,
+    }));
+    andConditions.push({ AND: conditions });
+  }
+  if (location) {
+    andConditions.push({
+      owner: {
+        address: {
+          contains: location,
+          mode: 'insensitive',
+        },
+      },
+    });
+  }
+  const whereConditions =
+    andConditions.length > 0 ? { AND: andConditions } : {};
+
+  const result = await prisma.organization.findMany({
+    where: whereConditions,
+    skip,
+    take: limit,
+    orderBy:
+      options.sortBy && options.sortOrder
+        ? { [options.sortBy]: options.sortOrder }
+        : {
+            createdAt: 'desc',
+          },
+    include: {
+      owner: true,
+    },
+  });
+
+  const total = await prisma.product.count({
+    where: whereConditions,
+  });
+
+  return {
+    meta: {
+      total,
+      page,
+      limit,
+    },
+    data: result,
+  };
+};
+
+const getSingleOrganization = async (id: string) => {
+  const isExist = await prisma.organization.findUnique({
+    where: { id: id },
+  });
+  if (!isExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization not found');
+  }
+  const result = await prisma.organization.findUnique({
+    where: { id: id },
+    include: {
+      products: {
+        include: {
+          category: true,
+          images: true,
+          feedbacks: true,
+        },
+      },
+      owner: true,
+      staff: { include: { staffInfo: true } },
+      outgoing_order: true,
+      incoming_order: true,
+      ownerRefferedCode: true,
+      PaymentSystemOptions: true,
+      PayCommission: true,
+      OrganizationRewardPoints: true,
+      ClaimReward: true,
+      RequestExtendDeadline: true,
+    },
+  });
+  return result;
+};
+
 export const OrganizaionServices = {
   getDashboardMatrics,
   getOutgoingOrdersByDate,
@@ -440,4 +542,6 @@ export const OrganizaionServices = {
   removePicture,
   suspendOrganization,
   updateOrganizationMembershipCategory,
+  getAllOrganization,
+  getSingleOrganization,
 };

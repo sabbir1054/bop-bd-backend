@@ -21,6 +21,8 @@ router.get(
     ENUM_USER_ROLE.RESELLER,
     ENUM_USER_ROLE.STAFF,
     ENUM_USER_ROLE.WHOLESALER,
+    ENUM_USER_ROLE.ADMIN,
+    ENUM_USER_ROLE.SUPER_ADMIN,
   ),
   OrganizationController.getDashboardMatrics,
 );
@@ -116,4 +118,16 @@ router.patch(
   auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
   OrganizationController.suspendOrganization,
 );
+
+router.get(
+  '/',
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  OrganizationController.getAllOrganization,
+);
+router.get(
+  '/organizationProfile/:id',
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  OrganizationController.getSingle,
+);
+
 export const OrganizationRoutes = router;
