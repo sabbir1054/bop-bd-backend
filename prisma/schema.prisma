@@ -96,7 +96,7 @@ model Organization {
     id                       String                            @id @default(uuid())
     name                     String?
     photo                    String?
-    owner                    User                              @relation(fields: [ownerId], references: [id],onDelete: Cascade)
+    owner                    User                              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
     ownerId                  String                            @unique
     staff                    Staff[]
     updatedAt                DateTime                          @updatedAt
@@ -287,7 +287,7 @@ model Staff {
     updatedAt      DateTime     @updatedAt
     organization   Organization @relation(fields: [organizationId], references: [id])
     organizationId String
-    staffInfo      User         @relation(fields: [staffInfoId], references: [id],onDelete: Cascade)
+    staffInfo      User         @relation(fields: [staffInfoId], references: [id], onDelete: Cascade)
     staffInfoId    String       @unique
 
     AssigndForDelivery AssigndForDelivery[] @relation("deliveryBy")
@@ -541,6 +541,7 @@ model RequestExtendDeadline {
 model ClaimReward {
     id             String       @id @default(uuid())
     claimedAmount  Float
+    points         Float        @default(0)
     oranization    Organization @relation(fields: [organizationId], references: [id])
     organizationId String
     updatedAt      DateTime     @updatedAt

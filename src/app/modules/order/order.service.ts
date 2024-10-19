@@ -193,6 +193,7 @@ const orderCreate = async (
       } while (!isUnique);
       //* instant reward use
       let caculateDiscountWithReward = 0;
+      let calculatedDiscountValueWithReward = 0;
       if (orderData.isInstantRewardUse === true) {
         const rewardInfo = await prisma.rewardPoints.findFirst({
           where: {
@@ -205,11 +206,40 @@ const orderCreate = async (
         if (!rewardInfo) {
           throw new ApiError(httpStatus.NOT_FOUND, 'Reward info not found');
         }
+
         caculateDiscountWithReward = parseFloat(
-          (pointsValue.perPointsTk * (rewardInfo.points / 100)).toFixed(2),
+          (total * (rewardInfo.points / 100)).toFixed(2),
         );
+
+        calculatedDiscountValueWithReward =
+          pointsValue.perPointsTk * pointsValue.perPointsTk;
+
+        //? set organizationRewardPoints History
+        await prisma.organizationRewardPointsHistory.create({
+          data: {
+            pointHistoryType: 'IN',
+            rewardPointsId: rewardInfo.id,
+            points: caculateDiscountWithReward,
+            organizationId: cart.organizationId,
+          },
+        });
+        await prisma.organizationRewardPointsHistory.create({
+          data: {
+            pointHistoryType: 'OUT',
+            rewardPointsId: rewardInfo.id,
+            points: caculateDiscountWithReward,
+            organizationId: cart.organizationId,
+          },
+        });
+        await prisma.claimReward.create({
+          data: {
+            claimedAmount: calculatedDiscountValueWithReward,
+            points: caculateDiscountWithReward,
+            organizationId: cart.organizationId,
+          },
+        });
       }
-      const totalAfterDiscount = total - caculateDiscountWithReward;
+      const totalAfterDiscount = total - calculatedDiscountValueWithReward;
       // Create the order
       const order = await prisma.order.create({
         data: {
@@ -217,7 +247,7 @@ const orderCreate = async (
           shipping_address: shipping_address,
           total,
           isInstantRewardUse: orderData.isInstantRewardUse,
-          discount: caculateDiscountWithReward,
+          discount: calculatedDiscountValueWithReward,
           totalWithDeliveryChargeAndDiscount: totalAfterDiscount,
           customer: {
             connect: { id: cart?.organizationId },
