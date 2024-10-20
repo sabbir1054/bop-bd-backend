@@ -71,14 +71,7 @@ const createPayment = async (
     // //* convert point to taka
     const rewardConvertedToAmount = (
       valueOfPoint.perPointsTk * isValidOrganization.totalRewardPoints
-    ).toFixed(2); //! 316
-    //pass=> console.log(rewardConvertedToAmount);
-    //pass=> console.log(valueOfPoint.perPointsTk);
-    //pas=> console.log(isValidOrganization.totalRewardPoints);
-
-    // const isRewarddBig =
-    //   isValidOrganization.totalCommission <=
-    //   parseFloat(rewardConvertedToAmount);
+    ).toFixed(2);
 
     if (payload.commissionPayType === 'REWARD_POINTS') {
       //* set amount
@@ -100,6 +93,8 @@ const createPayment = async (
           where: { id: isValidOrganization.id },
           data: { totalRewardPoints: 0, totalCommission: 0 },
         });
+
+        return { bkashURL: '' };
       }
       if (
         isValidOrganization.totalCommission <
@@ -128,6 +123,7 @@ const createPayment = async (
             totalRewardPoints: restRewardAmountInPoint,
           },
         });
+        return { bkashURL: '' };
       }
       if (
         isValidOrganization.totalCommission >
