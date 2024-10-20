@@ -199,6 +199,7 @@ const createPayment = async (
           data: {
             paymentID: startCreatePaymentResponse.data.paymentID,
             token: grantTokenResponse.data.id_token,
+            cashDeductionType: 'PARTIAL',
           },
         });
         if (!setToken.paymentID) {
@@ -207,10 +208,10 @@ const createPayment = async (
             'Token not save db',
           );
         }
-        await prisma.organization.update({
+        /* await prisma.organization.update({
           where: { id: isValidOrganization.id },
           data: { totalRewardPoints: 0, totalCommission: 0 },
-        });
+        }); */
 
         return {
           bkashURL: startCreatePaymentResponse.data.bkashURL,
@@ -282,6 +283,7 @@ const createPayment = async (
         data: {
           paymentID: startCreatePaymentResponse.data.paymentID,
           token: grantTokenResponse.data.id_token,
+          cashDeductionType: 'FULL',
         },
       });
       if (!setToken.paymentID) {
@@ -290,12 +292,12 @@ const createPayment = async (
           'Token not save db',
         );
       }
-      await prisma.organization.update({
+      /*       await prisma.organization.update({
         where: { id: isValidOrganization.id },
         data: {
           totalCommission: 0,
         },
-      });
+      }); */
       return {
         bkashURL: startCreatePaymentResponse.data.bkashURL,
       };
@@ -371,7 +373,7 @@ const executePaymentHit = async (paymentID: string) => {
       await prisma.organization.update({
         where: { id: createTransactionPaycommission.payerReference },
         data: {
-          totalCommission: { decrement: createTransactionPaycommission.amount },
+          totalCommission: 0,
         },
       });
     } else {
@@ -382,20 +384,20 @@ const executePaymentHit = async (paymentID: string) => {
         );
       }
       //* reawd point calc
-      const countUsesReward =
-        pointsValue.perPointsTk * organizationInfo.totalRewardPoints -
-        createTransactionPaycommission.amount;
+      // const countUsesReward =
+      //   pointsValue.perPointsTk * organizationInfo.totalRewardPoints -
+      //   createTransactionPaycommission.amount;
 
-      await prisma.organization.update({
-        where: { id: createTransactionPaycommission.payerReference },
-        data: {
-          totalRewardPoints:
-            countUsesReward <= 0
-              ? 0
-              : countUsesReward / pointsValue.perPointsTk,
-          totalCommission: { decrement: createTransactionPaycommission.amount },
-        },
-      });
+      // await prisma.organization.update({
+      //   where: { id: createTransactionPaycommission.payerReference },
+      //   data: {
+      //     totalRewardPoints:
+      //       countUsesReward <= 0
+      //         ? 0
+      //         : countUsesReward / pointsValue.perPointsTk,
+      //     totalCommission: { decrement: createTransactionPaycommission.amount },
+      //   },
+      // });
     }
     return createTransactionPaycommission;
   });

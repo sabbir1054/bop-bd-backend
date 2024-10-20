@@ -227,10 +227,12 @@ const getSingle = async (referredCodeId: string) => {
     where: { id: referredCodeId },
     include: {
       commission: true,
-      codeOwnerOrganization: true,
+      codeOwnerOrganization: { include: { owner: true } },
       joiningRewardPoints: true,
       buyingRewardPoints: true,
-      organizationUsedReffereCode: { include: { organization: true } },
+      organizationUsedReffereCode: {
+        include: { organization: { include: { owner: true } } },
+      },
     },
   });
   if (!result) {
