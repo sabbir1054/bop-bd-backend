@@ -303,7 +303,7 @@ const getSingleRequest = async (
       if (isValidStaff.role !== 'STAFF_ADMIN') {
         throw new ApiError(
           httpStatus.BAD_REQUEST,
-          'You are not able to request',
+          'You are not able to see request',
         );
       }
 
@@ -322,6 +322,9 @@ const getSingleRequest = async (
 
     const result = await prisma.requestExtendDeadline.findUnique({
       where: { id: requestId },
+      include: {
+        organization: { include: { owner: true } },
+      },
     });
     if (!result) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Request not found');
