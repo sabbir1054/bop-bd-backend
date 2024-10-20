@@ -105,18 +105,17 @@ const createPayment = async (
         isValidOrganization.totalCommission <
         parseFloat(rewardConvertedToAmount)
       ) {
-        if (!amount) {
-          throw new ApiError(httpStatus.NOT_FOUND, 'amount info not found');
-        }
         const restRewardAmount =
-          parseFloat(rewardConvertedToAmount) - parseFloat(amount);
+          parseFloat(rewardConvertedToAmount) -
+          isValidOrganization.totalCommission;
 
         const restRewardAmountInPoint =
           restRewardAmount / valueOfPoint.perPointsTk;
-        const claimdPoint = parseFloat(amount) / valueOfPoint.perPointsTk;
+        const claimdPoint =
+          isValidOrganization.totalCommission / valueOfPoint.perPointsTk;
         await prisma.claimReward.create({
           data: {
-            claimedAmount: parseFloat(amount),
+            claimedAmount: isValidOrganization.totalCommission,
             points: claimdPoint,
             organizationId: isValidOrganization.id,
           },
