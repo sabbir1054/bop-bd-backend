@@ -323,7 +323,7 @@ const getSingleRequest = async (
     const result = await prisma.requestExtendDeadline.findUnique({
       where: { id: requestId },
       include: {
-        organization: { include: { owner: true } },
+        organization: { include: { owner: true, PayCommission: true } },
       },
     });
     if (!result) {
