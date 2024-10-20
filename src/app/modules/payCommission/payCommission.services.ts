@@ -393,21 +393,6 @@ const executePaymentHit = async (paymentID: string) => {
           },
         });
       }
-      //* reawd point calc
-      // const countUsesReward =
-      //   pointsValue.perPointsTk * organizationInfo.totalRewardPoints -
-      //   createTransactionPaycommission.amount;
-
-      // await prisma.organization.update({
-      //   where: { id: createTransactionPaycommission.payerReference },
-      //   data: {
-      //     totalRewardPoints:
-      //       countUsesReward <= 0
-      //         ? 0
-      //         : countUsesReward / pointsValue.perPointsTk,
-      //     totalCommission: { decrement: createTransactionPaycommission.amount },
-      //   },
-      // });
     }
     return createTransactionPaycommission;
   });
