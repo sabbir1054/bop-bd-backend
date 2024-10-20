@@ -212,7 +212,7 @@ const orderCreate = async (
         );
 
         calculatedDiscountValueWithReward =
-          pointsValue.perPointsTk * pointsValue.perPointsTk;
+          caculateDiscountWithReward * pointsValue.perPointsTk;
 
         //? set organizationRewardPoints History
         await prisma.organizationRewardPointsHistory.create({
