@@ -193,7 +193,7 @@ const getAll = async (userId: string, userRole: string) => {
     const result = await prisma.refferedCode.findMany({
       include: {
         commission: true,
-        codeOwnerOrganization: true,
+        codeOwnerOrganization: { include: { owner: true } },
         joiningRewardPoints: true,
         buyingRewardPoints: true,
         organizationUsedReffereCode: true,
