@@ -69,21 +69,45 @@ const createPayment = async (
     }
 
     // //* convert point to taka
-    // const rewardConvertedToAmount = (
-    //   valueOfPoint.perPointsTk * isValidOrganization.totalRewardPoints
-    // ).toFixed(2);
+    const rewardConvertedToAmount = (
+      valueOfPoint.perPointsTk * isValidOrganization.totalRewardPoints
+    ).toFixed(2);
 
-    // const isRewarddBig =
-    //   isValidOrganization.totalCommission <=
-    //   parseFloat(rewardConvertedToAmount);
+    const isRewarddBig =
+      isValidOrganization.totalCommission <=
+      parseFloat(rewardConvertedToAmount);
 
     //* set amount
+    let amount = null;
 
-    /*  const amount =
-      payload?.commissionPayType === 'CASH'
-        ? payload.amount
-        : rewardConvertedToAmount; */
-    const amount = isValidOrganization?.totalCommission;
+    if (payload.commissionPayType === 'REWARD_POINTS') {
+      if (isRewarddBig) {
+        amount = rewardConvertedToAmount;
+        await prisma.claimReward.create({
+          data: {
+            claimedAmount: parseFloat(rewardConvertedToAmount),
+            points: isValidOrganization.totalRewardPoints,
+            organizationId: isValidOrganization.id,
+          },
+        });
+
+        const restRewardAmount =
+          parseFloat(rewardConvertedToAmount) - parseFloat(amount)
+            ? parseFloat(amount)
+            : 0;
+        const restRewardAmountInPoint =
+          restRewardAmount / valueOfPoint.perPointsTk;
+        await prisma.organization.update({
+          where: { id: isValidOrganization.id },
+          data: { totalRewardPoints: restRewardAmountInPoint },
+        });
+      } else {
+        amount =
+          isValidOrganization.totalCommission -
+          parseFloat(rewardConvertedToAmount);
+      }
+    }
+
     if (!amount) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Amount not get');
     }
