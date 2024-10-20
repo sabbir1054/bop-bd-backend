@@ -488,7 +488,7 @@ const getAllOrganization = async (
     },
   });
 
-  const total = await prisma.product.count({
+  const total = await prisma.organization.count({
     where: whereConditions,
   });
 
