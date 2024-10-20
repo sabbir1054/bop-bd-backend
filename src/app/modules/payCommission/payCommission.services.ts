@@ -383,6 +383,16 @@ const executePaymentHit = async (paymentID: string) => {
           'Points value or your reward not found',
         );
       }
+
+      if (isPaymentExist.cashDeductionType === 'PARTIAL') {
+        await prisma.organization.update({
+          where: { id: createTransactionPaycommission.payerReference },
+          data: {
+            totalCommission: 0,
+            totalRewardPoints: 0,
+          },
+        });
+      }
       //* reawd point calc
       // const countUsesReward =
       //   pointsValue.perPointsTk * organizationInfo.totalRewardPoints -
