@@ -71,16 +71,15 @@ const createPayment = async (
     // //* convert point to taka
     const rewardConvertedToAmount = (
       valueOfPoint.perPointsTk * isValidOrganization.totalRewardPoints
-    ).toFixed(2);
+    ).toFixed(2); //! 316
 
     const isRewarddBig =
       isValidOrganization.totalCommission <=
       parseFloat(rewardConvertedToAmount);
 
-    //* set amount
-    let amount = null;
-
     if (payload.commissionPayType === 'REWARD_POINTS') {
+      //* set amount
+      let amount = null;
       if (isRewarddBig) {
         amount = rewardConvertedToAmount;
         await prisma.claimReward.create({
@@ -102,82 +101,165 @@ const createPayment = async (
           data: { totalRewardPoints: restRewardAmountInPoint },
         });
       } else {
+        //! adjusted amount
         amount =
           isValidOrganization.totalCommission -
           parseFloat(rewardConvertedToAmount);
+
+        if (!amount) {
+          throw new ApiError(httpStatus.NOT_FOUND, 'Amount not found');
+        }
+        //* commssion create
+        const createPayCommission = await prisma.payCommission.create({
+          data: {
+            organizationId: payload.orgId,
+            amount: amount,
+            commissionPayType: payload.commissionPayType,
+          },
+        });
+        //* token create
+        const grantTokenResponse = await startGrantToken();
+        if (
+          !grantTokenResponse ||
+          grantTokenResponse.data.statusCode !== '0000'
+        ) {
+          throw new ApiError(
+            httpStatus.INTERNAL_SERVER_ERROR,
+            'Payment not start , ',
+          );
+        }
+
+        if (!grantTokenResponse.data.id_token) {
+          throw new ApiError(httpStatus.NOT_FOUND, ' Session not started');
+        }
+
+        const createPaymentData = {
+          amount: isValidOrganization.totalCommission.toString(),
+          payComID: createPayCommission.id,
+          orgId: payload.orgId,
+          id_token: grantTokenResponse.data.id_token.toString(),
+        };
+        if (!createPaymentData.amount) {
+          throw new ApiError(httpStatus.NOT_FOUND, '');
+        }
+        const startCreatePaymentResponse =
+          await startCreatePayment(createPaymentData);
+
+        if (
+          !startCreatePaymentResponse ||
+          startCreatePaymentResponse.data.statusCode !== '0000'
+        ) {
+          throw new ApiError(
+            httpStatus.INTERNAL_SERVER_ERROR,
+            'Payment not create',
+          );
+        }
+
+        if (
+          !startCreatePaymentResponse.data.bkashURL ||
+          !startCreatePaymentResponse.data.paymentID
+        ) {
+          throw new ApiError(
+            httpStatus.INTERNAL_SERVER_ERROR,
+            'No payment id info create',
+          );
+        }
+
+        //v
+
+        const setToken = await prisma.commissionTrnxToken.create({
+          data: {
+            paymentID: startCreatePaymentResponse.data.paymentID,
+            token: grantTokenResponse.data.id_token,
+          },
+        });
+        if (!setToken.paymentID) {
+          throw new ApiError(
+            httpStatus.INTERNAL_SERVER_ERROR,
+            'Token not save db',
+          );
+        }
+        return {
+          bkashURL: startCreatePaymentResponse.data.bkashURL,
+        };
       }
     }
+    //! pay with cash
+    else {
+      //* commssion create
+      const createPayCommission = await prisma.payCommission.create({
+        data: {
+          organizationId: payload.orgId,
+          amount: isValidOrganization.totalCommission,
+          commissionPayType: payload.commissionPayType,
+        },
+      });
+      //* token create
+      const grantTokenResponse = await startGrantToken();
+      if (
+        !grantTokenResponse ||
+        grantTokenResponse.data.statusCode !== '0000'
+      ) {
+        throw new ApiError(
+          httpStatus.INTERNAL_SERVER_ERROR,
+          'Payment not start , ',
+        );
+      }
 
-    if (!amount) {
-      throw new ApiError(httpStatus.BAD_REQUEST, 'Amount not get');
-    }
-    //* commssion create
-    const createPayCommission = await prisma.payCommission.create({
-      data: {
-        organizationId: payload.orgId,
-        amount: typeof amount === 'string' ? parseFloat(amount) : amount,
-        commissionPayType: payload.commissionPayType,
-      },
-    });
-    //* token create
-    const grantTokenResponse = await startGrantToken();
-    if (!grantTokenResponse || grantTokenResponse.data.statusCode !== '0000') {
-      throw new ApiError(
-        httpStatus.INTERNAL_SERVER_ERROR,
-        'Payment not start , ',
-      );
-    }
+      if (!grantTokenResponse.data.id_token) {
+        throw new ApiError(httpStatus.NOT_FOUND, ' Session not started');
+      }
 
-    if (!grantTokenResponse.data.id_token) {
-      throw new ApiError(httpStatus.NOT_FOUND, ' Session not started');
-    }
+      const createPaymentData = {
+        amount: isValidOrganization.totalCommission.toString(),
+        payComID: createPayCommission.id,
+        orgId: payload.orgId,
+        id_token: grantTokenResponse.data.id_token.toString(),
+      };
+      if (!createPaymentData.amount) {
+        throw new ApiError(httpStatus.NOT_FOUND, '');
+      }
+      const startCreatePaymentResponse =
+        await startCreatePayment(createPaymentData);
 
-    const createPaymentData = {
-      amount: typeof amount === 'number' ? amount.toString() : amount,
-      payComID: createPayCommission.id,
-      orgId: payload.orgId,
-      id_token: grantTokenResponse.data.id_token.toString(),
-    };
-    if (!createPaymentData.amount) {
-      throw new ApiError(httpStatus.NOT_FOUND, '');
-    }
-    const startCreatePaymentResponse =
-      await startCreatePayment(createPaymentData);
+      if (
+        !startCreatePaymentResponse ||
+        startCreatePaymentResponse.data.statusCode !== '0000'
+      ) {
+        throw new ApiError(
+          httpStatus.INTERNAL_SERVER_ERROR,
+          'Payment not create',
+        );
+      }
 
-    if (
-      !startCreatePaymentResponse ||
-      startCreatePaymentResponse.data.statusCode !== '0000'
-    ) {
-      throw new ApiError(
-        httpStatus.INTERNAL_SERVER_ERROR,
-        'Payment not create',
-      );
-    }
+      if (
+        !startCreatePaymentResponse.data.bkashURL ||
+        !startCreatePaymentResponse.data.paymentID
+      ) {
+        throw new ApiError(
+          httpStatus.INTERNAL_SERVER_ERROR,
+          'No payment id info create',
+        );
+      }
 
-    if (
-      !startCreatePaymentResponse.data.bkashURL ||
-      !startCreatePaymentResponse.data.paymentID
-    ) {
-      throw new ApiError(
-        httpStatus.INTERNAL_SERVER_ERROR,
-        'No payment id info create',
-      );
-    }
+      //v
 
-    //v
-
-    const setToken = await prisma.commissionTrnxToken.create({
-      data: {
-        paymentID: startCreatePaymentResponse.data.paymentID,
-        token: grantTokenResponse.data.id_token,
-      },
-    });
-    if (!setToken.paymentID) {
-      throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Token not save db');
+      const setToken = await prisma.commissionTrnxToken.create({
+        data: {
+          paymentID: startCreatePaymentResponse.data.paymentID,
+          token: grantTokenResponse.data.id_token,
+        },
+      });
+      if (!setToken.paymentID) {
+        throw new ApiError(
+          httpStatus.INTERNAL_SERVER_ERROR,
+          'Token not save db',
+        );
+      }
+      return {
+        bkashURL: startCreatePaymentResponse.data.bkashURL,
+      };
     }
-    return {
-      bkashURL: startCreatePaymentResponse.data.bkashURL,
-    };
   });
 
   return result;
