@@ -72,14 +72,15 @@ const createPayment = async (
     const rewardConvertedToAmount = (
       valueOfPoint.perPointsTk * isValidOrganization.totalRewardPoints
     ).toFixed(2); //! 316
+    console.log(rewardConvertedToAmount);
+    console.log(valueOfPoint.perPointsTk);
+    console.log(isValidOrganization.totalRewardPoints);
 
     const isRewarddBig =
       isValidOrganization.totalCommission <=
       parseFloat(rewardConvertedToAmount);
 
     if (payload.commissionPayType === 'REWARD_POINTS') {
-      console.log(parseFloat(rewardConvertedToAmount));
-
       //* set amount
       let amount = null;
       if (isRewarddBig) {
