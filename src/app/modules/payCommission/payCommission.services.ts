@@ -79,6 +79,7 @@ const createPayment = async (
 
     if (payload.commissionPayType === 'REWARD_POINTS') {
       console.log('ami reward');
+      console.log(isRewarddBig);
 
       //* set amount
       let amount = null;
