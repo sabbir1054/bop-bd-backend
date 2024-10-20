@@ -8,9 +8,11 @@ import { IPaginationOptions } from '../../../interfaces/pagination';
 import prisma from '../../../shared/prisma';
 import { organizationSearchableFields } from './organization.constant';
 import { IRangeOfDate, IupdateOrgaCategory } from './organization.interface';
-const getDashboardMatrics = async (userId: string, userRole: string) => {
-  let ownerId = null;
-
+const getDashboardMatrics = async (
+  userId: string,
+  userRole: string,
+  orgId: string,
+) => {
   if (userRole === 'STAFF') {
     const isValidStaff = await prisma.staff.findUnique({
       where: { staffInfoId: userId },
@@ -21,63 +23,61 @@ const getDashboardMatrics = async (userId: string, userRole: string) => {
     if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Staff info not found');
     }
-    if (isValidStaff.role !== 'STAFF_ADMIN') {
-      throw new ApiError(httpStatus.NOT_FOUND, 'Staff role not valid');
+
+    if (isValidStaff.organizationId !== orgId) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'You cant see other organization info',
+      );
     }
-    ownerId = isValidStaff.organization.ownerId;
-  } else {
-    ownerId = userId;
   }
 
-  if (!ownerId) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Owner info not found');
-  }
   const result = await prisma.$transaction(async prisma => {
     // Total outgoing orders
     const totalOutgoingOrders = await prisma.order.count({
-      where: { product_seller_id: userId },
+      where: { product_seller_id: orgId },
     });
 
     // Total incoming orders
     const totalIncomingOrders = await prisma.order.count({
-      where: { customerId: userId },
+      where: { customerId: orgId },
     });
 
     // Outgoing orders status count
     const outgoingOrdersStatus = await prisma.order.groupBy({
       by: ['orderStatus'],
-      where: { product_seller_id: userId },
+      where: { product_seller_id: orgId },
       _count: { orderStatus: true },
     });
     // Outgoing payment status count
     const outgoingPaymentStatus = await prisma.order.groupBy({
       by: ['paymentStatus'],
-      where: { product_seller_id: userId },
+      where: { product_seller_id: orgId },
       _count: { orderStatus: true },
     });
 
     // Incoming orders status count
     const incomingOrdersStatus = await prisma.order.groupBy({
       by: ['orderStatus'],
-      where: { customerId: userId },
+      where: { customerId: orgId },
       _count: { orderStatus: true },
     });
     // Incoming orders payment status count
     const incomingPaymentStatus = await prisma.order.groupBy({
       by: ['paymentStatus'],
-      where: { customerId: userId },
+      where: { customerId: orgId },
       _count: { orderStatus: true },
     });
 
     // Total cost from outgoing orders
     const totalCostOutgoingOrders = await prisma.order.aggregate({
-      where: { product_seller_id: userId },
+      where: { product_seller_id: orgId },
       _sum: { total: true },
     });
 
     // Total earned from incoming orders
     const totalEarnedIncomingOrders = await prisma.order.aggregate({
-      where: { customerId: userId },
+      where: { customerId: orgId },
       _sum: { total: true },
     });
 

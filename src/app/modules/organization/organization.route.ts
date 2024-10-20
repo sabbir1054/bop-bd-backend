@@ -13,7 +13,7 @@ import { OrganizationController } from './organizations.controller';
 const router = express.Router();
 
 router.get(
-  '/dashboardMatrics',
+  '/dashboardMatrics/:orgId',
   auth(
     ENUM_USER_ROLE.DEALER,
     ENUM_USER_ROLE.IMPORTER,
