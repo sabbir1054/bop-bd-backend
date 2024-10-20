@@ -207,6 +207,11 @@ const createPayment = async (
             'Token not save db',
           );
         }
+        await prisma.organization.update({
+          where: { id: isValidOrganization.id },
+          data: { totalRewardPoints: 0, totalCommission: 0 },
+        });
+
         return {
           bkashURL: startCreatePaymentResponse.data.bkashURL,
         };
