@@ -78,6 +78,8 @@ const createPayment = async (
       parseFloat(rewardConvertedToAmount);
 
     if (payload.commissionPayType === 'REWARD_POINTS') {
+      console.log('ami reward');
+
       //* set amount
       let amount = null;
       if (isRewarddBig) {
@@ -186,6 +188,7 @@ const createPayment = async (
     }
     //! pay with cash
     else {
+      console.log('ami cash');
       //* commssion create
       const createPayCommission = await prisma.payCommission.create({
         data: {
