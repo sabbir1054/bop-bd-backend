@@ -72,18 +72,21 @@ const createPayment = async (
     const rewardConvertedToAmount = (
       valueOfPoint.perPointsTk * isValidOrganization.totalRewardPoints
     ).toFixed(2); //! 316
-    console.log(rewardConvertedToAmount);
-    console.log(valueOfPoint.perPointsTk);
-    console.log(isValidOrganization.totalRewardPoints);
+    //pass=> console.log(rewardConvertedToAmount);
+    //pass=> console.log(valueOfPoint.perPointsTk);
+    //pas=> console.log(isValidOrganization.totalRewardPoints);
 
-    const isRewarddBig =
-      isValidOrganization.totalCommission <=
-      parseFloat(rewardConvertedToAmount);
+    // const isRewarddBig =
+    //   isValidOrganization.totalCommission <=
+    //   parseFloat(rewardConvertedToAmount);
 
     if (payload.commissionPayType === 'REWARD_POINTS') {
       //* set amount
       let amount = null;
-      if (isRewarddBig) {
+      if (
+        isValidOrganization.totalCommission ===
+        parseFloat(rewardConvertedToAmount)
+      ) {
         amount = rewardConvertedToAmount;
         await prisma.claimReward.create({
           data: {
@@ -93,17 +96,44 @@ const createPayment = async (
           },
         });
 
-        const restRewardAmount =
-          parseFloat(rewardConvertedToAmount) - parseFloat(amount)
-            ? parseFloat(amount)
-            : 0;
-        const restRewardAmountInPoint =
-          restRewardAmount / valueOfPoint.perPointsTk;
         await prisma.organization.update({
           where: { id: isValidOrganization.id },
-          data: { totalRewardPoints: restRewardAmountInPoint },
+          data: { totalRewardPoints: 0, totalCommission: 0 },
         });
-      } else {
+      }
+      if (
+        isValidOrganization.totalCommission <
+        parseFloat(rewardConvertedToAmount)
+      ) {
+        if (!amount) {
+          throw new ApiError(httpStatus.NOT_FOUND, 'amount info not found');
+        }
+        const restRewardAmount =
+          parseFloat(rewardConvertedToAmount) - parseFloat(amount);
+
+        const restRewardAmountInPoint =
+          restRewardAmount / valueOfPoint.perPointsTk;
+        const claimdPoint = parseFloat(amount) / valueOfPoint.perPointsTk;
+        await prisma.claimReward.create({
+          data: {
+            claimedAmount: parseFloat(amount),
+            points: claimdPoint,
+            organizationId: isValidOrganization.id,
+          },
+        });
+
+        await prisma.organization.update({
+          where: { id: isValidOrganization.id },
+          data: {
+            totalCommission: 0,
+            totalRewardPoints: restRewardAmountInPoint,
+          },
+        });
+      }
+      if (
+        isValidOrganization.totalCommission >
+        parseFloat(rewardConvertedToAmount)
+      ) {
         //! adjusted amount
         amount =
           isValidOrganization.totalCommission -
@@ -137,7 +167,7 @@ const createPayment = async (
         }
 
         const createPaymentData = {
-          amount: isValidOrganization.totalCommission.toString(),
+          amount: amount.toString(),
           payComID: createPayCommission.id,
           orgId: payload.orgId,
           id_token: grantTokenResponse.data.id_token.toString(),
@@ -189,7 +219,6 @@ const createPayment = async (
     }
     //! pay with cash
     else {
-      console.log('ami cash');
       //* commssion create
       const createPayCommission = await prisma.payCommission.create({
         data: {
@@ -198,6 +227,7 @@ const createPayment = async (
           commissionPayType: payload.commissionPayType,
         },
       });
+
       //* token create
       const grantTokenResponse = await startGrantToken();
       if (
@@ -260,6 +290,12 @@ const createPayment = async (
           'Token not save db',
         );
       }
+      await prisma.organization.update({
+        where: { id: isValidOrganization.id },
+        data: {
+          totalCommission: 0,
+        },
+      });
       return {
         bkashURL: startCreatePaymentResponse.data.bkashURL,
       };
