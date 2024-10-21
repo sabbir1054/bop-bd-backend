@@ -481,7 +481,8 @@ const getMyDeliveryBoy = async (userId: string, userRole: string) => {
     if (!isExistStaff.isValidNow) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Staff is not valid');
     }
-    if (isExistStaff.role !== 'ORDER_SUPERVISOR') {
+    const validStaffRole = ['ORDER_SUPERVISOR', 'STAFF_ADMIN'];
+    if (!validStaffRole.includes(isExistStaff.role)) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
         'Only order supervisor can get this',

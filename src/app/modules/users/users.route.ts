@@ -148,7 +148,7 @@ router.patch(
   validateRequest(UsersValidation.staffUpdateRoleValidation),
   UserController.updateMySingleStaffRole,
 );
-router.get(
+router.delete(
   '/removeUser/:userId',
   auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
   UserController.deleteUser,
