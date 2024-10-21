@@ -148,5 +148,9 @@ router.patch(
   validateRequest(UsersValidation.staffUpdateRoleValidation),
   UserController.updateMySingleStaffRole,
 );
-router.get('/removeUser/:userId', UserController.deleteUser);
+router.get(
+  '/removeUser/:userId',
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  UserController.deleteUser,
+);
 export const UsersRoutes = router;
