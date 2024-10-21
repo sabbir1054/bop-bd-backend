@@ -113,6 +113,7 @@ const getAllProduct = async (
     category,
     orgId,
     ownerType,
+    businessTypeId,
     ...filtersData
   } = filters;
   const andConditions: any[] = [];
@@ -156,6 +157,14 @@ const getAllProduct = async (
   if (orgId) {
     andConditions.push({
       organizationId: orgId,
+    });
+  }
+  //!
+  if (businessTypeId) {
+    andConditions.push({
+      organization: {
+        businessTypeId: businessTypeId,
+      },
     });
   }
   if (address) {
