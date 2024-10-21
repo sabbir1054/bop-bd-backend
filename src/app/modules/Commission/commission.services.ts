@@ -76,6 +76,10 @@ const deleteSingle = async (id: string): Promise<Commission | null> => {
   return result;
 };
 
+// const commissionPendingOrganizationList = async () => {
+
+// }
+
 export const CommissionServices = {
   createNew,
   getAll,

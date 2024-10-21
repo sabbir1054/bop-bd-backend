@@ -283,6 +283,9 @@ const getSingleRequest = async (
   if (userRole === 'SUPER_ADMIN' || userRole === 'ADMIN') {
     const result = await prisma.requestExtendDeadline.findUnique({
       where: { id: requestId },
+      include: {
+        organization: { include: { owner: true, PayCommission: true } },
+      },
     });
     if (!result) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Request not found');
