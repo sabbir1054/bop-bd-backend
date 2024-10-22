@@ -7,10 +7,10 @@ import { ENUM_USER_ROLE } from '../../../enums/user';
 import ApiError from '../../../errors/ApiError';
 import { FileUploadHelper } from '../../../helpers/fileUpload';
 import auth from '../../middlewares/auth';
+import { checkSuspension } from '../../middlewares/organizationSuspenCheck';
 import validateRequest from '../../middlewares/validateRequest';
 import { ProductController } from './products.controller';
 import { ProductsValidation } from './products.validations';
-import { checkSuspension } from '../../middlewares/organizationSuspenCheck';
 const router = express.Router();
 // Extend Request interface to include files property
 interface MulterRequest extends Request {
@@ -127,8 +127,10 @@ router.get('/image/:fileName', async (req: Request, res: Response) => {
     if (err) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Image not found');
     }
-    // Send the image file
-    res.sendFile(filePath);
+    if (!err) {
+      // Send the image file
+      res.sendFile(filePath);
+    }
   });
 });
 export const ProductRoutes = router;
