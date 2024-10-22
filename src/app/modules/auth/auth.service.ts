@@ -44,7 +44,7 @@ const userRegistration = async (
   const isUserAlreadyExist = await prisma.user.findUnique({
     where: { phone: phone },
   });
-  if (isUserAlreadyExist) {
+  if (isUserAlreadyExist && othersData.role !== 'STAFF') {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
       'User already registered with this phone number !',
@@ -54,6 +54,20 @@ const userRegistration = async (
   const encryptedPassword = await encryptPassword(password);
 
   const result = await prisma.$transaction(async prisma => {
+    if (isUserAlreadyExist && othersData.role === 'STAFF') {
+      const isValidStaff = await prisma.staff.findUnique({
+        where: { staffInfoId: isUserAlreadyExist.id },
+      });
+      if (isValidStaff?.isValidNow === true) {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          'He is already staff of other company',
+        );
+      }
+      if (isValidStaff?.isValidNow === false) {
+        await prisma.user.delete({ where: { id: isValidStaff.id } });
+      }
+    }
     //otp process
     const otp = generateOTP();
 
