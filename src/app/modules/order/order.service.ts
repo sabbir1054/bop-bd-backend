@@ -887,7 +887,7 @@ const verifyDeliveryOtp = async (
         },
       });
 
-      if (!ownerRewardInfo?.points) {
+      if (!ownerRewardInfo) {
         throw new ApiError(httpStatus.BAD_REQUEST, 'No reward points defined');
       }
       //* calculate reward
