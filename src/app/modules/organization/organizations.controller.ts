@@ -122,6 +122,24 @@ const getAllOrganization = catchAsync(async (req: Request, res: Response) => {
     data: result.data,
   });
 });
+const getOrganizationsWithPendingCommissions = catchAsync(
+  async (req: Request, res: Response) => {
+    const filters = pick(req.query, organizationFilterableFields);
+    const options = pick(req.query, paginationFields);
+    const result = await OrganizaionServices
+      .getOrganizationsWithPendingCommissions
+      // filters,
+      // options,
+      ();
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Organization retrieve successfully !!',
+      // meta: result.meta,
+      data: result,
+    });
+  },
+);
 const getSingle = catchAsync(async (req: Request, res: Response) => {
   const result = await OrganizaionServices.getSingleOrganization(req.params.id);
   sendResponse(res, {
@@ -141,4 +159,5 @@ export const OrganizationController = {
   suspendOrganization,
   getSingle,
   getAllOrganization,
+  getOrganizationsWithPendingCommissions,
 };

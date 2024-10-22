@@ -125,6 +125,11 @@ router.get(
   OrganizationController.getAllOrganization,
 );
 router.get(
+  '/pendingCommissionList',
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  OrganizationController.getOrganizationsWithPendingCommissions,
+);
+router.get(
   '/organizationProfile/:id',
   auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
   OrganizationController.getSingle,

@@ -534,6 +534,81 @@ const getSingleOrganization = async (id: string) => {
   return result;
 };
 
+const getOrganizationsWithPendingCommissions = async () => {
+  const result = await prisma.$transaction(async prisma => {
+    // Get all deadlines related to commission payment
+    const allDeadlines = await prisma.deadlinePayCommission.findMany();
+
+    // Initialize an array to store organizations with pending commissions
+    const organizationsWithPendingCommission = [];
+
+    // Loop through each deadline category
+    for (const deadline of allDeadlines) {
+      // Find organizations with unpaid commissions
+      const organizations = await prisma.organization.findMany({
+        where: {
+          memberShipCategory: deadline.memberCategory,
+          totalCommission: { gt: 0 },
+          isSuspend: false, // Only active organizations
+        },
+        select: {
+          id: true,
+          name: true, // Get organization name if needed
+          totalCommission: true, // Get the total commission amount
+          deadlineExtendfor: true, // Needed for calculating the extended deadline
+          PayCommission: {
+            select: {
+              updatedAt: true,
+            },
+            orderBy: {
+              updatedAt: 'desc',
+            },
+            take: 1, // Get the latest payment commission date
+          },
+        },
+      });
+
+      for (const org of organizations) {
+        // Calculate the adjusted deadline with extended days
+        const currentDate = new Date();
+        const totalDeadlineDays =
+          parseInt(deadline.deadline) + (org.deadlineExtendfor || 0); // Original deadline + extended days
+
+        // Calculate the adjusted deadline date
+        const adjustedDeadline = new Date();
+        adjustedDeadline.setDate(
+          adjustedDeadline.getDate() - totalDeadlineDays,
+        );
+
+        // Check if the latest payment commission was before the adjusted deadline
+        const latestCommission = org.PayCommission[0];
+
+        // If there was a commission payment, calculate the remaining days to pay
+        if (latestCommission) {
+          const daysLeftToPay = Math.ceil(
+            (adjustedDeadline.getTime() - currentDate.getTime()) /
+              (1000 * 60 * 60 * 24),
+          );
+
+          // Only add organizations with pending commissions to the result array
+          if (daysLeftToPay > 0) {
+            organizationsWithPendingCommission.push({
+              id: org.id,
+              name: org.name, // Organization name
+              totalCommission: org.totalCommission, // Commission amount
+              daysLeftToPay: daysLeftToPay, // How many days left to pay
+            });
+          }
+        }
+      }
+    }
+
+    return organizationsWithPendingCommission; // Return only organizations with pending commissions
+  });
+
+  return result;
+};
+
 export const OrganizaionServices = {
   getDashboardMatrics,
   getOutgoingOrdersByDate,
@@ -544,4 +619,5 @@ export const OrganizaionServices = {
   updateOrganizationMembershipCategory,
   getAllOrganization,
   getSingleOrganization,
+  getOrganizationsWithPendingCommissions,
 };
