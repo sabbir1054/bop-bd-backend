@@ -891,7 +891,7 @@ const verifyDeliveryOtp = async (
         throw new ApiError(httpStatus.BAD_REQUEST, 'No reward points defined');
       }
       //* calculate reward
-      if (!ownerRewardInfo.points) {
+      if (!ownerRewardInfo) {
         throw new ApiError(
           httpStatus.NOT_FOUND,
           'Owner reward points info not found',
@@ -899,7 +899,7 @@ const verifyDeliveryOtp = async (
       }
       const ownerCalculatedreward = (
         isExistOrder.total *
-        (ownerRewardInfo.points / 100)
+        (ownerRewardInfo?.points / 100)
       ).toFixed(2);
 
       await prisma.organizationRewardPointsHistory.create({
