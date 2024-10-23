@@ -1,5 +1,5 @@
 import express, { NextFunction, Request, Response } from 'express';
-import fs from 'fs';
+import fs from 'fs/promises';
 import httpStatus from 'http-status';
 import path from 'path';
 import config from '../../../config';
@@ -115,22 +115,37 @@ router.delete(
   ),
   ProductController.deleteProduct,
 );
+//!
+router.get(
+  '/image/:fileName',
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // Construct the file path safely
+      const filePath = path.join(
+        process.cwd(),
+        'uploads',
+        path.basename(req.params.fileName),
+      );
 
-router.get('/image/:fileName', async (req: Request, res: Response) => {
-  const filePath = await path.join(
-    process.cwd(),
-    'uploads',
-    path.basename(req.params.fileName),
-  );
-  // Check if the file exists
-  await fs.access(filePath, fs.constants.F_OK, err => {
-    if (err) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'Image not found');
-    }
-    if (!err) {
-      // Send the image file
+      // Check if the file exists using fs.promises
+      await fs.access(filePath);
+
+      // Send the image file if it exists
       res.sendFile(filePath);
+    } catch (err: any) {
+      if (err.code === 'ENOENT') {
+        // If file not found, throw a 404 error with ApiError
+        next(new ApiError(httpStatus.NOT_FOUND, 'Image not found'));
+      } else {
+        // For any other errors, handle it as a 500 Internal Server Error
+        next(
+          new ApiError(
+            httpStatus.INTERNAL_SERVER_ERROR,
+            'An error occurred while processing your request',
+          ),
+        );
+      }
     }
-  });
-});
+  },
+);
 export const ProductRoutes = router;
