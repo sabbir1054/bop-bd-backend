@@ -673,7 +673,7 @@ const updateOrderStatus = async (
           },
         });
 
-        if (!ownerRewardInfo?.points) {
+        if (!ownerRewardInfo) {
           throw new ApiError(
             httpStatus.BAD_REQUEST,
             'No reward points defined',
@@ -706,7 +706,7 @@ const updateOrderStatus = async (
           },
         });
 
-        if (!customerRewardInfo?.points) {
+        if (!customerRewardInfo) {
           throw new ApiError(
             httpStatus.BAD_REQUEST,
             'No reward points defined',
@@ -929,7 +929,7 @@ const verifyDeliveryOtp = async (
         },
       });
 
-      if (!customerRewardInfo?.points) {
+      if (!customerRewardInfo) {
         throw new ApiError(httpStatus.BAD_REQUEST, 'No reward points defined');
       }
       const customerCalculatedreward = (
