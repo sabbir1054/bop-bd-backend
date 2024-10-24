@@ -231,7 +231,9 @@ const getAllDeadlineExtendRequest = async (
   userRole: string,
 ) => {
   if (userRole === 'SUPER_ADMIN' || userRole === 'ADMIN') {
-    const result = await prisma.requestExtendDeadline.findMany();
+    const result = await prisma.requestExtendDeadline.findMany({
+      include: { organization: { include: { owner: true } } },
+    });
     return result;
   } else {
     let orgId = null;
@@ -271,6 +273,7 @@ const getAllDeadlineExtendRequest = async (
       where: {
         organizationId: orgId,
       },
+      include: { organization: { include: { owner: true } } },
     });
     return result;
   }
