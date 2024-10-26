@@ -12,24 +12,28 @@ import { IStaffRole } from './user.interface';
 const updateUserProfile = async (req: Request, next: NextFunction) => {
   const { id: userId } = req.user as any;
 
-  const deletePhoto = (photoLink: string) => {
+  const deletePhoto = async (photoLink: string) => {
     // Delete the image file from the server
     const filePath = path.join(
       process.cwd(),
       'uploads/userPhoto',
       path.basename(photoLink),
     );
-    fs.unlink(filePath, err => {
-      if (err) {
-        deletePhoto(req.body.photo);
-        next(
-          new ApiError(
-            httpStatus.BAD_REQUEST,
-            `Failed to delete previous image, try again for update,photo `,
-          ),
+    if (fs.existsSync(filePath)) {
+      try {
+        await fs.promises.unlink(filePath); // Using fs.promises.unlink for a promise-based approach
+      } catch (err) {
+        throw new ApiError(
+          httpStatus.NOT_FOUND,
+          `Failed to delete image or database record`,
         );
       }
-    });
+    } else {
+      throw new ApiError(
+        httpStatus.NOT_FOUND,
+        'Image not found in the directory',
+      );
+    }
   };
 
   const isUserExist = await prisma.user.findUnique({ where: { id: userId } });
@@ -54,8 +58,8 @@ const updateUserProfile = async (req: Request, next: NextFunction) => {
 
     if (isUserExist.photo && req.body.photo !== isUserExist.photo) {
       //* delete photo
-      if (req.body.photo) {
-        deletePhoto(isUserExist?.photo);
+      if (req.body.photo && isUserExist.photo) {
+        deletePhoto(isUserExist.photo);
       }
       const result = await prisma.user.update({
         where: { id: userId },
@@ -127,36 +131,45 @@ const removeProfilePicture = async (userId: string): Promise<Partial<User>> => {
     'uploads/userPhoto',
     path.basename(isUserExist.photo),
   );
-  fs.unlink(filePath, err => {
-    if (err) {
+  if (fs.existsSync(filePath)) {
+    try {
+      await fs.promises.unlink(filePath); // Using fs.promises.unlink for a promise-based approach
+
+      // Delete the image from the database
+      const result = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          photo: '',
+        },
+        select: {
+          id: true,
+          role: true,
+          verified: true,
+          organization: true,
+          isMobileVerified: true,
+          name: true,
+          email: true,
+          phone: true,
+          address: true,
+          photo: true,
+          license: true,
+          nid: true,
+        },
+      });
+
+      return result;
+    } catch (err) {
       throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        `Failed to delete image: ${filePath}`,
+        httpStatus.NOT_FOUND,
+        `Failed to delete image or database record`,
       );
     }
-  });
-  const result = await prisma.user.update({
-    where: { id: userId },
-    data: {
-      photo: '',
-    },
-    select: {
-      id: true,
-      role: true,
-      verified: true,
-      organization: true,
-      isMobileVerified: true,
-      name: true,
-      email: true,
-      phone: true,
-      address: true,
-      photo: true,
-      license: true,
-      nid: true,
-    },
-  });
-
-  return result;
+  } else {
+    throw new ApiError(
+      httpStatus.NOT_FOUND,
+      'Image not found in the directory',
+    );
+  }
 };
 
 const getAll = async (filters: any, options: IPaginationOptions) => {

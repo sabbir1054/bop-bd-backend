@@ -319,24 +319,33 @@ const deleteImageFromProduct = async (
   }
 
   // Delete the image file from the server
+
   const filePath = path.join(
     process.cwd(),
     'uploads',
     path.basename(isImageExist.url),
   );
-  fs.unlink(filePath, err => {
-    if (err) {
+  if (fs.existsSync(filePath)) {
+    try {
+      await fs.promises.unlink(filePath); // Using fs.promises.unlink for a promise-based approach
+
+      // Delete the image from the database
+      await prisma.image.delete({
+        where: { id: imageId },
+      });
+      console.log(`Image and database record deleted successfully.`);
+    } catch (err) {
       throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        `Failed to delete image: ${filePath}`,
+        httpStatus.NOT_FOUND,
+        `Failed to delete image or database record`,
       );
     }
-  });
-
-  // Delete the image from the database
-  await prisma.image.delete({
-    where: { id: imageId },
-  });
+  } else {
+    throw new ApiError(
+      httpStatus.NOT_FOUND,
+      'Image not found in the directory',
+    );
+  }
 
   const result = await prisma.product.findUnique({
     where: { id: productId },
@@ -416,14 +425,21 @@ const addNewImageForProduct = async (req: Request): Promise<Product | null> => {
           'uploads',
           path.basename(url),
         );
-        fs.unlink(filePath, err => {
-          if (err) {
-            throw new ApiError(
-              httpStatus.BAD_REQUEST,
-              `Failed to delete image: ${filePath}`,
-            );
-          }
-        });
+        if (fs.existsSync(filePath)) {
+          fs.unlink(filePath, err => {
+            if (err) {
+              throw new ApiError(
+                httpStatus.NOT_FOUND,
+                `Failed to delete image: ${filePath}`,
+              );
+            }
+          });
+        } else {
+          throw new ApiError(
+            httpStatus.NOT_FOUND,
+            `Image does not exist: ${filePath}`,
+          );
+        }
       });
     }
     // Trim the fileUrls array to fit the available slots
@@ -586,17 +602,26 @@ const deleteProduct = async (
         'uploads',
         path.basename(image.url),
       );
-      fs.unlink(filePath, err => {
-        if (err) {
-          console.error(`Failed to delete image: ${filePath}`);
+      if (fs.existsSync(filePath)) {
+        try {
+          await fs.promises.unlink(filePath); // Using fs.promises.unlink for a promise-based approach
+          // Delete image records from the database
+          await prisma.image.deleteMany({
+            where: { productId: productId },
+          });
+        } catch (err) {
+          throw new ApiError(
+            httpStatus.NOT_FOUND,
+            `Failed to delete image or database record`,
+          );
         }
-      });
+      } else {
+        throw new ApiError(
+          httpStatus.NOT_FOUND,
+          'Image not found in the directory',
+        );
+      }
     }
-
-    // Delete image records from the database
-    await prisma.image.deleteMany({
-      where: { productId: productId },
-    });
 
     // Delete the product
     const result = await prisma.product.delete({

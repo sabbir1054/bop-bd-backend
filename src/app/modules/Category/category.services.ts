@@ -43,21 +43,30 @@ const removePhoto = async (categoryId: string) => {
     'uploads/categoryPhoto',
     path.basename(isCategoryExist.photo),
   );
-  fs.unlink(filePath, err => {
-    if (err) {
+  if (fs.existsSync(filePath)) {
+    try {
+      await fs.promises.unlink(filePath); // Using fs.promises.unlink for a promise-based approach
+
+      // Delete the image from the database
+      const result = await prisma.category.update({
+        where: { id: categoryId },
+        data: {
+          photo: '',
+        },
+      });
+      return result;
+    } catch (err) {
       throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        `Failed to delete image: ${filePath}`,
+        httpStatus.NOT_FOUND,
+        `Failed to delete image or database record`,
       );
     }
-  });
-  const result = await prisma.category.update({
-    where: { id: categoryId },
-    data: {
-      photo: '',
-    },
-  });
-  return result;
+  } else {
+    throw new ApiError(
+      httpStatus.NOT_FOUND,
+      'Image not found in the directory',
+    );
+  }
 };
 /* const createNew = async (payload: Category): Promise<Category> => {
   const isBusinessTypeExist = await prisma.businessType.findUnique({
@@ -96,29 +105,37 @@ const getSingle = async (id: string): Promise<Category | null> => {
 
   return result;
 };
+
+//? global function => its genarel photo delete function
+const deletePhoto = async (photoLink: string) => {
+  // Delete the image file from the server
+  const filePath = path.join(
+    process.cwd(),
+    'uploads/categoryPhoto',
+    path.basename(photoLink),
+  );
+  if (fs.existsSync(filePath)) {
+    try {
+      await fs.promises.unlink(filePath); // Using fs.promises.unlink for a promise-based approach
+
+      console.log(`CategoryImage and database record deleted successfully.`);
+    } catch (err) {
+      throw new ApiError(
+        httpStatus.NOT_FOUND,
+        `Failed to delete image or database record`,
+      );
+    }
+  } else {
+    throw new ApiError(
+      httpStatus.NOT_FOUND,
+      'Image not found in the directory',
+    );
+  }
+};
 const updateSingle = async (
   req: any,
   next: NextFunction,
 ): Promise<Category | null> => {
-  const deletePhoto = (photoLink: string) => {
-    // Delete the image file from the server
-    const filePath = path.join(
-      process.cwd(),
-      'uploads/categoryPhoto',
-      path.basename(photoLink),
-    );
-    fs.unlink(filePath, err => {
-      if (err) {
-        deletePhoto(req.body.photo);
-        next(
-          new ApiError(
-            httpStatus.BAD_REQUEST,
-            `Failed to delete previous image, try again for update,photo `,
-          ),
-        );
-      }
-    });
-  };
   const { id } = req.params;
   const isExist = await prisma.category.findUnique({ where: { id } });
 
@@ -143,6 +160,9 @@ const updateSingle = async (
   }
 
   if (othersData.photo) {
+    if (isExist.photo) {
+      deletePhoto(isExist.photo);
+    }
     updateData.photo = othersData.photo;
   }
 
@@ -158,6 +178,9 @@ const deleteSingle = async (id: string): Promise<Category | null> => {
 
   if (!isExist) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Category not found !');
+  }
+  if (isExist.photo) {
+    deletePhoto(isExist.photo);
   }
   const result = await prisma.category.delete({ where: { id } });
 
