@@ -618,7 +618,7 @@ const deleteProduct = async (
       } else {
         throw new ApiError(
           httpStatus.NOT_FOUND,
-          'Image not found in the directory',
+          `Image not found in the directory ${image}`,
         );
       }
     }
