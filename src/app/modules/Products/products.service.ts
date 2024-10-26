@@ -616,9 +616,11 @@ const deleteProduct = async (
           );
         }
       } else {
+        console.log(image.url);
+
         throw new ApiError(
           httpStatus.NOT_FOUND,
-          `Image not found in the directory ${image}`,
+          `Image not found in the directory `,
         );
       }
     }
