@@ -598,14 +598,18 @@ const deleteProduct = async (
   const result = await prisma.$transaction(async prisma => {
     // Delete images from the server
     for (const image of isProductExist.images) {
-      const filePath = path.join(
-        process.cwd(),
-        'uploads/',
-        path.basename(image.url),
-      );
+      // Extract the image filename from URL if needed
+      const fileName = path.basename(image.url);
+      const filePath = path.resolve(process.cwd(), 'uploads', fileName); // Using path.resolve
+
+      console.log(`Checking path: ${filePath}`);
+      console.log(`Exists: ${fs.existsSync(filePath)}`);
+
       if (fs.existsSync(filePath)) {
         try {
-          await fs.promises.unlink(filePath); // Using fs.promises.unlink for a promise-based approach
+          await fs.promises.unlink(filePath); // Using fs.promises.unlink
+          console.log(`Deleted file: ${filePath}`);
+
           // Delete image records from the database
           await prisma.image.deleteMany({
             where: { productId: productId },
@@ -617,14 +621,7 @@ const deleteProduct = async (
           );
         }
       } else {
-        console.log(filePath);
-
-        // next(
-        //   new ApiError(
-        //     httpStatus.NOT_FOUND,
-        //     `Image not found in the directory `,
-        //   ),
-        // );
+        console.warn(`File not found at path: ${filePath}`);
       }
     }
 
