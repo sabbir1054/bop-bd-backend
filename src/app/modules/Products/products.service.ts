@@ -1,5 +1,5 @@
 import { Product, Role } from '@prisma/client';
-import { Request } from 'express';
+import { NextFunction, Request } from 'express';
 import fs from 'fs';
 import httpStatus from 'http-status';
 import path from 'path';
@@ -539,6 +539,7 @@ const deleteProduct = async (
   productId: string,
   userId: string,
   userRole: string,
+  next: NextFunction,
 ): Promise<Product | null> => {
   let orgId = null;
 
@@ -618,9 +619,11 @@ const deleteProduct = async (
       } else {
         console.log(image.url);
 
-        throw new ApiError(
-          httpStatus.NOT_FOUND,
-          `Image not found in the directory `,
+        next(
+          new ApiError(
+            httpStatus.NOT_FOUND,
+            `Image not found in the directory `,
+          ),
         );
       }
     }

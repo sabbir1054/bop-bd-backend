@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import httpStatus from 'http-status';
 import { paginationFields } from '../../../constants/paginationFields';
 import catchAsync from '../../../shared/catchAsync';
@@ -88,18 +88,25 @@ const updateProductInfo = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const deleteProduct = catchAsync(async (req: Request, res: Response) => {
-  const { productId } = req.params;
-  const { id: userId, role } = req.user as any;
+const deleteProduct = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { productId } = req.params;
+    const { id: userId, role } = req.user as any;
 
-  const result = await ProductServices.deleteProduct(productId, userId, role);
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: 'Product deleted ',
-    data: result,
-  });
-});
+    const result = await ProductServices.deleteProduct(
+      productId,
+      userId,
+      role,
+      next,
+    );
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Product deleted ',
+      data: result,
+    });
+  },
+);
 
 export const ProductController = {
   createProduct,
