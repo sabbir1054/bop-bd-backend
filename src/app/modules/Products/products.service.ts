@@ -617,12 +617,7 @@ const deleteProduct = async (
           );
         }
       } else {
-        console.log(
-          'Miss image :',
-          image.url,
-          'basename=',
-          path.basename(image.url),
-        );
+        console.log(filePath);
 
         // next(
         //   new ApiError(
