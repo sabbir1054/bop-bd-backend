@@ -617,14 +617,14 @@ const deleteProduct = async (
           );
         }
       } else {
-        console.log(image.url);
+        console.log('Miss image :', image.url);
 
-        next(
-          new ApiError(
-            httpStatus.NOT_FOUND,
-            `Image not found in the directory `,
-          ),
-        );
+        // next(
+        //   new ApiError(
+        //     httpStatus.NOT_FOUND,
+        //     `Image not found in the directory `,
+        //   ),
+        // );
       }
     }
 
