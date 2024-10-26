@@ -600,7 +600,7 @@ const deleteProduct = async (
     for (const image of isProductExist.images) {
       const filePath = path.join(
         process.cwd(),
-        'uploads',
+        'uploads/',
         path.basename(image.url),
       );
       if (fs.existsSync(filePath)) {
