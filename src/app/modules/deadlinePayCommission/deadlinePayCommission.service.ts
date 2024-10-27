@@ -360,10 +360,8 @@ const getAllOrganizationPendingCommissionList = async () => {
           totalCommission: { gt: 0 },
           isSuspend: false, // Only active organizations
         },
-        select: {
-          id: true,
+        include: {
           owner: true,
-          deadlineExtendfor: true, // We need this for calculating adjusted deadline
           PayCommission: {
             select: {
               createdAt: true,
