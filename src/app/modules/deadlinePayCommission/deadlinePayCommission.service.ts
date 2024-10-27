@@ -375,15 +375,21 @@ const getSingleOrganizationDeadlineDate = async (orgId: string) => {
     // Calculate the deadline date for commission payment
     const lastPaymentDate = latestPayCommission[0]?.createdAt || new Date();
     const extendedDays = isOrganizationExist.deadlineExtendfor || 0;
+    console.log(lastPaymentDate, extendedDays);
 
     // Calculate the final deadline by adding normal deadline days and extended days
     const finalDeadlineDate = new Date(
       new Date(lastPaymentDate).setDate(
         lastPaymentDate.getDate() +
-          parseInt(deadlineInfo.deadline, 10) +
+          parseInt(deadlineInfo.deadline) +
           extendedDays,
       ),
     );
+    console.log(
+      new Date(lastPaymentDate),
+      new Date(lastPaymentDate).setDate(lastPaymentDate.getDate()),
+    );
+    console.log(finalDeadlineDate);
 
     return finalDeadlineDate;
   });
