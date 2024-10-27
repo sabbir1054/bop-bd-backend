@@ -363,9 +363,6 @@ const getAllOrganizationPendingCommissionList = async () => {
         include: {
           owner: true,
           PayCommission: {
-            select: {
-              createdAt: true,
-            },
             orderBy: {
               createdAt: 'desc',
             },
