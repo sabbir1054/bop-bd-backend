@@ -246,8 +246,8 @@ const getAllDeadlineExtendRequest = async (
       if (!isValidStaff || !isValidStaff.isValidNow) {
         throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid staff user id');
       }
-
-      if (isValidStaff.role !== 'STAFF_ADMIN') {
+      const validStaffRole = ['STAFF_ADMIN', 'ACCOUNTS_MANAGER'];
+      if (!validStaffRole.includes(isValidStaff.role)) {
         throw new ApiError(
           httpStatus.BAD_REQUEST,
           'You are not able to request',
@@ -306,10 +306,11 @@ const getSingleRequest = async (
         throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid staff user id');
       }
 
-      if (isValidStaff.role !== 'STAFF_ADMIN') {
+      const validStaffRole = ['STAFF_ADMIN', 'ACCOUNTS_MANAGER'];
+      if (!validStaffRole.includes(isValidStaff.role)) {
         throw new ApiError(
           httpStatus.BAD_REQUEST,
-          'You are not able to see request',
+          'You are not able to request',
         );
       }
 
