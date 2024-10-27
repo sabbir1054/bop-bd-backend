@@ -136,6 +136,17 @@ const getOutgoingOrdersByDate = async (
           lte: end,
         },
       },
+      include: {
+        orderItems: {
+          include: {
+            product: {
+              include: {
+                images: true,
+              },
+            },
+          },
+        },
+      },
     });
     // Total cost from outgoing orders within date range
     const totalCostOutgoingOrders = await prisma.order.aggregate({
@@ -197,6 +208,17 @@ const getIncomingOrdersByDate = async (
         createdAt: {
           gte: start,
           lte: end,
+        },
+      },
+      include: {
+        orderItems: {
+          include: {
+            product: {
+              include: {
+                images: true,
+              },
+            },
+          },
         },
       },
     });
