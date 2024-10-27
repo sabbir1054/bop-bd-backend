@@ -154,6 +154,7 @@ const getOutgoingOrdersByDate = async (
       date: date,
     };
   });
+  return result;
 };
 const getIncomingOrdersByDate = async (
   userId: string,
