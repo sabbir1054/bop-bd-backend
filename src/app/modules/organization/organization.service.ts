@@ -179,13 +179,14 @@ const getIncomingOrdersByDate = async (
     if (!validStaffRole.includes(isValidStaff.role)) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Staff role not valid');
     }
-    ownerId = isValidStaff.organization.ownerId;
+    ownerId = isValidStaff.organization.id;
   } else {
-    ownerId = userId;
+    const isUserExist = await prisma.user.findUnique({ where: { id: userId } });
+    ownerId = isUserExist?.organizationId;
   }
 
   if (!ownerId) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Owner info not found');
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
   }
   const result = await prisma.$transaction(async prisma => {
     // Total outgoing orders within date range
@@ -198,6 +199,8 @@ const getIncomingOrdersByDate = async (
         },
       },
     });
+    console.log(incomingOrders);
+
     // Total cost from outgoing orders within date range
     const totalEarnIncomingOrders = await prisma.order.aggregate({
       where: {

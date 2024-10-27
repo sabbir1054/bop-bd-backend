@@ -365,18 +365,17 @@ const getSingleOrganizationDeadlineDate = async (orgId: string) => {
     const latestPayCommission = await prisma.payCommission.findMany({
       where: { organizationId: isOrganizationExist.id },
       orderBy: {
-        createdAt: 'desc', // Order by createdAt in descending order
+        createdAt: 'desc',
       },
-      take: 1, // Limit to the latest record (you can remove or adjust this to get multiple records)
+      take: 1,
       include: {
-        transactionDetails: true, // Include related TransactionInfoForPayCommission data
-        organization: true, // Include related Organization data if needed
+        transactionDetails: true,
+        organization: true,
       },
     });
     // Calculate the deadline date for commission payment
     const lastPaymentDate = latestPayCommission[0]?.createdAt || new Date();
     const extendedDays = isOrganizationExist.deadlineExtendfor || 0;
-    console.log(lastPaymentDate);
 
     // Calculate the final deadline by adding normal deadline days and extended days
     const finalDeadlineDate = new Date(
@@ -386,11 +385,6 @@ const getSingleOrganizationDeadlineDate = async (orgId: string) => {
           extendedDays,
       ),
     );
-    // console.log(
-    //   new Date(lastPaymentDate),
-    //   new Date(lastPaymentDate).setDate(lastPaymentDate.getDate()),
-    // );
-    // console.log(finalDeadlineDate);
 
     return finalDeadlineDate;
   });
