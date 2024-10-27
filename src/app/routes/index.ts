@@ -104,6 +104,10 @@ const moduleRoutes = [
     path: '/deadlineCommission',
     route: DeadlinePayCommissionRoutes,
   },
+  {
+    path: '/admin',
+    route: AdminRoutes,
+  },
 ];
 
 moduleRoutes.forEach(route => router.use(route.path, route.route));
