@@ -108,5 +108,10 @@ router.get(
   ),
   DeadlinePayCommissionController.getSingleOrganizationDeadlineDate,
 );
+router.get(
+  '/pendingList/',
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  DeadlinePayCommissionController.getAllOrganizationPendingCommissionList,
+);
 
 export const DeadlinePayCommissionRoutes = router;

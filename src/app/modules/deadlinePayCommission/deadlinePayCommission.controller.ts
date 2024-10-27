@@ -142,6 +142,19 @@ const getSingleOrganizationDeadlineDate = catchAsync(
     });
   },
 );
+const getAllOrganizationPendingCommissionList = catchAsync(
+  async (req: Request, res: Response) => {
+    const { orgId } = req.params;
+    const result =
+      await DeadlinePayCommissionServices.getAllOrganizationPendingCommissionList();
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Pending commission pay organization list ',
+      data: result,
+    });
+  },
+);
 
 export const DeadlinePayCommissionController = {
   create,
@@ -155,4 +168,5 @@ export const DeadlinePayCommissionController = {
   getAllDeadlineExtendRequest,
   getSingleOrganizationDeadlineDate,
   getSingleRequest,
+  getAllOrganizationPendingCommissionList,
 };

@@ -345,7 +345,61 @@ const getSingleRequest = async (
     return result;
   }
 };
+const getAllOrganizationPendingCommissionList = async () => {
+  const result = await prisma.$transaction(async prisma => {
+    // Get all kinds of deadlines
+    const getAllDeadline = await prisma.deadlinePayCommission.findMany();
 
+    const pendingCommissionOrg = [];
+    // Loop through each deadline and process accordingly
+    for (const deadline of getAllDeadline) {
+      // Find organizations with unpaid commissions and consider deadlineExtendFor
+      const organizations = await prisma.organization.findMany({
+        where: {
+          memberShipCategory: deadline.memberCategory,
+          totalCommission: { gt: 0 },
+          isSuspend: false, // Only active organizations
+        },
+        select: {
+          id: true,
+          owner: true,
+          deadlineExtendfor: true, // We need this for calculating adjusted deadline
+          PayCommission: {
+            select: {
+              createdAt: true,
+            },
+            orderBy: {
+              createdAt: 'desc',
+            },
+            take: 1, // Get the latest payment commission date
+          },
+        },
+      });
+
+      for (const org of organizations) {
+        // Calculate the deadline date for commission payment
+        const lastPaymentDate = org.PayCommission[0]?.createdAt || new Date();
+        const extendedDays = org.deadlineExtendfor || 0;
+
+        // Calculate the final deadline by adding normal deadline days and extended days
+        const finalDeadlineDate = new Date(
+          new Date(lastPaymentDate).setDate(
+            lastPaymentDate.getDate() +
+              parseInt(deadline.deadline) +
+              extendedDays,
+          ),
+        );
+        //? push info in the array
+        pendingCommissionOrg.push({
+          organizationsInfo: org,
+          lastDate: finalDeadlineDate,
+        });
+      }
+    }
+    return pendingCommissionOrg;
+  });
+  return result;
+};
 const getSingleOrganizationDeadlineDate = async (orgId: string) => {
   const isOrganizationExist = await prisma.organization.findUnique({
     where: { id: orgId },
@@ -489,4 +543,5 @@ export const DeadlinePayCommissionServices = {
   updateMyRequest,
   suspendOrganizations,
   getSingleOrganizationDeadlineDate,
+  getAllOrganizationPendingCommissionList,
 };
