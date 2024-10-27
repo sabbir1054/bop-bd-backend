@@ -383,8 +383,11 @@ const getAllOrganizationPendingCommissionList = async () => {
 
       for (const org of organizations) {
         // Calculate the deadline date for commission payment
+
         const lastPaymentDate =
-          org.PayCommission[0]?.createdAt || org.incoming_order[0]?.createdAt;
+          org.PayCommission[0]?.createdAt ||
+          org.incoming_order[0]?.createdAt ||
+          new Date();
         const extendedDays = org.deadlineExtendfor || 0;
 
         // Calculate the final deadline by adding normal deadline days and extended days
