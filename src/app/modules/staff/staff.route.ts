@@ -49,7 +49,7 @@ router.patch(
     ENUM_USER_ROLE.WHOLESALER,
     ENUM_USER_ROLE.STAFF,
   ),
-  StaffController.blockstaff,
+  StaffController.unBlockstaff,
 );
 
 export const StaffRoutes = router;
