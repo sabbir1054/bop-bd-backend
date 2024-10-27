@@ -354,7 +354,11 @@ const getSingleOrganizationDeadlineDate = async (orgId: string) => {
   }
 
   const result = await prisma.$transaction(async prisma => {
-    const deadlineInfo = await prisma.deadlinePayCommission.findFirst();
+    const deadlineInfo = await prisma.deadlinePayCommission.findFirst({
+      where: {
+        memberCategory: isOrganizationExist.memberShipCategory,
+      },
+    });
     if (!deadlineInfo) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Deadline info not set');
     }
