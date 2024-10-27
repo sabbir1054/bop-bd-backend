@@ -109,7 +109,7 @@ router.get(
   DeadlinePayCommissionController.getSingleOrganizationDeadlineDate,
 );
 router.get(
-  '/pendingList',
+  '/oranizationCommission/pendingList',
   auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
   DeadlinePayCommissionController.getAllOrganizationPendingCommissionList,
 );
