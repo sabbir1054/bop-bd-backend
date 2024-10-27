@@ -199,7 +199,6 @@ const getIncomingOrdersByDate = async (
         },
       },
     });
-    console.log(incomingOrders);
 
     // Total cost from outgoing orders within date range
     const totalEarnIncomingOrders = await prisma.order.aggregate({
