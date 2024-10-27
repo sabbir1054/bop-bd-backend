@@ -26,6 +26,17 @@ const blockstaff = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const unBlockstaff = catchAsync(async (req: Request, res: Response) => {
+  const { id, role } = req.user as any;
+  const { staffId } = req.params;
+  const result = await staffServices.unBlockstaff(id, role, staffId);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Staff retrieve',
+    data: result,
+  });
+});
 const getSingle = catchAsync(async (req: Request, res: Response) => {
   const { id: userId } = req.user as any;
   const { id } = req.params;
@@ -41,5 +52,6 @@ const getSingle = catchAsync(async (req: Request, res: Response) => {
 export const StaffController = {
   getAll,
   getSingle,
+  unBlockstaff,
   blockstaff,
 };
