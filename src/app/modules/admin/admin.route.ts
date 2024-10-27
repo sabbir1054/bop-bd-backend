@@ -10,5 +10,15 @@ router.get(
   auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
   AdminController.BOPCommissionInfo,
 );
+router.get(
+  '/cashTransactionHistory',
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  AdminController.cashTransactionHistory,
+);
+router.get(
+  '/claimedRewardHistory',
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  AdminController.claimedRewardTransactionHistory,
+);
 
 export const AdminRoutes = router;
