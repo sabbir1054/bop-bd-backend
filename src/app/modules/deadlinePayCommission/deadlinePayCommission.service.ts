@@ -375,6 +375,7 @@ const getAllOrganizationPendingCommissionList = async () => {
           },
         },
       });
+      console.log(organizations);
 
       for (const org of organizations) {
         // Calculate the deadline date for commission payment
