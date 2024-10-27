@@ -363,6 +363,7 @@ const getSingleOrganizationDeadlineDate = async (orgId: string) => {
       throw new ApiError(httpStatus.NOT_FOUND, 'Deadline info not set');
     }
     const latestPayCommission = await prisma.payCommission.findMany({
+      where: { organizationId: isOrganizationExist.id },
       orderBy: {
         createdAt: 'desc', // Order by createdAt in descending order
       },
@@ -375,7 +376,7 @@ const getSingleOrganizationDeadlineDate = async (orgId: string) => {
     // Calculate the deadline date for commission payment
     const lastPaymentDate = latestPayCommission[0]?.createdAt || new Date();
     const extendedDays = isOrganizationExist.deadlineExtendfor || 0;
-    console.log(lastPaymentDate, extendedDays);
+    console.log(lastPaymentDate);
 
     // Calculate the final deadline by adding normal deadline days and extended days
     const finalDeadlineDate = new Date(
@@ -385,11 +386,11 @@ const getSingleOrganizationDeadlineDate = async (orgId: string) => {
           extendedDays,
       ),
     );
-    console.log(
-      new Date(lastPaymentDate),
-      new Date(lastPaymentDate).setDate(lastPaymentDate.getDate()),
-    );
-    console.log(finalDeadlineDate);
+    // console.log(
+    //   new Date(lastPaymentDate),
+    //   new Date(lastPaymentDate).setDate(lastPaymentDate.getDate()),
+    // );
+    // console.log(finalDeadlineDate);
 
     return finalDeadlineDate;
   });
