@@ -596,14 +596,9 @@ const deleteProduct = async (
       const fileName = path.basename(image.url);
       const filePath = path.resolve(process.cwd(), 'uploads', fileName); // Using path.resolve
 
-      console.log(`Checking path: ${filePath}`);
-      console.log(`Exists: ${fs.existsSync(filePath)}`);
-
       if (fs.existsSync(filePath)) {
         try {
-          await fs.promises.unlink(filePath); // Using fs.promises.unlink
-          console.log(`Deleted file: ${filePath}`);
-
+          await fs.promises.unlink(filePath);
           // Delete image records from the database
           await prisma.image.deleteMany({
             where: { productId: productId },
