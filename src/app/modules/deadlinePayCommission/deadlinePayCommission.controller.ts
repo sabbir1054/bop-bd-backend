@@ -127,6 +127,21 @@ const getSingleRequest = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const getSingleOrganizationDeadlineDate = catchAsync(
+  async (req: Request, res: Response) => {
+    const { orgId } = req.params;
+    const result =
+      await DeadlinePayCommissionServices.getSingleOrganizationDeadlineDate(
+        orgId,
+      );
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Date for commission pay retrieve',
+      data: result,
+    });
+  },
+);
 
 export const DeadlinePayCommissionController = {
   create,
@@ -138,5 +153,6 @@ export const DeadlinePayCommissionController = {
   handleDeadlineRequest,
   updateMyRequest,
   getAllDeadlineExtendRequest,
+  getSingleOrganizationDeadlineDate,
   getSingleRequest,
 };

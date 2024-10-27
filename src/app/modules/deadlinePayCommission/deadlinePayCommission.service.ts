@@ -345,6 +345,46 @@ const getSingleRequest = async (
   }
 };
 
+const getSingleOrganizationDeadlineDate = async (orgId: string) => {
+  const isOrganizationExist = await prisma.organization.findUnique({
+    where: { id: orgId },
+  });
+  if (!isOrganizationExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization not found');
+  }
+
+  const result = await prisma.$transaction(async prisma => {
+    const deadlineInfo = await prisma.deadlinePayCommission.findFirst();
+    if (!deadlineInfo) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Deadline info not set');
+    }
+    const latestPayCommission = await prisma.payCommission.findMany({
+      orderBy: {
+        createdAt: 'desc', // Order by createdAt in descending order
+      },
+      take: 1, // Limit to the latest record (you can remove or adjust this to get multiple records)
+      include: {
+        transactionDetails: true, // Include related TransactionInfoForPayCommission data
+        organization: true, // Include related Organization data if needed
+      },
+    });
+    // Calculate the deadline date for commission payment
+    const lastPaymentDate = latestPayCommission[0]?.createdAt || new Date();
+    const extendedDays = isOrganizationExist.deadlineExtendfor || 0;
+
+    // Calculate the final deadline by adding normal deadline days and extended days
+    const finalDeadlineDate = new Date(
+      new Date(lastPaymentDate).setDate(
+        lastPaymentDate.getDate() +
+          parseInt(deadlineInfo.deadline, 10) +
+          extendedDays,
+      ),
+    );
+
+    return finalDeadlineDate;
+  });
+  return result;
+};
 //? cron jobs
 // const suspendOrganizations = async () => {
 //   const fixedDaysAgo = new Date();
@@ -442,4 +482,5 @@ export const DeadlinePayCommissionServices = {
   getAllDeadlineExtendRequest,
   updateMyRequest,
   suspendOrganizations,
+  getSingleOrganizationDeadlineDate,
 };

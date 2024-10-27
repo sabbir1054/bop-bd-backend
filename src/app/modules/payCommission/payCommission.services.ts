@@ -374,6 +374,7 @@ const executePaymentHit = async (paymentID: string) => {
         where: { id: createTransactionPaycommission.payerReference },
         data: {
           totalCommission: 0,
+          isSuspend: false,
         },
       });
     } else {
@@ -390,6 +391,7 @@ const executePaymentHit = async (paymentID: string) => {
           data: {
             totalCommission: 0,
             totalRewardPoints: 0,
+            isSuspend: false,
           },
         });
       }

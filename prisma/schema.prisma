@@ -489,7 +489,6 @@ model PayCommission {
     updatedAt          DateTime                          @updatedAt
     createdAt          DateTime                          @default(now())
     transactionDetails TransactionInfoForPayCommission[]
-
     @@map("payCommission")
 }
 
