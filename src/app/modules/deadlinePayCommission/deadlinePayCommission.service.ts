@@ -361,6 +361,15 @@ const getAllOrganizationPendingCommissionList = async () => {
           isSuspend: false, // Only active organizations
         },
         include: {
+          incoming_order: {
+            select: {
+              createdAt: true,
+            },
+            orderBy: {
+              createdAt: 'desc',
+            },
+            take: 1,
+          },
           owner: true,
           PayCommission: {
             orderBy: {
@@ -375,7 +384,7 @@ const getAllOrganizationPendingCommissionList = async () => {
       for (const org of organizations) {
         // Calculate the deadline date for commission payment
         const lastPaymentDate =
-          org.PayCommission[0]?.createdAt || deadline.updatedAt;
+          org.PayCommission[0]?.createdAt || org.incoming_order[0]?.createdAt;
         const extendedDays = org.deadlineExtendfor || 0;
 
         // Calculate the final deadline by adding normal deadline days and extended days
@@ -400,11 +409,24 @@ const getAllOrganizationPendingCommissionList = async () => {
 const getSingleOrganizationDeadlineDate = async (orgId: string) => {
   const isOrganizationExist = await prisma.organization.findUnique({
     where: { id: orgId },
+    include: {
+      incoming_order: {
+        select: {
+          createdAt: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: 1,
+      },
+    },
   });
   if (!isOrganizationExist) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Organization not found');
   }
-
+  if (isOrganizationExist.totalCommission === 0) {
+    return 'No commission';
+  }
   const result = await prisma.$transaction(async prisma => {
     const deadlineInfo = await prisma.deadlinePayCommission.findFirst({
       where: {
@@ -425,9 +447,11 @@ const getSingleOrganizationDeadlineDate = async (orgId: string) => {
         organization: true,
       },
     });
+
     // Calculate the deadline date for commission payment
     const lastPaymentDate =
-      latestPayCommission[0]?.createdAt || deadlineInfo.updatedAt;
+      latestPayCommission[0]?.createdAt ||
+      isOrganizationExist.incoming_order[0]?.createdAt;
     const extendedDays = isOrganizationExist.deadlineExtendfor || 0;
 
     // Calculate the final deadline by adding normal deadline days and extended days
