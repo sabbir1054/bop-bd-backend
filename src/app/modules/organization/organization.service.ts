@@ -218,6 +218,7 @@ const getIncomingOrdersByDate = async (
       date: date,
     };
   });
+  return result;
 };
 const updateOrganization = async (req: Request, next: NextFunction) => {
   const deletePhoto = (photoLink: string) => {
