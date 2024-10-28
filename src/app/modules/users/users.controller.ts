@@ -57,7 +57,8 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
     statusCode: httpStatus.OK,
     success: true,
     message: 'Users retrieve',
-    data: result,
+    data: result.data,
+    meta: result.meta,
   });
 });
 const getSingle = catchAsync(async (req: Request, res: Response) => {
