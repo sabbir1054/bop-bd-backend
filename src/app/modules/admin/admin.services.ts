@@ -13,6 +13,13 @@ const BOPCommissionInfo = async () => {
     const totalRecievedCommissionUsingCash =
       await prisma.payCommission.aggregate({
         _sum: { amount: true },
+        where: {
+          transactionDetails: {
+            some: {
+              statusMessage: 'Successful',
+            },
+          },
+        },
       });
     const totaClaimedRewardAmount = await prisma.claimReward.aggregate({
       _sum: {
@@ -38,6 +45,13 @@ const BOPCommissionInfo = async () => {
 const cashTransactionHistory = async (options: IPaginationOptions) => {
   const { limit, page, skip } = paginationHelpers.calculatePagination(options);
   const result = await prisma.payCommission.findMany({
+    where: {
+      transactionDetails: {
+        some: {
+          statusMessage: 'Successful',
+        },
+      },
+    },
     skip,
     take: limit,
     orderBy: { createdAt: 'desc' },
