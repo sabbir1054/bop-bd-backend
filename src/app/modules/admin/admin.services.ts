@@ -60,7 +60,15 @@ const cashTransactionHistory = async (options: IPaginationOptions) => {
       transactionDetails: true,
     },
   });
-  const total = await prisma.payCommission.count({});
+  const total = await prisma.payCommission.count({
+    where: {
+      transactionDetails: {
+        some: {
+          statusMessage: 'Successful',
+        },
+      },
+    },
+  });
   return {
     meta: {
       total,
