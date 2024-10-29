@@ -16,6 +16,16 @@ const BOPCommissionInfo = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const BOPuserInfo = catchAsync(async (req: Request, res: Response) => {
+  const { id, role } = req.user as any;
+  const result = await AdminServices.BOPuserInfo();
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Users info retrieve !',
+    data: result,
+  });
+});
 const cashTransactionHistory = catchAsync(
   async (req: Request, res: Response) => {
     const options = pick(req.query, paginationFields);
@@ -47,4 +57,5 @@ export const AdminController = {
   BOPCommissionInfo,
   cashTransactionHistory,
   claimedRewardTransactionHistory,
+  BOPuserInfo,
 };

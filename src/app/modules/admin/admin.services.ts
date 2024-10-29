@@ -1,3 +1,4 @@
+import { Role } from '@prisma/client';
 import { paginationHelpers } from '../../../helpers/paginationHelper';
 import { IPaginationOptions } from '../../../interfaces/pagination';
 import prisma from '../../../shared/prisma';
@@ -100,8 +101,47 @@ const claimedRewardTransactionHistory = async (options: IPaginationOptions) => {
   };
 };
 
+const BOPuserInfo = async () => {
+  const result = await prisma.$transaction(async prisma => {
+    const totalUsers = await prisma.user.count();
+    const userCounts = await prisma.user.groupBy({
+      by: ['role'],
+      _count: {
+        role: true,
+      },
+    });
+
+    // Format the result for easier use
+    const formattedCounts: Record<Role, number> = userCounts.reduce(
+      (acc, { role, _count }) => {
+        acc[role] = _count.role;
+        return acc;
+      },
+      {} as Record<Role, number>,
+    );
+    const totalOrganizations = await prisma.organization.count();
+    const totalUnverifiedOrganizations = await prisma.organization.count({
+      where: { owner: { verified: false } },
+    });
+    const totalVerifiedOrganizations = await prisma.organization.count({
+      where: { owner: { verified: true } },
+    });
+
+    return {
+      totalUsers,
+      usersCountByRole: formattedCounts,
+      totalOrganizations,
+      totalUnverifiedOrganizations,
+      totalVerifiedOrganizations,
+    };
+  });
+
+  return result;
+};
+
 export const AdminServices = {
   BOPCommissionInfo,
   cashTransactionHistory,
   claimedRewardTransactionHistory,
+  BOPuserInfo,
 };

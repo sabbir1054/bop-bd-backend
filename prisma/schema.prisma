@@ -145,7 +145,6 @@ model User {
     isMobileVerified Boolean       @default(false)
     isEmailVerified  Boolean       @default(false)
     isNidVerified    Boolean       @default(false)
-
     @@map("users")
 }
 
