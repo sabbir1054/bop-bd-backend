@@ -153,7 +153,7 @@ const updateOranizationBusinessType = catchAsync(
   async (req: Request, res: Response) => {
     const { orgId } = req.params;
     const result = await OrganizaionServices.updateOranizationBusinessType(
-      req.params.id,
+      req.params.orgId,
       req.body,
     );
     sendResponse(res, {
@@ -168,7 +168,7 @@ const manualSuspendStatusUpdate = catchAsync(
   async (req: Request, res: Response) => {
     const { orgId } = req.params;
     const result = await OrganizaionServices.manualSuspendStatusUpdate(
-      req.params.id,
+      req.params.orgId,
       req.body.suspendedStatus,
     );
     sendResponse(res, {
