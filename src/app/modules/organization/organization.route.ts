@@ -26,6 +26,11 @@ router.get(
   ),
   OrganizationController.getDashboardMatrics,
 );
+router.get(
+  '/updateBusinessType/:orgId',
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  OrganizationController.updateOranizationBusinessType,
+);
 
 router.post(
   '/incomingOrderByDate',

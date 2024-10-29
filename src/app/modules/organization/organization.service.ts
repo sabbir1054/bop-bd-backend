@@ -634,6 +634,39 @@ const getOrganizationsWithPendingCommissions = async () => {
 
   return result;
 };
+const updateOranizationBusinessType = async (
+  orgId: string,
+  businessTypeId: string,
+) => {
+  const isExistOrganization = await prisma.organization.findUnique({
+    where: { id: orgId },
+    include: {
+      owner: true,
+    },
+  });
+
+  if (!isExistOrganization) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
+  }
+  if (isExistOrganization.owner.verified) {
+    throw new ApiError(
+      httpStatus.NOT_FOUND,
+      'After verify you can not change business type',
+    );
+  }
+  const isExistBussinessType = await prisma.businessType.findUnique({
+    where: { id: businessTypeId },
+  });
+  if (!isExistBussinessType) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
+  }
+
+  const result = await prisma.organization.update({
+    where: { id: orgId },
+    data: { businessTypeId: businessTypeId },
+  });
+  return result;
+};
 
 export const OrganizaionServices = {
   getDashboardMatrics,
@@ -646,4 +679,5 @@ export const OrganizaionServices = {
   getAllOrganization,
   getSingleOrganization,
   getOrganizationsWithPendingCommissions,
+  updateOranizationBusinessType,
 };

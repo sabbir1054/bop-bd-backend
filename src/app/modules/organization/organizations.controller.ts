@@ -149,6 +149,22 @@ const getSingle = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const updateOranizationBusinessType = catchAsync(
+  async (req: Request, res: Response) => {
+    const { orgId } = req.params;
+    const result = await OrganizaionServices.updateOranizationBusinessType(
+      req.params.id,
+      req.body.businessTypeId,
+    );
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Organization updated ',
+      data: result,
+    });
+  },
+);
+
 export const OrganizationController = {
   getDashboardMatrics,
   getOutgoingOrdersByDate,
@@ -160,4 +176,5 @@ export const OrganizationController = {
   getSingle,
   getAllOrganization,
   getOrganizationsWithPendingCommissions,
+  updateOranizationBusinessType,
 };
