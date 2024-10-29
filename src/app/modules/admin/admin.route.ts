@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.get(
   '/getAllComssionInfo',
-  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  auth(ENUM_USER_ROLE.SUPER_ADMIN),
   AdminController.BOPCommissionInfo,
 );
 router.get(
@@ -17,12 +17,12 @@ router.get(
 );
 router.get(
   '/cashTransactionHistory',
-  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  auth(ENUM_USER_ROLE.SUPER_ADMIN),
   AdminController.cashTransactionHistory,
 );
 router.get(
   '/claimedRewardHistory',
-  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  auth(ENUM_USER_ROLE.SUPER_ADMIN),
   AdminController.claimedRewardTransactionHistory,
 );
 
