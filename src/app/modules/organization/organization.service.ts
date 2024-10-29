@@ -676,7 +676,7 @@ const updateOranizationBusinessType = async (
 
   if (role) {
     const result = await prisma.user.update({
-      where: { id: orgId },
+      where: { id: isExistOrganization.owner.id },
       data: { role: role },
     });
     return result;
