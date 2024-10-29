@@ -7,7 +7,11 @@ import { paginationHelpers } from '../../../helpers/paginationHelper';
 import { IPaginationOptions } from '../../../interfaces/pagination';
 import prisma from '../../../shared/prisma';
 import { organizationSearchableFields } from './organization.constant';
-import { IRangeOfDate, IupdateOrgaCategory } from './organization.interface';
+import {
+  IRangeOfDate,
+  IUpdateOrga,
+  IupdateOrgaCategory,
+} from './organization.interface';
 const getDashboardMatrics = async (
   userId: string,
   userRole: string,
@@ -634,10 +638,12 @@ const getOrganizationsWithPendingCommissions = async () => {
 
   return result;
 };
+
 const updateOranizationBusinessType = async (
   orgId: string,
-  businessTypeId: string,
+  payload: IUpdateOrga,
 ) => {
+  const { businessTypeId, role } = payload;
   const isExistOrganization = await prisma.organization.findUnique({
     where: { id: orgId },
     include: {
@@ -654,18 +660,27 @@ const updateOranizationBusinessType = async (
       'After verify you can not change business type',
     );
   }
-  const isExistBussinessType = await prisma.businessType.findUnique({
-    where: { id: businessTypeId },
-  });
-  if (!isExistBussinessType) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
+  if (businessTypeId) {
+    const isExistBussinessType = await prisma.businessType.findUnique({
+      where: { id: businessTypeId },
+    });
+    if (!isExistBussinessType) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
+    }
+    const result = await prisma.organization.update({
+      where: { id: orgId },
+      data: { businessTypeId: businessTypeId },
+    });
+    return result;
   }
 
-  const result = await prisma.organization.update({
-    where: { id: orgId },
-    data: { businessTypeId: businessTypeId },
-  });
-  return result;
+  if (role) {
+    const result = await prisma.user.update({
+      where: { id: orgId },
+      data: { role: role },
+    });
+    return result;
+  }
 };
 
 export const OrganizaionServices = {

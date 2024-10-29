@@ -154,7 +154,7 @@ const updateOranizationBusinessType = catchAsync(
     const { orgId } = req.params;
     const result = await OrganizaionServices.updateOranizationBusinessType(
       req.params.id,
-      req.body.businessTypeId,
+      req.body,
     );
     sendResponse(res, {
       statusCode: httpStatus.OK,
