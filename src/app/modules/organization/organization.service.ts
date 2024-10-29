@@ -660,27 +660,33 @@ const updateOranizationBusinessType = async (
       'After verify you can not change business type',
     );
   }
-  if (businessTypeId) {
-    const isExistBussinessType = await prisma.businessType.findUnique({
-      where: { id: businessTypeId },
-    });
-    if (!isExistBussinessType) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
-    }
-    const result = await prisma.organization.update({
-      where: { id: orgId },
-      data: { businessTypeId: businessTypeId },
-    });
-    return result;
-  }
 
-  if (role) {
-    const result = await prisma.user.update({
-      where: { id: isExistOrganization.owner.id },
-      data: { role: role },
+  const result = await prisma.$transaction(async prisma => {
+    if (businessTypeId) {
+      const isExistBussinessType = await prisma.businessType.findUnique({
+        where: { id: businessTypeId },
+      });
+      if (!isExistBussinessType) {
+        throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
+      }
+      await prisma.organization.update({
+        where: { id: orgId },
+        data: { businessTypeId: businessTypeId },
+      });
+    }
+
+    if (role) {
+      await prisma.user.update({
+        where: { id: isExistOrganization.owner.id },
+        data: { role: role },
+      });
+    }
+    const result = await prisma.organization.findUnique({
+      where: { id: orgId },
     });
     return result;
-  }
+  });
+  return result;
 };
 const manualSuspendStatusUpdate = async (
   orgId: string,
