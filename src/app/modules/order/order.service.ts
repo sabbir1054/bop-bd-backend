@@ -34,7 +34,10 @@ const orderCreate = async (
         organization: { include: { cart: true } },
       },
     });
-    if (isValidStaff?.organization?.isSuspend) {
+    if (
+      isValidStaff?.organization?.isSuspend ||
+      isValidStaff?.organization?.isManualSuspend
+    ) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
         'Your organization is suspend, can not buy now',
