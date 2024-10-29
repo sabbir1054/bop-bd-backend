@@ -164,6 +164,21 @@ const updateOranizationBusinessType = catchAsync(
     });
   },
 );
+const manualSuspendStatusUpdate = catchAsync(
+  async (req: Request, res: Response) => {
+    const { orgId } = req.params;
+    const result = await OrganizaionServices.manualSuspendStatusUpdate(
+      req.params.id,
+      req.body.suspendedStatus,
+    );
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Organization updated ',
+      data: result,
+    });
+  },
+);
 
 export const OrganizationController = {
   getDashboardMatrics,
@@ -177,4 +192,5 @@ export const OrganizationController = {
   getAllOrganization,
   getOrganizationsWithPendingCommissions,
   updateOranizationBusinessType,
+  manualSuspendStatusUpdate,
 };

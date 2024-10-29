@@ -118,6 +118,7 @@ model Organization {
     UsedReffereCode          UsedReffereCode?
     totalCommission          Float                             @default(0)
     isSuspend                Boolean                           @default(false)
+    isManualSuspend          Boolean                           @default(false)
     deadlineExtendfor        Int                               @default(0)
     RequestExtendDeadline    RequestExtendDeadline[]
 
@@ -145,6 +146,7 @@ model User {
     isMobileVerified Boolean       @default(false)
     isEmailVerified  Boolean       @default(false)
     isNidVerified    Boolean       @default(false)
+
     @@map("users")
 }
 
@@ -488,6 +490,7 @@ model PayCommission {
     updatedAt          DateTime                          @updatedAt
     createdAt          DateTime                          @default(now())
     transactionDetails TransactionInfoForPayCommission[]
+
     @@map("payCommission")
 }
 

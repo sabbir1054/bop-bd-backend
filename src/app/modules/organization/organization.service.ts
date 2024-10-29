@@ -682,7 +682,23 @@ const updateOranizationBusinessType = async (
     return result;
   }
 };
+const manualSuspendStatusUpdate = async (
+  orgId: string,
+  suspendedStatus: boolean,
+) => {
+  const isExist = await prisma.organization.findUnique({
+    where: { id: orgId },
+  });
+  if (!isExist) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization not found');
+  }
 
+  const result = await prisma.organization.update({
+    where: { id: orgId },
+    data: { isManualSuspend: suspendedStatus },
+  });
+  return result;
+};
 export const OrganizaionServices = {
   getDashboardMatrics,
   getOutgoingOrdersByDate,
@@ -695,4 +711,5 @@ export const OrganizaionServices = {
   getSingleOrganization,
   getOrganizationsWithPendingCommissions,
   updateOranizationBusinessType,
+  manualSuspendStatusUpdate,
 };

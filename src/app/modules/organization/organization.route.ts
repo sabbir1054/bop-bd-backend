@@ -26,10 +26,15 @@ router.get(
   ),
   OrganizationController.getDashboardMatrics,
 );
-router.get(
-  '/updateBusinessType/:orgId',
+router.patch(
+  '/updateOrgTypeRole/:orgId',
   auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
   OrganizationController.updateOranizationBusinessType,
+);
+router.patch(
+  '/updateSuspendStatus/:orgId',
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  OrganizationController.manualSuspendStatusUpdate,
 );
 
 router.post(

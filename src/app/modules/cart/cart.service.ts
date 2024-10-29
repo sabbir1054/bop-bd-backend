@@ -18,10 +18,13 @@ const updateCartSingle = async (
     throw new ApiError(httpStatus.NOT_FOUND, 'Product not found');
   }
 
-  if (isProductExist.organization.isSuspend) {
+  if (
+    isProductExist.organization.isSuspend ||
+    isProductExist.organization.isManualSuspend
+  ) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
-      'Product organizatios is suspended',
+      'Product organizations is suspended',
     );
   }
   let orgId = null;
@@ -56,10 +59,13 @@ const updateCartSingle = async (
     where: { id: orgId },
     include: { owner: true },
   });
-  if (organizationInfo?.isSuspend) {
+  if (!organizationInfo) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
+  }
+  if (organizationInfo.isSuspend || organizationInfo.isManualSuspend) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
-      'Organization is suspen, can not buy now',
+      'Organization is suspend, can not buy now',
     );
   }
 
@@ -186,7 +192,8 @@ const updateCartMultiple = async (
     if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
-    if (isValidStaff.role !== ('PURCHASE_OFFICER' || 'STAFF_ADMIN')) {
+    const validStaffRole = ['PURCHASE_OFFICER', 'STAFF_ADMIN'];
+    if (!validStaffRole.includes(isValidStaff.role)) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
         'Only store purchase officer or admin delete the product image',
@@ -208,7 +215,10 @@ const updateCartMultiple = async (
     where: { id: orgId },
     include: { owner: true },
   });
-  if (organizationInfo?.isSuspend) {
+  if (!organizationInfo) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Organization info not found');
+  }
+  if (organizationInfo.isSuspend || organizationInfo.isManualSuspend) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
       'Organization is suspen, can not buy now',
@@ -324,7 +334,8 @@ const removeItemsFromCart = async (
     if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
-    if (isValidStaff.role !== ('PURCHASE_OFFICER' || 'STAFF_ADMIN')) {
+    const validStaffRole = ['PURCHASE_OFFICER', 'STAFF_ADMIN'];
+    if (!validStaffRole.includes(isValidStaff.role)) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
         'Only store manager or admin delete the product image',
@@ -372,7 +383,8 @@ const getMyCart = async (userId: string, userRole: string) => {
     if (!isValidStaff || !isValidStaff.isValidNow) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Staff is invalid');
     }
-    if (isValidStaff.role !== ('PURCHASE_OFFICER' || 'STAFF_ADMIN')) {
+    const validStaffRole = ['PURCHASE_OFFICER', 'STAFF_ADMIN'];
+    if (!validStaffRole.includes(isValidStaff.role)) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
         'Only store manager or admin delete the product image',
