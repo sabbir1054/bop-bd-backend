@@ -68,33 +68,37 @@ const userRegistration = async (
         await prisma.user.delete({ where: { id: isValidStaff.id } });
       }
     }
+
+    const exceptRole = ['ADMIN', 'SUPER_ADMIN'];
     //otp process
-    const otp = generateOTP();
 
-    const sendOtp = await sendOTP(
-      payload.phone,
-      otp,
-      `Your BOP-BD registration verification code is ${otp}`,
-    );
-
-    if (sendOtp == null || sendOtp.Status != 0) {
-      throw new ApiError(
-        httpStatus.INTERNAL_SERVER_ERROR,
-        'Otp not send please try again',
+    if (!exceptRole.includes(othersData.role)) {
+      const otp = generateOTP();
+      const sendOtp = await sendOTP(
+        payload.phone,
+        otp,
+        `Your BOP-BD registration verification code is ${otp}`,
       );
-    }
 
-    const makeOtpForUser = await prisma.oneTimePassword.create({
-      data: {
-        phone: payload.phone,
-        otpCode: otp,
-        checkCounter: 0,
-        resendCounter: 0,
-      },
-    });
+      if (sendOtp == null || sendOtp.Status != 0) {
+        throw new ApiError(
+          httpStatus.INTERNAL_SERVER_ERROR,
+          'Otp not send please try again',
+        );
+      }
 
-    if (!makeOtpForUser) {
-      throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Otp not set');
+      const makeOtpForUser = await prisma.oneTimePassword.create({
+        data: {
+          phone: payload.phone,
+          otpCode: otp,
+          checkCounter: 0,
+          resendCounter: 0,
+        },
+      });
+
+      if (!makeOtpForUser) {
+        throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Otp not set');
+      }
     }
 
     if (othersData.role === 'ADMIN' || othersData.role === 'SUPER_ADMIN') {
@@ -590,34 +594,50 @@ const forgetPasswordOtp = async (phone: string) => {
   if (!isUserExist) {
     throw new ApiError(httpStatus.NOT_FOUND, 'User info not exist');
   }
-  const otp = generateOTP();
-  const sendOtp = await sendOTP(
-    phone,
-    otp,
-    `From BOP-BD, password reset verification code is ${otp}`,
-  );
-
-  if (sendOtp == null || sendOtp.Status != 0) {
-    throw new ApiError(
-      httpStatus.INTERNAL_SERVER_ERROR,
-      'Otp not send please try again',
-    );
-  }
-
-  const makeOtpForUser = await prisma.oneTimePassword.create({
-    data: {
+  const isOtpExist = await prisma.oneTimePassword.findUnique({
+    where: {
       phone: phone,
-      otpCode: otp,
-      checkCounter: 0,
-      resendCounter: 0,
     },
   });
+  const otp = generateOTP();
 
-  if (!makeOtpForUser) {
-    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Otp not set');
-  }
+  const result = await prisma.$transaction(async prisma => {
+    if (!isOtpExist) {
+      const sendOtp = await sendOTP(
+        phone,
+        otp,
+        `From BOP-BD, password reset verification code is ${otp}`,
+      );
 
-  return makeOtpForUser;
+      if (sendOtp == null || sendOtp.Status != 0) {
+        throw new ApiError(
+          httpStatus.INTERNAL_SERVER_ERROR,
+          'Otp not send please try again',
+        );
+      }
+      const makeOtpForUser = await prisma.oneTimePassword.create({
+        data: {
+          phone: phone,
+          otpCode: otp,
+          checkCounter: 0,
+          resendCounter: 0,
+        },
+      });
+
+      if (!makeOtpForUser) {
+        throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Otp not set');
+      }
+
+      return makeOtpForUser;
+    } else {
+      const updateOt = await prisma.oneTimePassword.update({
+        where: { phone: phone },
+        data: { otpCode: otp },
+      });
+      return updateOt;
+    }
+  });
+  return result;
 };
 
 const resendForgetpasswordOtp = async (phone: string) => {
