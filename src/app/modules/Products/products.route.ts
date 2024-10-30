@@ -1,5 +1,5 @@
 import express, { NextFunction, Request, Response } from 'express';
-import fs from 'fs';
+import fs from 'fs/promises';
 import httpStatus from 'http-status';
 import path from 'path';
 import config from '../../../config';
@@ -116,7 +116,7 @@ router.delete(
   ProductController.deleteProduct,
 );
 //!
-/* router.get(
+router.get(
   '/image/:fileName',
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -126,8 +126,6 @@ router.delete(
         'uploads',
         path.basename(req.params.fileName),
       );
-
-     
     } catch (err: any) {
       if (err.code === 'ENOENT') {
         // File not found, return 404 error
@@ -142,38 +140,6 @@ router.delete(
         );
       }
     }
-  },
-); */
-router.get(
-  '/image/:fileName',
-  (req: Request, res: Response, next: NextFunction) => {
-    // Construct the file path securely
-    const filePath = path.join(
-      process.cwd(),
-      'uploads',
-      path.basename(req.params.fileName),
-    );
-
-    // Check if the file exists
-    fs.access(filePath, fs.constants.F_OK, err => {
-      if (err) {
-        // File does not exist; pass the 404 error to next
-        return next(new ApiError(httpStatus.NOT_FOUND, 'Image not found'));
-      }
-
-      // Send the image file if it exists
-      res.sendFile(filePath, sendErr => {
-        if (sendErr) {
-          // Handle any errors while sending the file as a 500 error
-          next(
-            new ApiError(
-              httpStatus.INTERNAL_SERVER_ERROR,
-              'Error sending file',
-            ),
-          );
-        }
-      });
-    });
   },
 );
 
