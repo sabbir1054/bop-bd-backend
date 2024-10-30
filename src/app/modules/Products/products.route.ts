@@ -1,5 +1,5 @@
 import express, { NextFunction, Request, Response } from 'express';
-import fs from 'fs/promises';
+import fs from 'fs';
 import httpStatus from 'http-status';
 import path from 'path';
 import config from '../../../config';
@@ -116,28 +116,24 @@ router.delete(
   ProductController.deleteProduct,
 );
 //!
-router.get(
+/* router.get(
   '/image/:fileName',
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Construct the file path safely
+      // Construct the file path securely
       const filePath = path.join(
         process.cwd(),
         'uploads',
         path.basename(req.params.fileName),
       );
 
-      // Check if the file exists using fs.promises
-      await fs.access(filePath);
-
-      // Send the image file if it exists
-      res.sendFile(filePath);
+     
     } catch (err: any) {
       if (err.code === 'ENOENT') {
-        // If file not found, throw a 404 error with ApiError
+        // File not found, return 404 error
         next(new ApiError(httpStatus.NOT_FOUND, 'Image not found'));
       } else {
-        // For any other errors, handle it as a 500 Internal Server Error
+        // Handle all other errors as 500 Internal Server Error
         next(
           new ApiError(
             httpStatus.INTERNAL_SERVER_ERROR,
@@ -147,5 +143,38 @@ router.get(
       }
     }
   },
+); */
+router.get(
+  '/image/:fileName',
+  (req: Request, res: Response, next: NextFunction) => {
+    // Construct the file path securely
+    const filePath = path.join(
+      process.cwd(),
+      'uploads',
+      path.basename(req.params.fileName),
+    );
+
+    // Check if the file exists
+    fs.access(filePath, fs.constants.F_OK, err => {
+      if (err) {
+        // File does not exist; pass the 404 error to next
+        return next(new ApiError(httpStatus.NOT_FOUND, 'Image not found'));
+      }
+
+      // Send the image file if it exists
+      res.sendFile(filePath, sendErr => {
+        if (sendErr) {
+          // Handle any errors while sending the file as a 500 error
+          next(
+            new ApiError(
+              httpStatus.INTERNAL_SERVER_ERROR,
+              'Error sending file',
+            ),
+          );
+        }
+      });
+    });
+  },
 );
+
 export const ProductRoutes = router;
