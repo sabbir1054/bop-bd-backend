@@ -30,7 +30,6 @@ router.post(
 );
 router.post(
   '/forgetPassword/verifyOtp',
-  validateRequest(AuthValidation.userPasswordValidation),
   AuthController.verifyForgotPasswordOtp,
 );
 router.patch('/updatePassword', AuthController.updatePassword);
