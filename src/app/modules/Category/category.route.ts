@@ -7,7 +7,6 @@ import { ENUM_USER_ROLE } from '../../../enums/user';
 import ApiError from '../../../errors/ApiError';
 import { FileUploadHelper } from '../../../helpers/fileUpload';
 import auth from '../../middlewares/auth';
-import validateRequest from '../../middlewares/validateRequest';
 import { CategoryController } from './category.controller';
 import { CategoryZodValidation } from './category.validation';
 const router = express.Router();
@@ -38,21 +37,37 @@ router.post(
 );
 
 //get picture
-router.get('/image/:fileName', (req: Request, res: Response) => {
-  const filePath = path.join(
-    process.cwd(),
-    'uploads/categoryPhoto',
-    path.basename(req.params.fileName),
-  );
-  // Check if the file exists
-  fs.access(filePath, fs.constants.F_OK, err => {
-    if (err) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'Image not found');
+router.get(
+  '/image/:fileName',
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const filePath = path.join(
+        process.cwd(),
+        'uploads/categoryPhoto',
+        path.basename(req.params.fileName),
+      );
+
+      // Check if the file exists
+      await fs.promises.access(filePath, fs.constants.F_OK);
+
+      // Send the image file if it exists
+      res.sendFile(filePath);
+    } catch (err: any) {
+      if (err.code === 'ENOENT') {
+        // File not found, return 404 error
+        next(new ApiError(httpStatus.NOT_FOUND, 'Image not found'));
+      } else {
+        // Handle all other errors as 500 Internal Server Error
+        next(
+          new ApiError(
+            httpStatus.INTERNAL_SERVER_ERROR,
+            'An error occurred while processing your request',
+          ),
+        );
+      }
     }
-    // Send the image file
-    res.sendFile(filePath);
-  });
-});
+  },
+);
 
 //remove photo
 router.delete(
