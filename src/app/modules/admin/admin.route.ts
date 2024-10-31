@@ -25,5 +25,10 @@ router.get(
   auth(ENUM_USER_ROLE.SUPER_ADMIN),
   AdminController.claimedRewardTransactionHistory,
 );
+router.get(
+  '/smsBalanceCheck',
+  auth(ENUM_USER_ROLE.SUPER_ADMIN),
+  AdminController.smsBalanceCheck,
+);
 
 export const AdminRoutes = router;

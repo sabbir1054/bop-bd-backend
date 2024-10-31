@@ -26,6 +26,7 @@ export default {
     refresh_expires_in: process.env.JWT_REFRESH_EXPIRES_IN,
   },
   mobileOTP: {
+    smsBalance: process.env.SMS_BALANCE_LINK,
     apiKey: process.env.MOBILE_OTP_API_KEY,
     secretKey: process.env.MOBILE_OTP_SECRET_KEY,
     callerId: process.env.MOBILE_OTP_CALLER_ID,

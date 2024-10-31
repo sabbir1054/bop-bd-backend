@@ -52,10 +52,21 @@ const claimedRewardTransactionHistory = catchAsync(
     });
   },
 );
+const smsBalanceCheck = catchAsync(async (req: Request, res: Response) => {
+  const result = await AdminServices.smsBalanceCheck();
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Balance retrieve successfully !!',
+
+    data: result,
+  });
+});
 
 export const AdminController = {
   BOPCommissionInfo,
   cashTransactionHistory,
   claimedRewardTransactionHistory,
   BOPuserInfo,
+  smsBalanceCheck,
 };

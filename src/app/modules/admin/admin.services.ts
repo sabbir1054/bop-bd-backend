@@ -1,8 +1,8 @@
 import { Role } from '@prisma/client';
 import { paginationHelpers } from '../../../helpers/paginationHelper';
+import { chackSmsBalance } from '../../../helpers/smsBalanceCheck';
 import { IPaginationOptions } from '../../../interfaces/pagination';
 import prisma from '../../../shared/prisma';
-
 const BOPCommissionInfo = async () => {
   const result = await prisma.$transaction(async prisma => {
     const totalCommission = await prisma.order_Commission_History.aggregate({
@@ -139,9 +139,15 @@ const BOPuserInfo = async () => {
   return result;
 };
 
+const smsBalanceCheck = async () => {
+  const result = await chackSmsBalance();
+  return result;
+};
+
 export const AdminServices = {
   BOPCommissionInfo,
   cashTransactionHistory,
   claimedRewardTransactionHistory,
   BOPuserInfo,
+  smsBalanceCheck,
 };
