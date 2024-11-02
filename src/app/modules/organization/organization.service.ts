@@ -470,7 +470,7 @@ const getAllOrganization = async (
   options: IPaginationOptions,
 ) => {
   const { limit, page, skip } = paginationHelpers.calculatePagination(options);
-  const { searchTerm, businessTypeId, location, ...filtersData } = filters;
+  const { searchTerm, location, ...filtersData } = filters;
   const andConditions: any[] = [];
 
   if (searchTerm) {
