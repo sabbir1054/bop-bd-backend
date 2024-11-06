@@ -489,7 +489,7 @@ const updateOrderStatus = async (
     throw new ApiError(httpStatus.NOT_FOUND, 'Order not exist ');
   }
 
-  if (status === 'SHIPPING' && !isExistOrder.deliveryCharge) {
+  if (status === 'SHIPPING' && isExistOrder.deliveryCharge === null) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
       'At first set delivery charge it can be minimum 0',
