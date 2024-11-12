@@ -500,6 +500,8 @@ const getAllOrganization = async (
       },
     });
   }
+  andConditions.push({ owner: { verified: true } });
+
   const whereConditions =
     andConditions.length > 0 ? { AND: andConditions } : {};
 
