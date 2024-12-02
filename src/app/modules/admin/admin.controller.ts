@@ -4,7 +4,7 @@ import { paginationFields } from '../../../constants/paginationFields';
 import catchAsync from '../../../shared/catchAsync';
 import pick from '../../../shared/pick';
 import sendResponse from '../../../shared/sendResponse';
-import { AdminServices } from './admin.services';
+import { AdminServices, orderFilterableFieldsAdmin } from './admin.services';
 
 const BOPCommissionInfo = catchAsync(async (req: Request, res: Response) => {
   const { id, role } = req.user as any;
@@ -62,11 +62,23 @@ const smsBalanceCheck = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
-
+const getAllOrders = catchAsync(async (req: Request, res: Response) => {
+  const filters = pick(req.query, orderFilterableFieldsAdmin);
+  const options = pick(req.query, paginationFields);
+  const result = await AdminServices.getAllOrders(filters, options);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Organization retrieve successfully !!',
+    meta: result.meta,
+    data: result.data,
+  });
+});
 export const AdminController = {
   BOPCommissionInfo,
   cashTransactionHistory,
   claimedRewardTransactionHistory,
   BOPuserInfo,
   smsBalanceCheck,
+  getAllOrders,
 };

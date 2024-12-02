@@ -143,11 +143,69 @@ const smsBalanceCheck = async () => {
   const result = await chackSmsBalance();
   return result;
 };
+const orderSearchableFields = ['id', 'orderCode'];
+export const orderFilterableFieldsAdmin = ['searchTerm', 'orderStatus'];
 
+const getAllOrders = async (filters: any, options: IPaginationOptions) => {
+  const { limit, page, skip } = paginationHelpers.calculatePagination(options);
+  const { searchTerm, ...filtersData } = filters;
+  const andConditions: any[] = [];
+
+  if (searchTerm) {
+    andConditions.push({
+      OR: orderSearchableFields.map(field => ({
+        [field]: {
+          contains: searchTerm,
+          mode: 'insensitive',
+        },
+      })),
+    });
+  }
+  if (Object.keys(filtersData).length) {
+    const conditions = Object.entries(filtersData).map(([field, value]) => ({
+      [field]: value,
+    }));
+    andConditions.push({ AND: conditions });
+  }
+  andConditions.push({ owner: { verified: true } });
+
+  const whereConditions =
+    andConditions.length > 0 ? { AND: andConditions } : {};
+
+  const result = await prisma.order.findMany({
+    where: whereConditions,
+    skip,
+    take: limit,
+    orderBy:
+      options.sortBy && options.sortOrder
+        ? { [options.sortBy]: options.sortOrder }
+        : {
+            createdAt: 'desc',
+          },
+    include: {
+      customer: true,
+      product_seller: true,
+    },
+  });
+
+  const total = await prisma.organization.count({
+    where: whereConditions,
+  });
+
+  return {
+    meta: {
+      total,
+      page,
+      limit,
+    },
+    data: result,
+  };
+};
 export const AdminServices = {
   BOPCommissionInfo,
   cashTransactionHistory,
   claimedRewardTransactionHistory,
   BOPuserInfo,
   smsBalanceCheck,
+  getAllOrders,
 };

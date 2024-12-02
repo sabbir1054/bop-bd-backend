@@ -30,5 +30,9 @@ router.get(
   auth(ENUM_USER_ROLE.SUPER_ADMIN, ENUM_USER_ROLE.ADMIN),
   AdminController.smsBalanceCheck,
 );
-
+router.get(
+  '/allOrders/admin',
+  auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.SUPER_ADMIN),
+  AdminController.getAllOrders,
+);
 export const AdminRoutes = router;
