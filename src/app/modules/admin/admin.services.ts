@@ -188,7 +188,7 @@ const getAllOrders = async (filters: any, options: IPaginationOptions) => {
     },
   });
 
-  const total = await prisma.organization.count({
+  const total = await prisma.order.count({
     where: whereConditions,
   });
 

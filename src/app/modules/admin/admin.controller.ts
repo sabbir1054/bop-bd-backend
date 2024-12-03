@@ -69,7 +69,7 @@ const getAllOrders = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: 'Organization retrieve successfully !!',
+    message: 'Orders retrieve successfully !!',
     meta: result.meta,
     data: result.data,
   });
