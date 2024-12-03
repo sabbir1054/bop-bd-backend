@@ -182,8 +182,8 @@ const getAllOrders = async (filters: any, options: IPaginationOptions) => {
             createdAt: 'desc',
           },
     include: {
-      customer: true,
-      product_seller: true,
+      customer: { include: { owner: true } },
+      product_seller: { include: { owner: true } },
     },
   });
 
