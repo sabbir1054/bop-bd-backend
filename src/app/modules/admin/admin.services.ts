@@ -167,7 +167,6 @@ const getAllOrders = async (filters: any, options: IPaginationOptions) => {
     }));
     andConditions.push({ AND: conditions });
   }
-  andConditions.push({ owner: { verified: true } });
 
   const whereConditions =
     andConditions.length > 0 ? { AND: andConditions } : {};
